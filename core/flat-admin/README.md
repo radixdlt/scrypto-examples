@@ -7,7 +7,7 @@ Instantiating a `FlatAdmin` component will create a badge manager component, as 
 ```rust
 struct FlatAdmin {
     admin_mint_badge: Vault,
-    admin_badge: ResourceDef,
+    admin_badge: ResourceAddress,
 }
 ```
 
@@ -19,30 +19,43 @@ For user convenience, we'll also maintain the `ResourceDef` of the external admi
 Upon instantiation, we'll only ask the user to name the badge.  We'll return to the user the instantiated component, as well as the first admin badge managed by the component.
 
 ```rust
-pub fn instantiate_flatadmin(badge_name: String) -> (Component, Bucket) {
+pub fn instantiate_flat_admin(badge_name: String) -> (ComponentAddress, Bucket) {
 ```
 
 We'll want our supply of admin badges to be mutable.  Mutable supply resources can only be minted and burned by an appropriate authority, so we'll first create a badge to serve as that authority, and then use that new badge to create our supply of admin badges.
 
 ```rust
-let admin_mint_badge = ResourceBuilder::new_fungible(DIVISIBILITY_NONE)
-    .initial_supply_fungible(1);
-let admin_badge_def = ResourceBuilder::new_fungible(DIVISIBILITY_NONE)
+let admin_mint_badge = ResourceBuilder::new_fungible()
+    .divisibility(DIVISIBILITY_NONE)
+    .initial_supply(1);
+
+let mut admin_badge = ResourceBuilder::new_fungible()
+    .divisibility(DIVISIBILITY_NONE)
     .metadata("name", badge_name)
-    .flags(MINTABLE | BURNABLE)
-    .badge(admin_mint_badge.resource_def(), MAY_MINT | MAY_BURN)
+    .mintable(auth!(require(admin_mint_badge.resource_address())), LOCKED)
+    .burnable(auth!(require(admin_mint_badge.resource_address())), LOCKED)
     .no_initial_supply();
 ```
 
-With that out of the way, we can mint our first admin badge and create our component.  We'll tuck our sole minting authority badge safely away within its vault.  Then we'll return the new component and the admin badge.
+With that out of the way, we can mint our first admin badge, set the access rules for the component methods and create our component.  We'll tuck our sole minting authority badge safely away within its vault.  Then we'll return the new component and the admin badge.
 
 ```rust
-let first_admin_badge = admin_badge_def.mint(1, admin_mint_badge.present());
+let first_admin_badge = admin_mint_badge.authorize(|| {
+    let admin_badge_manager = borrow_resource_manager!(admin_badge);
+    admin_badge_manager.mint(1)
+});
+
+let auth: AccessRules = AccessRules::new()
+    .method("create_additional_admin", auth!(require(admin_badge)))
+    .default(auth!(allow_all));
+
 let component = Self {
     admin_mint_badge: Vault::with_bucket(admin_mint_badge),
-    admin_badge: admin_badge_def
+    admin_badge: admin_badge,
 }
-.instantiate();
+.instantiate()
+.add_access_check(auth)
+.globalize();
 
 (component, first_admin_badge)
 ```
@@ -55,8 +68,10 @@ Obviously we don't want just anyone to be able to create additional admin badges
 ```rust
 #[auth(admin_badge)]
 pub fn create_additional_admin(&self) -> Bucket {
-  self.admin_mint_badge
-    .authorize(|auth| self.admin_badge.mint(1, auth))
+    self.admin_mint_badge.authorize(|| {
+        let admin_badge_manager = borrow_resource_manager!(self.admin_badge);
+        admin_badge_manager.mint(1)
+    })
 }
 ```
 
