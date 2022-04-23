@@ -22,9 +22,9 @@ and pass an array of instances to resource builder:
 ```rust
 let special_cards_bucket = ResourceBuilder::new_non_fungible()
     .metadata("name", "Russ' Magic Card Collection")
-    .initial_supply_non_fungible([
+    .initial_supply([
         (
-            NftKey::from(1u128), // The ID of the first NFT, you can also use `Uuid::generate()` to create a random ID
+            NonFungibleId::from_u64(1u64), // The ID of the first NFT, you can also use `Uuid::generate()` to create a random ID
             MagicCard {
                 color: Color::Black,
                 rarity: Rarity::MythicRare,
@@ -32,7 +32,7 @@ let special_cards_bucket = ResourceBuilder::new_non_fungible()
             }
         ),
         (
-            NftKey::from(2u128), // The ID of the second NFT
+            NonFungibleId::from_u64(2u64), // The ID of the second NFT
             MagicCard {
                 color: Color::Green,
                 rarity: Rarity::Rare,
@@ -45,22 +45,22 @@ let special_cards_bucket = ResourceBuilder::new_non_fungible()
 To create NFTs with mutable supply, 
 
 ```rust
-let random_card_mint_badge = ResourceBuilder::new_fungible(DIVISIBILITY_NONE)
+let random_card_mint_badge = ResourceBuilder::new_fungible()
+    .divisibility(DIVISIBILITY_NONE)
     .metadata("name", "Random Cards Mint Badge")
-    .initial_supply_fungible(1);
-let random_card_resource_def = ResourceBuilder::new_non_fungible()
+    .initial_supply(1);
+
+let random_card_resource_address = ResourceBuilder::new_non_fungible()
     .metadata("name", "Random Cards")
-    .flags(MINTABLE | BURNABLE | INDIVIDUAL_METADATA_MUTABLE)
-    .badge(
-        random_card_mint_badge.resource_def(),
-        MAY_MINT | MAY_BURN | MAY_CHANGE_INDIVIDUAL_METADATA,
-    )
+    .mintable(rule!(require(random_card_mint_badge.resource_address())), LOCKED)
+    .burnable(rule!(require(random_card_mint_badge.resource_address())), LOCKED)
+    .updateable_non_fungible_data(rule!(require(random_card_mint_badge.resource_address())), LOCKED)
     .no_initial_supply();
 ```
 
 Once the resource is created, we can mint NFTs with the `mint_non_fungible` method:
 ```rust
-let nft = self.random_card_mint_badge.authorize(|auth| {
+let nft = self.random_card_mint_badge.authorize(|| {
     self.random_card_resource_def.mint_non_fungible(
         // The NFT id
         self.random_card_id_counter,
@@ -70,8 +70,6 @@ let nft = self.random_card_mint_badge.authorize(|auth| {
             rarity: Self::random_rarity(random_seed),
             level: 5,
         },
-        // authorization to mint
-        auth
     )
 });
 ```
@@ -89,11 +87,12 @@ To pick a specific NFT when calling a function or method, we can use the followi
 ## Update an Existing NFT
 
 
-To update, we need to call the `update_non_fungible_data` method on resource definition.
+To update, we need to call the `update_non_fungible_data` method on resource manager.
 
 ```rust
 let nft = self.random_card_mint_badge.authorize(|auth| {
-    self.random_card_resource_def.update_non_fungible_data(
+    let random_card_resource_manager = borrow_resource_manager!(self.random_card_resource_address)
+    random_card_resource_manager.update_non_fungible_data(
         // The NFT id
         self.random_card_id_counter,
         // The new NFT data
@@ -136,7 +135,7 @@ resim show <ACCOUNT_ADDRESS>
 ```
 6. Fuse our random cards
 ```
-resim call-method <COMPONENT_ADDRESS> fuse_my_cards "#0,#1,03d8541671ab09116ae450d468f91e5488a9b22c705d70dcfe9e09"
+resim call-method <COMPONENT_ADDRESS> fuse_my_cards "#0000000000000000,#0000000000000001,<CARDS_RESOURCE_ADDRESS>"
 ```
 7. Check out our balance again and we should see a upgraded card
 ```
