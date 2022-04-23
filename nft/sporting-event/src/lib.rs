@@ -34,26 +34,29 @@ blueprint! {
     }
 
     impl SportingEvent {
-        pub fn instantiate_sporting_event() -> Component {
+        pub fn instantiate_sporting_event() -> ComponentAddress {
             // For simplicity's sake, we will just use all fixed values for our numbers of tickets and their prices, though all of those could be parameterized
 
             // We'll start by creating our admin badge which is able to create and modify our NFT
-            let my_admin = ResourceBuilder::new_fungible(DIVISIBILITY_NONE)
-                .initial_supply_fungible(1);
+            let my_admin = ResourceBuilder::new_fungible()
+                .divisibility(DIVISIBILITY_NONE)
+                .initial_supply(1);
+
+            // Putting the admin badge in the component auth zone as it will be used throughout this function multiple
+            // times. After we're done using it, we will take it back and drop the proof
+            ComponentAuthZone::push(my_admin.create_proof());
 
             // Create our NFT
-            let my_non_fungible_def = ResourceBuilder::new_non_fungible()
+            let my_non_fungible_address = ResourceBuilder::new_non_fungible()
                 .metadata("name", "Ticket to the big game")
-                .flags(MINTABLE | INDIVIDUAL_METADATA_MUTABLE)
-                .badge(
-                    my_admin.resource_def(),
-                    MAY_MINT | MAY_CHANGE_INDIVIDUAL_METADATA
-                )
+                .mintable(rule!(require(my_admin.resource_address())), LOCKED)
+                .updateable_non_fungible_data(rule!(require(my_admin.resource_address())), LOCKED)
                 .no_initial_supply();
 
             // Currently, Scrypto requires manual assignment of NFT IDs
-            let mut ticket_bucket = Bucket::new(my_non_fungible_def);
-            let mut manual_id = 1u128;
+            let mut ticket_bucket = Bucket::new(my_non_fungible_address);
+            let ticket_resource_manager = borrow_resource_manager!(ticket_bucket.resource_address());
+            let mut manual_id = 1u64;
 
             // Mint the Luxury seat tokens.  These seats have an assigned seat number
             // We will default to a prediction of the Home team winning, and purchasers may alter this when they buy their ticket
@@ -65,9 +68,7 @@ blueprint! {
                         prediction: Team::Home,
                     };
                     ticket_bucket.put(
-                        my_admin.authorize(
-                            |auth| ticket_bucket.resource_def().mint_non_fungible(&NonFungibleKey::from(manual_id), ticket, auth)
-                        )
+                        ticket_resource_manager.mint_non_fungible(&NonFungibleId::from_u64(manual_id), ticket)
                     );
                     manual_id += 1;
                 }
@@ -75,18 +76,19 @@ blueprint! {
 
             // Mint the Field level seats.  These are common seating, with no seat number.  As with Luxury, they will default to a Home win prediction
             // While these tokens each will have unique IDs, they will be otherwise identical
-            for manual_id in 101u128..200u128 {
+            for manual_id in 101u64..200u64 {
                 let ticket = Ticket {
                     section: Section::Field,
                     seat: None,
                     prediction: Team::Home,
                 };
                 ticket_bucket.put(
-                    my_admin.authorize(
-                        |auth| ticket_bucket.resource_def().mint_non_fungible(&NonFungibleKey::from(manual_id), ticket, auth)
-                    )
+                    ticket_resource_manager.mint_non_fungible(&NonFungibleId::from_u64(manual_id), ticket)
                 );
             }
+
+            // Dropping the my admin proof
+            ComponentAuthZone::pop().drop();
 
             // Instantiate our component with our supply of sellable tickets
             Self {
@@ -97,11 +99,12 @@ blueprint! {
                 admin_authority: Vault::with_bucket(my_admin),
             }
             .instantiate()
+            .globalize()
         }
 
         /// Helper function to look for a matching ticket
         fn get_ticket(&mut self, section: Section, seat: Option<String>) -> Bucket {
-            let nfts = self.tickets.get_non_fungibles::<Ticket>();
+            let nfts = self.tickets.non_fungibles::<Ticket>();
             // Currently, there is no way to search for particular NFT characteristics within a bucket/vault other than iterating through all of them.
             // A better implementation of this simple use case would be to provide a way to map Luxury seat numbers to an ID deterministically,
             // and likely keep them in a separate vault from the Field tokens so that the semi-fungible Field tokens can be immediately grabbed.            
@@ -109,7 +112,7 @@ blueprint! {
             for nft in &nfts {
                 let ticket: Ticket = nft.data();
                 if ticket.section == section && ticket.seat == seat {
-                    return self.tickets.take_non_fungible(&nft.key());
+                    return self.tickets.take_non_fungible(&nft.id());
                 }                
             };
 
@@ -119,13 +122,11 @@ blueprint! {
         /// Passing an NFT into this function will switch it from the default Home team prediction to an Away team prediction
         fn switch_nft_prediction(&mut self, mut nft_bucket: Bucket) -> Bucket {
             // First, get the current data and change it to the desired state locally
-            let mut nft_data: Ticket = nft_bucket.get_non_fungible_data(&nft_bucket.get_non_fungible_key());
+            let mut nft_data: Ticket = nft_bucket.non_fungible().data();
             nft_data.prediction = Team::Away;
 
             // Then commit our updated data to our NFT
-            self.admin_authority.authorize(
-                |auth| nft_bucket.update_non_fungible_data(&nft_bucket.get_non_fungible_key(), nft_data, auth)
-            );
+            self.admin_authority.authorize(|| nft_bucket.non_fungible().update_data(nft_data));
 
             // All done, send it back
             nft_bucket
