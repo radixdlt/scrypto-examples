@@ -24,7 +24,7 @@ blueprint! {
         /// Liquidation bonus
         liquidation_bonus: Decimal,
         /// User state
-        users: LazyMap<Address, User>,
+        users: LazyMap<ResourceAddress, User>,
         /// The interest rate of deposits, per epoch
         deposit_interest_rate: Decimal,
         /// The (stable) interest rate of loans, per epoch
@@ -33,29 +33,31 @@ blueprint! {
 
     impl AutoLend {
         /// Creates a lending pool, with single collateral.
-        pub fn instantiate_autolend(reserve_address: Address) -> Component {
+        pub fn instantiate_autolend(reserve_address: ResourceAddress) -> ComponentAddress {
             Self {
                 liquidity_pool: Vault::new(reserve_address),
-                min_collateral_ratio: "1.2".parse().unwrap(),
-                max_borrow_percent: "0.3".parse().unwrap(),
-                max_liquidation_percent: "0.5".parse().unwrap(),
-                liquidation_bonus: "0.05".parse().unwrap(),
+                min_collateral_ratio: dec!("1.2"),
+                max_borrow_percent: dec!("0.3"),
+                max_liquidation_percent: dec!("0.5"),
+                liquidation_bonus: dec!("0.05"),
                 users: LazyMap::new(),
-                deposit_interest_rate: "0.01".parse().unwrap(),
-                borrow_interest_rate: "0.02".parse().unwrap(),
+                deposit_interest_rate: dec!("0.01"),
+                borrow_interest_rate: dec!("0.02"),
             }
             .instantiate()
+            .globalize()
         }
 
         /// Registers a new user
         pub fn new_user(&self) -> Bucket {
-            ResourceBuilder::new_fungible(DIVISIBILITY_NONE)
+            ResourceBuilder::new_fungible()
+                .divisibility(DIVISIBILITY_NONE)
                 .metadata("name", "AutoLend User Badge")
-                .initial_supply_fungible(1)
+                .initial_supply(1)
         }
 
         /// Deposits into the liquidity pool and start earning interest.
-        pub fn deposit(&mut self, user_auth: BucketRef, reserve_tokens: Bucket) {
+        pub fn deposit(&mut self, user_auth: Proof, reserve_tokens: Bucket) {
             let user_id = Self::get_user_id(user_auth);
             let amount = reserve_tokens.amount();
 
@@ -71,8 +73,8 @@ blueprint! {
                     borrow_balance: Decimal::zero(),
                     deposit_interest_rate,
                     borrow_interest_rate: Decimal::zero(),
-                    deposit_last_update: Context::current_epoch(),
-                    borrow_last_update: Context::current_epoch(),
+                    deposit_last_update: Runtime::current_epoch(),
+                    borrow_last_update: Runtime::current_epoch(),
                 },
             };
 
@@ -82,7 +84,7 @@ blueprint! {
         }
 
         /// Redeems the underlying assets, partially or in full.
-        pub fn redeem(&mut self, user_auth: BucketRef, amount: Decimal) -> Bucket {
+        pub fn redeem(&mut self, user_auth: Proof, amount: Decimal) -> Bucket {
             let user_id = Self::get_user_id(user_auth);
 
             // Update user state
@@ -102,7 +104,7 @@ blueprint! {
         }
 
         /// Borrows the specified amount from lending pool
-        pub fn borrow(&mut self, user_auth: BucketRef, requested: Decimal) -> Bucket {
+        pub fn borrow(&mut self, user_auth: Proof, requested: Decimal) -> Bucket {
             let user_id = Self::get_user_id(user_auth);
 
             assert!(
@@ -122,7 +124,7 @@ blueprint! {
         }
 
         /// Repays a loan, partially or in full.
-        pub fn repay(&mut self, user_auth: BucketRef, mut repaid: Bucket) -> Bucket {
+        pub fn repay(&mut self, user_auth: Proof, mut repaid: Bucket) -> Bucket {
             let user_id = Self::get_user_id(user_auth);
 
             // Update user state
@@ -137,7 +139,7 @@ blueprint! {
         }
 
         /// Liquidates one user's position, if it's under collateralized.
-        pub fn liquidate(&mut self, user_id: Address, repaid: Bucket) -> Bucket {
+        pub fn liquidate(&mut self, user_id: ResourceAddress, repaid: Bucket) -> Bucket {
             let mut user = self.get_user(user_id);
 
             // Check if the user is under collateralized
@@ -167,7 +169,7 @@ blueprint! {
         }
 
         /// Returns the current state of a user.
-        pub fn get_user(&self, user_id: Address) -> User {
+        pub fn get_user(&self, user_id: ResourceAddress) -> User {
             match self.users.get(&user_id) {
                 Some(user) => user,
                 _ => panic!("User not found"),
@@ -184,9 +186,9 @@ blueprint! {
             self.borrow_interest_rate = rate;
         }
 
-        /// Parse user id from a bucket ref.
-        fn get_user_id(user_auth: BucketRef) -> Address {
-            assert!(user_auth.amount() > 0.into(), "Invalid user proof");
+        /// Parse user id from a proof.
+        fn get_user_id(user_auth: Proof) -> ResourceAddress {
+            assert!(user_auth.amount() > dec!("0"), "Invalid user proof");
             user_auth.resource_address()
         }
     }
@@ -239,7 +241,7 @@ impl User {
         let interest =
             self.deposit_balance * self.deposit_interest_rate * self.deposit_time_elapsed();
         self.deposit_balance += interest;
-        self.deposit_last_update = Context::current_epoch();
+        self.deposit_last_update = Runtime::current_epoch();
 
         // Calculate the aggregated interest of previous deposits & the new deposit
         self.deposit_interest_rate = (self.deposit_balance * self.deposit_interest_rate
@@ -262,7 +264,7 @@ impl User {
         // Increase borrow balance by interests accrued
         let interest = self.borrow_balance * self.borrow_interest_rate * self.borrow_time_elapsed();
         self.borrow_balance += interest;
-        self.borrow_last_update = Context::current_epoch();
+        self.borrow_last_update = Runtime::current_epoch();
 
         // Calculate the aggregated interest of previous borrows & the new borrow
         self.borrow_interest_rate = (self.borrow_balance * self.borrow_interest_rate
@@ -277,7 +279,7 @@ impl User {
         // Increase borrow balance by interests accrued
         let interest = self.borrow_balance * self.borrow_interest_rate * self.borrow_time_elapsed();
         self.borrow_balance += interest;
-        self.borrow_last_update = Context::current_epoch();
+        self.borrow_last_update = Runtime::current_epoch();
 
         // Repay the loan
         if self.borrow_balance < amount {
@@ -304,11 +306,11 @@ impl User {
 
     fn deposit_time_elapsed(&self) -> u64 {
         // +1 is for demo purpose only
-        Context::current_epoch() - self.deposit_last_update + 1
+        Runtime::current_epoch() - self.deposit_last_update + 1
     }
 
     fn borrow_time_elapsed(&self) -> u64 {
         // +1 is for demo purpose only
-        Context::current_epoch() - self.borrow_last_update + 1
+        Runtime::current_epoch() - self.borrow_last_update + 1
     }
 }
