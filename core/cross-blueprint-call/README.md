@@ -16,30 +16,30 @@ If the function or method is from an already published package, we need to
     import! {
     r#"
     {
-        "package": "01bda8686d6c2fa45dce04fac71a09b54efbc8028c23aac74bc00e",
-        "name": "Airdrop",
+        "package_address": "01e9917332573b6332ffaaadc96bc1509cc24ef8aa69d1cd117d39",
+        "blueprint_name": "Airdrop",
         "functions": [
-            {
-                "name": "instantiate_airdrop",
-                "inputs": [],
-                "output": {
-                    "type": "Custom",
-                    "name": "scrypto::core::Component",
-                    "generics": []
-                }
+        {
+            "name": "instantiate_airdrop",
+            "inputs": [],
+            "output": {
+                "type": "Custom",
+                "name": "ComponentAddress",
+                "generics": []
             }
+        }
         ],
         "methods": [
-            {
-                "name": "free_token",
-                "mutability": "Immutable",
-                "inputs": [],
-                "output": {
-                    "type": "Custom",
-                    "name": "scrypto::resource::Bucket",
-                    "generics": []
-                }
+        {
+            "name": "free_token",
+            "mutability": "Mutable",
+            "inputs": [],
+            "output": {
+                "type": "Custom",
+                "name": "Bucket",
+                "generics": []
             }
+        }
         ]
     }
     "#
@@ -53,8 +53,8 @@ let airdrop_component = Airdrop::instantiate_airdrop();
 
 To call a method, though, we need a component address, which can be parsed from string.
 ```rust
-let address = Address::from_str("022cf5de8153aaf56ee81c032fb06c7fde0a1dc2389040d651dfc2").unwrap();
-let airdrop = Airdrop::from(address);
+let address = ComponentAddress::from_str("01e9917332573b6332ffaaadc96bc1509cc24ef8aa69d1cd117d39").unwrap();
+let airdrop: Airdrop = address.into();
 let received_tokens = airdrop.free_token();
 ```
 
