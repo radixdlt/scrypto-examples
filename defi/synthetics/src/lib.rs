@@ -314,7 +314,7 @@ blueprint! {
                 .initial_supply(1)
         }
 
-        /// Parse user id from a bucket ref.
+        /// Parse user id from proof.
         fn get_user_id(user_auth: Proof) -> ResourceAddress {
             assert!(user_auth.amount() > 0.into(), "Invalid user proof");
             user_auth.resource_address()
@@ -344,9 +344,9 @@ blueprint! {
 pub struct SyntheticToken {
     /// The symbol of the asset
     asset_symbol: String,
-    /// The resource definition address of the asset
+    /// The resource address of the asset
     asset_address: ResourceAddress,
-    /// The synth (sXYZ) resource definition
+    /// The synth (sXYZ) resource address
     token_resource_address: ResourceAddress,
 }
 
