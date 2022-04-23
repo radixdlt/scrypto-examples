@@ -32,7 +32,7 @@ deposit_per_year=50, fee_address_update=10 and fee_renewal_per_year=25 (all valu
 Save the address of the admin badge to `$admin_badge` (first new entity), the address of the DomainName resource
 to `$name_resource` (third new entity) and the component address to `$component` (fourth new entity)
 ```
-resim call-function $package RadixNameService new 50 10 25 
+resim call-function $package RadixNameService instantiate_rns 50 10 25 
 ```
 5. Simulate that a user comes along and uses the RNS component.  
 Save the account address to `$user_account` and the public key to `$user_pubkey`
@@ -86,6 +86,10 @@ the mapped address (#339715316826500606461318410874891739268,$name_resource)
 ```
 resim call-method $component update_address "#339715316826500606461318410874891739268,$name_resource" $new_user_account "10,030000000000000000000000000000000000000000000000000004"
 ```
+
+|**NOTE**| The above command uses `FF92CA45964EA42935A62DD2645F2084` which is the hexadecimal representation of the non-fungible id `339715316826500606461318410874891739268` as this is the format accepted by resim.|
+|----|-----|
+
 12. Call the lookup_address method one more time to see that the mapping has changed  
 and that the name "satoshi.xrd" now points to the user's new account  
 (02fbffedd2e0f3d0f3c5381b57b02c0f3b30bad1c57120f1c334bd).
@@ -99,7 +103,7 @@ the mapped address (#339715316826500606461318410874891739268,$name_resource)
 2: The number of years for which the name should be renewed (10)  
 3: A bucket that contains the fee for the name renewal (250,$tokenXRD)  
 ```
-resim call-method $component renew_name "#339715316826500606461318410874891739268,$name_resource" 10 "250,030000000000000000000000000000000000000000000000000004"
+resim call-method $component renew_name "#FF92CA45964EA42935A62DD2645F2084,$name_resource" 10 "250,030000000000000000000000000000000000000000000000000004"
 ```
 
 14. Again, display the user's account and note that the name is now reserved until epoch 300000.  

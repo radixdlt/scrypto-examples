@@ -49,7 +49,7 @@ blueprint! {
                 .metadata("name", "DomainName")
                 .mintable(auth!(require(minter.resource_address())), LOCKED)
                 .burnable(auth!(require(minter.resource_address())), LOCKED)
-                .updateable_metadata(auth!(require(minter.resource_address())), LOCKED)
+                .updateable_non_fungible_data(auth!(require(minter.resource_address())), LOCKED)
                 .no_initial_supply();
 
             let auth = AccessRules::new()
