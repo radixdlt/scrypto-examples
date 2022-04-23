@@ -79,7 +79,7 @@ resim new-account
 ```
 11. The name mapping can be changed by calling the update_address method on the RNS component.  
 The parameters to this method are:  
-1: A BucketRef with the DomainName NFT that demonstrates the user's ownership of the name and his right to change  
+1: A Proof with the DomainName NFT that demonstrates the user's ownership of the name and his right to change  
 the mapped address (#339715316826500606461318410874891739268,$name_resource)  
 2: The address of the newly created account ($new_user_account)  
 3: A bucket that contains the fee for the name update (10,$tokenXRD)
@@ -98,7 +98,7 @@ resim call-method $component lookup_address satoshi.xrd
 ```
 13. To simulate a renewal of the name mapping, call the renew_name method.  
 The method must be called with the following parameters:  
-1: A BucketRef with the DomainName NFT that demonstrates the user's ownership of the name and his right to change  
+1: A Proof with the DomainName NFT that demonstrates the user's ownership of the name and his right to change  
 the mapped address (#339715316826500606461318410874891739268,$name_resource)  
 2: The number of years for which the name should be renewed (10)  
 3: A bucket that contains the fee for the name renewal (250,$tokenXRD)  
@@ -116,7 +116,7 @@ resim show $user_account
 
 15. Finally, simulate that the user decides he now longer needs the domain name and wants to unregister it.  
 This is done by calling the unregister_name method with a single argument.
-This argument has to be a Bucket (not BucketRef) containing the DomainName NFT that should be unregistered
+This argument has to be a Bucket (not Proof) containing the DomainName NFT that should be unregistered
 (#339715316826500606461318410874891739268,$name_resource).
 In exchange for the DomainName NFT the user gets refunded his initial deposit of $XRD 500.
 All other fees are kept by the RNS component.
