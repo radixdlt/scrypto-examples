@@ -5,7 +5,7 @@ Note that in order for this example to function, you will have to publish the pa
 
 If you wish to publish `FlatAdmin` to the appropriate address, switch to that directory and run:
 ```bash
-resim publish . --address 01ca59a8d6ea4f7efa1765cef702d14e47570c079aedd44992dd09
+resim publish . --address 01a99c5f6d0f4b92e81968405bde0e14709ab6630dc0e215a38eef
 ```
 
 ## Importing & Calling a Blueprint
@@ -30,20 +30,20 @@ Now you'll be able to call functions on that blueprint like so: `FlatAdmin::some
 ## Resources and Data
 ```rust
 struct ManagedAccess {
-  admin_badge: ResourceDef,
-  flat_admin_controller: Address,
-  protected_vault: Vault
+  admin_badge: ResourceAddress,
+  flat_admin_controller: ComponentAddress,
+  protected_vault: Vault,
 }
 ```
 
 Our instantiated component will maintain a single vault which stores XRD.  Anyone may deposit to the vault, but only a caller in possession of an admin badge may withdraw from it.
 
-The only state we need to maintain is the aforementioned vault, and the `ResourceDef` of the badge used for authorization.  As a convenience for the user, we will also store the address of the `FlatAdmin` component which manages the supply of those badges.
+The only state we need to maintain is the aforementioned vault, and the `ResourceAddress` of the badge used for authorization.  As a convenience for the user, we will also store the address of the `FlatAdmin` component which manages the supply of those badges.
 
 ## Getting Ready for Instantiation
-In order to instantiate, we'll require no parameters and return to the caller a tuple containing the newly instantiated component, and a bucket containing the first admin badge created by our `FlatAdmin` badge manager:
+In order to instantiate, we'll require no parameters and return to the caller a tuple containing the address of the newly instantiated component, and a bucket containing the first admin badge created by our `FlatAdmin` badge manager:
 ```rust
-pub fn instantiate_managed_access() -> (Component, Bucket) {
+pub fn instantiate_managed_access() -> (ComponentAddress, Bucket) {
 ```
 
 Our first step will be to instantiate a `FlatAdmin` component, and store the results of that instantiation.
@@ -53,23 +53,32 @@ let (flat_admin_component, admin_badge) =
   FlatAdmin::instantiate_flat_admin("My Managed Access Badge".into());
 ```
 
+We then need to specify that only a holder of the admin badge may withdraw funds from a managed access component. 
+
+```rust
+let auth = AccessRules::new()
+  .method("withdraw_all", auth!(require(admin_badge.resource_address())))
+  .default(auth!(allow_all));
+```
+
 That gives us everything we need to populate our `struct`, instantiate, and return the results to our caller:
 
 ```rust
 let component = Self {
-  admin_badge: admin_badge.resource_def(),
-  flat_admin_controller: flat_admin_component.address(),
-  protected_vault: Vault::new(RADIX_TOKEN),
+    admin_badge: admin_badge.resource_address(),
+    flat_admin_controller: flat_admin_component,
+    protected_vault: Vault::new(RADIX_TOKEN),
 }
-.instantiate();
+.instantiate()
+.add_access_check(auth)
+.globalize();
 (component, admin_badge)
 ```        
 
 ## Adding Methods
-First, we'll create a protected method to allow withdrawal.  Only callers who present an appropriate badge will be able to use it:
+First, we'll create a protected method to allow withdrawal. This method is protected through the v0.4.0 system-level authentication system. Meaning, the system will automatically check that an admin badge is present in the Auth Zone before allowing the call to take place. 
 
 ```rust
-#[auth(admin_badge)]
 pub fn withdraw_all(&mut self) -> Bucket {
   self.protected_vault.take_all()
 }

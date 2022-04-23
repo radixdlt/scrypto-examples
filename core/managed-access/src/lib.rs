@@ -3,101 +3,101 @@ use scrypto::prelude::*;
 import! {
 r#"
 {
-    "package": "01ca59a8d6ea4f7efa1765cef702d14e47570c079aedd44992dd09",
-    "name": "FlatAdmin",
+    "package_address": "01a99c5f6d0f4b92e81968405bde0e14709ab6630dc0e215a38eef",
+    "blueprint_name": "FlatAdmin",
     "functions": [
-        {
-            "name": "instantiate_flat_admin",
-            "inputs": [
-                {
-                    "type": "String"
-                }
-            ],
-            "output": {
-                "type": "Tuple",
-                "elements": [
-                    {
-                        "type": "Custom",
-                        "name": "scrypto::core::Component",
-                        "generics": []
-                    },
-                    {
-                        "type": "Custom",
-                        "name": "scrypto::resource::Bucket",
-                        "generics": []
-                    }
-                ]
+      {
+        "name": "instantiate_flat_admin",
+        "inputs": [
+          {
+            "type": "String"
+          }
+        ],
+        "output": {
+          "type": "Tuple",
+          "elements": [
+            {
+              "type": "Custom",
+              "name": "ComponentAddress",
+              "generics": []
+            },
+            {
+              "type": "Custom",
+              "name": "Bucket",
+              "generics": []
             }
+          ]
         }
+      }
     ],
     "methods": [
-        {
-            "name": "create_additional_admin",
-            "mutability": "Immutable",
-            "inputs": [
-                {
-                    "type": "Custom",
-                    "name": "scrypto::resource::BucketRef",
-                    "generics": []
-                }
-            ],
-            "output": {
-                "type": "Custom",
-                "name": "scrypto::resource::Bucket",
-                "generics": []
-            }
-        },
-        {
-            "name": "destroy_admin_badge",
-            "mutability": "Immutable",
-            "inputs": [
-                {
-                    "type": "Custom",
-                    "name": "scrypto::resource::Bucket",
-                    "generics": []
-                }
-            ],
-            "output": {
-                "type": "Unit"
-            }
-        },
-        {
-            "name": "get_admin_badge_address",
-            "mutability": "Immutable",
-            "inputs": [],
-            "output": {
-                "type": "Custom",
-                "name": "scrypto::types::Address",
-                "generics": []
-            }
+      {
+        "name": "create_additional_admin",
+        "mutability": "Mutable",
+        "inputs": [],
+        "output": {
+          "type": "Custom",
+          "name": "Bucket",
+          "generics": []
         }
+      },
+      {
+        "name": "destroy_admin_badge",
+        "mutability": "Mutable",
+        "inputs": [
+          {
+            "type": "Custom",
+            "name": "Bucket",
+            "generics": []
+          }
+        ],
+        "output": {
+          "type": "Unit"
+        }
+      },
+      {
+        "name": "get_admin_badge_address",
+        "mutability": "Immutable",
+        "inputs": [],
+        "output": {
+          "type": "Custom",
+          "name": "ResourceAddress",
+          "generics": []
+        }
+      }
     ]
-}
+  }
 "#
 }
 
 blueprint! {
     struct ManagedAccess {
-        admin_badge: ResourceDef,
-        flat_admin_controller: Address,
+        admin_badge: ResourceAddress,
+        flat_admin_controller: ComponentAddress,
         protected_vault: Vault,
     }
 
     impl ManagedAccess {
-        pub fn instantiate_managed_access() -> (Component, Bucket) {
+        pub fn instantiate_managed_access() -> (ComponentAddress, Bucket) {
             let (flat_admin_component, admin_badge) =
                 FlatAdmin::instantiate_flat_admin("My Managed Access Badge".into());
 
+            let auth = AccessRules::new()
+                .method("withdraw_all", auth!(require(admin_badge.resource_address())))
+                .default(auth!(allow_all));
+
             let component = Self {
-                admin_badge: admin_badge.resource_def(),
-                flat_admin_controller: flat_admin_component.address(),
+                admin_badge: admin_badge.resource_address(),
+                flat_admin_controller: flat_admin_component,
                 protected_vault: Vault::new(RADIX_TOKEN),
             }
-            .instantiate();
+            .instantiate()
+            .add_access_check(auth)
+            .globalize();
+            
             (component, admin_badge)
         }
 
-        #[auth(admin_badge)]
         pub fn withdraw_all(&mut self) -> Bucket {
             self.protected_vault.take_all()
         }
@@ -106,11 +106,11 @@ blueprint! {
             self.protected_vault.put(to_deposit);
         }
 
-        pub fn get_admin_badge_address(&self) -> Address {
-            self.admin_badge.address()
+        pub fn get_admin_badge_address(&self) -> ResourceAddress {
+            self.admin_badge
         }
 
-        pub fn get_flat_admin_controller_address(&self) -> Address {
+        pub fn get_flat_admin_controller_address(&self) -> ComponentAddress {
             self.flat_admin_controller
         }
     }
