@@ -33,7 +33,7 @@ blueprint! {
                 .burnable(rule!(allow_all), LOCKED)
                 .initial_supply(1);
 
-            // Next we will create our regulated token with an initial fixed supply of 100 and the appropriate flags and permissions
+            // Next we will create our regulated token with an initial fixed supply of 100 and the appropriate permissions
             let access_rule: AccessRule = rule!( 
                 require(general_admin.resource_address()) || require(internal_admin.resource_address()) 
             );
@@ -80,7 +80,7 @@ blueprint! {
 
         /// Either the general admin or freeze admin badge may be used to freeze or unfreeze consumer transfers of the supply
         pub fn toggle_transfer_freeze(&self, set_frozen: bool) {
-            // Note that this operation will fail if the token has reached stage 3 and the RESTRICTED_TRANSFER flag has become immutably disabled
+            // Note that this operation will fail if the token has reached stage 3 and the token behavior has been locked
             let token_resource_manager: &ResourceManager = borrow_resource_manager!(self.token_supply.resource_address());
             
             self.internal_authority.authorize(|| {
@@ -147,9 +147,9 @@ blueprint! {
                 token_resource_manager.lock_withdrawable();
                 token_resource_manager.lock_updateable_metadata();
 
-                // With the resource flags all forever disabled and locked, our internal authority badge no longer has any use
+                // With the resource behavior forever locked, our internal authority badge no longer has any use
                 // We will burn our internal badge, and the holders of the other badges may burn them at will
-                // Our badge has the FREELY_BURNABLE flag, so there's no need to provide a burning authority           
+                // Our badge has the allows everybody to burn, so there's no need to provide a burning authority           
                 self.internal_authority.take_all().burn();
                 info!("Advanced to stage 3");
             }
