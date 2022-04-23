@@ -4,7 +4,7 @@ use scrypto::prelude::*;
 blueprint! {
     struct ClearingHouse {
         /// All traders' positions
-        trader_positions: LazyMap<Address, Vec<Position>>,
+        trader_positions: LazyMap<ResourceAddress, Vec<Position>>,
         /// Deposit vault
         deposits_in_quote: Vault,
         /// Liquidation threshold
@@ -15,10 +15,10 @@ blueprint! {
 
     impl ClearingHouse {
         pub fn instantiate_clearing_house(
-            quote_address: Address,
+            quote_address: ResourceAddress,
             base_init_supply: Decimal,
             quote_init_supply: Decimal,
-        ) -> Component {
+        ) -> ComponentAddress {
             Self {
                 trader_positions: LazyMap::new(),
                 deposits_in_quote: Vault::new(quote_address),
@@ -29,17 +29,18 @@ blueprint! {
                 },
             }
             .instantiate()
+            .globalize()
         }
 
         /// Creates a position.
         pub fn new_position(
             &mut self,
-            user_auth: BucketRef,
+            user_auth: Proof,
             margin: Bucket,
             leverage: Decimal,
             position_type: String, // TODO: make CLI support enum
         ) {
-            assert!(leverage >= 1.into() && leverage <= 16.into());
+            assert!(leverage >= dec!("1") && leverage <= dec!("16"));
             let user_id = Self::get_user_id(user_auth);
             let position_type = match position_type.as_str() {
                 "Long" => PositionType::Long,
@@ -59,13 +60,13 @@ blueprint! {
         }
 
         /// Settles a position.
-        pub fn settle_position(&mut self, user_auth: BucketRef, nth: usize) -> Bucket {
+        pub fn settle_position(&mut self, user_auth: Proof, nth: usize) -> Bucket {
             let user_id = Self::get_user_id(user_auth);
             self.settle_internal(user_id, nth)
         }
 
         /// Liquidate a position.
-        pub fn liquidate(&mut self, user_id: Address, nth: usize) -> Bucket {
+        pub fn liquidate(&mut self, user_id: ResourceAddress, nth: usize) -> Bucket {
             assert!(
                 self.get_margin_ratio(user_id, nth) <= self.liquidation_threshold,
                 "Position can't be liquidated"
@@ -80,13 +81,13 @@ blueprint! {
         }
 
         /// Returns the n-th position of a user
-        pub fn get_position(&self, user_id: Address, nth: usize) -> Position {
+        pub fn get_position(&self, user_id: ResourceAddress, nth: usize) -> Position {
             let positions = self.trader_positions.get(&user_id).unwrap();
             positions.get(nth).unwrap().clone()
         }
 
         /// Returns the margin ratio of a specific position
-        pub fn get_margin_ratio(&self, user_id: Address, nth: usize) -> Decimal {
+        pub fn get_margin_ratio(&self, user_id: ResourceAddress, nth: usize) -> Decimal {
             let position = self.get_position(user_id, nth);
             self.amm.get_margin_ratio(&position)
         }
@@ -98,18 +99,19 @@ blueprint! {
 
         /// Registers a new user
         pub fn new_user(&self) -> Bucket {
-            ResourceBuilder::new_fungible(DIVISIBILITY_NONE)
+            ResourceBuilder::new_fungible()
+                .divisibility(DIVISIBILITY_NONE)
                 .metadata("name", "xPerpFutures User Badge")
-                .initial_supply_fungible(1)
+                .initial_supply(1)
         }
 
-        /// Parse user id from a bucket ref.
-        fn get_user_id(user_auth: BucketRef) -> Address {
-            assert!(user_auth.amount() > 0.into(), "Invalid user proof");
+        /// Parse user id from proof.
+        fn get_user_id(user_auth: Proof) -> ResourceAddress {
+            assert!(user_auth.amount() > dec!("0"), "Invalid user proof");
             user_auth.resource_address()
         }
 
-        fn settle_internal(&mut self, user_id: Address, nth: usize) -> Bucket {
+        fn settle_internal(&mut self, user_id: ResourceAddress, nth: usize) -> Bucket {
             let mut positions = self.trader_positions.get(&user_id).unwrap();
             let position = positions.get(nth).unwrap();
 
@@ -147,7 +149,7 @@ pub struct Position {
     pub position_in_base: Decimal,
 }
 
-#[derive(TypeId, Encode, Decode)]
+#[derive(TypeId, Encode, Decode, Describe)]
 struct AMM {
     /// Supply of base asset
     base_supply: Decimal,
