@@ -82,9 +82,9 @@ blueprint! {
             let (flat_admin_component, admin_badge) =
                 FlatAdmin::instantiate_flat_admin("My Managed Access Badge".into());
 
-            let auth = AccessRules::new()
-                .method("withdraw_all", auth!(require(admin_badge.resource_address())))
-                .default(auth!(allow_all));
+            let rules = AccessRules::new()
+                .method("withdraw_all", rule!(require(admin_badge.resource_address())))
+                .default(rule!(allow_all));
 
             let component = Self {
                 admin_badge: admin_badge.resource_address(),
@@ -92,7 +92,7 @@ blueprint! {
                 protected_vault: Vault::new(RADIX_TOKEN),
             }
             .instantiate()
-            .add_access_check(auth)
+            .add_access_check(rules)
             .globalize();
             
             (component, admin_badge)

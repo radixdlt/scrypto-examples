@@ -17,8 +17,8 @@ blueprint! {
             let mut admin_badge = ResourceBuilder::new_fungible()
                 .divisibility(DIVISIBILITY_NONE)
                 .metadata("name", badge_name)
-                .mintable(auth!(require(admin_mint_badge.resource_address())), LOCKED)
-                .burnable(auth!(require(admin_mint_badge.resource_address())), LOCKED)
+                .mintable(rule!(require(admin_mint_badge.resource_address())), LOCKED)
+                .burnable(rule!(require(admin_mint_badge.resource_address())), LOCKED)
                 .no_initial_supply();
 
             // Using our minting authority badge, mint a single admin badge
@@ -28,9 +28,9 @@ blueprint! {
             });
 
             // Setting uo the access rules of the component
-            let auth: AccessRules = AccessRules::new()
-                .method("create_additional_admin", auth!(require(admin_badge)))
-                .default(auth!(allow_all));
+            let rules: AccessRules = AccessRules::new()
+                .method("create_additional_admin", rule!(require(admin_badge)))
+                .default(rule!(allow_all));
 
             // Initialize our component, placing the minting authority badge within its vault, where it will remain forever
             let component = Self {
@@ -38,7 +38,7 @@ blueprint! {
                 admin_badge: admin_badge,
             }
             .instantiate()
-            .add_access_check(auth)
+            .add_access_check(rules)
             .globalize();
 
             // Return the instantiated component and the admin badge we just minted

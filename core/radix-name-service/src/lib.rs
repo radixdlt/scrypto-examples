@@ -47,15 +47,15 @@ blueprint! {
 
             let name_resource = ResourceBuilder::new_non_fungible()
                 .metadata("name", "DomainName")
-                .mintable(auth!(require(minter.resource_address())), LOCKED)
-                .burnable(auth!(require(minter.resource_address())), LOCKED)
-                .updateable_non_fungible_data(auth!(require(minter.resource_address())), LOCKED)
+                .mintable(rule!(require(minter.resource_address())), LOCKED)
+                .burnable(rule!(require(minter.resource_address())), LOCKED)
+                .updateable_non_fungible_data(rule!(require(minter.resource_address())), LOCKED)
                 .no_initial_supply();
 
-            let auth = AccessRules::new()
-                .method("burn_expired_names", auth!(require(admin_badge.resource_address())))
-                .method("withdraw_fees", auth!(require(admin_badge.resource_address())))
-                .default(auth!(allow_all));
+            let rules = AccessRules::new()
+                .method("burn_expired_names", rule!(require(admin_badge.resource_address())))
+                .method("withdraw_fees", rule!(require(admin_badge.resource_address())))
+                .default(rule!(allow_all));
 
             let component = RadixNameService {
                 admin_badge: admin_badge.resource_address(),
@@ -68,7 +68,7 @@ blueprint! {
                 fee_renewal_per_year,
             }
             .instantiate()
-            .add_access_check(auth)
+            .add_access_check(rules)
             .globalize();
 
             (component, admin_badge)

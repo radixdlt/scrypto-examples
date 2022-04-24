@@ -111,7 +111,7 @@ blueprint! {
             // Setting up the auth for the vesting component. With v0.4.0 of Scrypto we can now make the authentication
             // and authorization to happen automatically without us needing to care about them. We can use this to
             // impose quite a number of rules on who is authorized to access what.
-            let auth: AccessRules = AccessRules::new()
+            let rules: AccessRules = AccessRules::new()
                 // Only people who have at least 1 admin badge in their auth zone may make calls to these methods.
                 .method("add_beneficiary", rule!(require(admin_badge.resource_address())))
                 
@@ -145,7 +145,7 @@ blueprint! {
                 min_admins_required_for_multi_admin: dec!("1"),
             }
             .instantiate()
-            .add_access_check(auth)
+            .add_access_check(rules)
             .globalize();
 
             return (vesting_component_address, admin_badge);

@@ -18,7 +18,7 @@ blueprint! {
                 .metadata("name", "Price Oracle Admin Badge")
                 .initial_supply(num_of_admins);
 
-            let auth = AccessRules::new()
+            let rules = AccessRules::new()
                 .method("update_price", rule!(require( badges.resource_address() )))
                 .default(rule!(allow_all));
 
@@ -27,7 +27,7 @@ blueprint! {
                 admin_badge: badges.resource_address(),
             }
             .instantiate()
-            .add_access_check(auth)
+            .add_access_check(rules)
             .globalize();
 
             (badges, component)
