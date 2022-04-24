@@ -56,8 +56,8 @@ Taking a look at the account, please note that the user is now the owner of a Do
 ownership of the "satoshi.xrd" name:
 ```
 Resources:
-├─ { amount: 999500, resource_def: 030000000000000000000000000000000000000000000000000004, name: "Radix", symbol: "XRD" }
-└─ { amount: 1, resource_def: 03d8541671ab09116ae450d468f91e5488a9b22c705d70dcfe9e09, name: "DomainName" }
+├─ { amount: 999500, resource address: 030000000000000000000000000000000000000000000000000004, name: "Radix", symbol: "XRD" }
+└─ { amount: 1, resource address: 03d8541671ab09116ae450d468f91e5488a9b22c705d70dcfe9e09, name: "DomainName" }
   └─ NFT { id: 339715316826500606461318410874891739268, immutable_data: Struct {  }, mutable_data: Struct { 02b8dd9f4232ce3c00dcb3496956fb57096d5d50763b989ca56f3b, 150000, 500 } }
 ```
 The NFT has an ID of 339715316826500606461318410874891739268 because that is, what "satoshi.xrd" is hashed to.

@@ -212,7 +212,7 @@ When you run the `script.sh` file the following will take place:
 * Your resim will be reset so that any accounts previously created or packages deployed are deleted.
 * Four new accounts will be created. The script will keep track of their addresses and public keys.
 * The package will be published and the script will store the package address.
-* The script will call the `new` function on the blueprint to create the `PaymentSplitter` component. When creating the component, a number of resource definitions will be created for the badges that blueprint creates.
+* The script will call the `new` function on the blueprint to create the `PaymentSplitter` component. When creating the component, a number of resource managers will be created for the badges that blueprint creates.
 * The script will then add all four of the addresses that we created as shareholders by calling the `add_shareholder` method on the `PaymentSplitter` component.
 * Some XRD will be deposited by account 1 (by calling the `deposit` method) and then later account 2 will attempt to withdraw their share of it (by calling the `withdraw` method).
 

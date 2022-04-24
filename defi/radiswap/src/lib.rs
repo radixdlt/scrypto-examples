@@ -188,7 +188,7 @@ blueprint! {
             output_tokens
         }
 
-        /// Returns the resource definition addresses of the pair.
+        /// Returns the resource addresses of the pair.
         pub fn get_pair(&self) -> (ResourceAddress, ResourceAddress) {
             (
                 self.a_pool.resource_address(),

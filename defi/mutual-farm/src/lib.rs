@@ -482,9 +482,9 @@ blueprint! {
         asset_address: ResourceAddress,
         /// Synthetic asset address
         synth_address: ResourceAddress,
-        /// SNX resource definition address
+        /// SNX resource address
         snx_address: ResourceAddress,
-        /// USD resource definition address
+        /// USD resource address
         usd_address: ResourceAddress,
 
         /// Radiswap for sTESLA/XRD
@@ -492,7 +492,7 @@ blueprint! {
         /// Radiswap LP token vault
         radiswap_lp_tokens: Vault,
 
-        /// Mutual farm share resource definition
+        /// Mutual farm share resource address
         mutual_farm_share_resource_address: ResourceAddress,
         /// Total contribution
         total_contribution_in_usd: Decimal,
