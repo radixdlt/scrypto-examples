@@ -73,6 +73,6 @@ In order to keep this as straightforward as possible in teaching a few basic con
 
 First, we have provided no way to actually retrieve the collected XRD!  This would most appropriately be done by adding a withdrawal method, protected by an admin badge which ensures that only appropriate parties are able to perform the withdrawal.
 
-Second, there's no reason to force payment in XRD only...we could easily have changed the `instantiate_gumball_machine` function to accept the `ResourceDef` of the currency that we intend to collect in exchange for gumballs.
+Second, there's no reason to force payment in XRD only...we could easily have changed the `instantiate_gumball_machine` function to accept the `ResourceAddress` of the currency that we intend to collect in exchange for gumballs.
 
 Third, we could allow for greater flexibility in the gumballs themselves.  We could let the instantiator define the symbol, name, and quantity...or even directly pass in the gumballs to be sold rather than creating a new resource at instantiation time.

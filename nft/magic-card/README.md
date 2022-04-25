@@ -61,7 +61,8 @@ let random_card_resource_address = ResourceBuilder::new_non_fungible()
 Once the resource is created, we can mint NFTs with the `mint_non_fungible` method:
 ```rust
 let nft = self.random_card_mint_badge.authorize(|| {
-    self.random_card_resource_def.mint_non_fungible(
+    let resource_manager = borrow_resource_manager!(self.random_card_resource_address);
+    resource_manager.mint_non_fungible(
         // The NFT id
         self.random_card_id_counter,
         // The NFT data

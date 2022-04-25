@@ -12,7 +12,6 @@ blueprint! {
         pub fn instantiate_gumball_machine(price: Decimal) -> ComponentAddress {
             // create a new Gumball resource, with a fixed quantity of 100
             let bucket_of_gumballs = ResourceBuilder::new_fungible()
-                .divisibility(DIVISIBILITY_MAXIMUM)
                 .metadata("name", "Gumball")
                 .metadata("symbol", "GUM")
                 .metadata("description", "A delicious gumball")

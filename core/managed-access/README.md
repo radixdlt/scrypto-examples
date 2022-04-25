@@ -56,9 +56,9 @@ let (flat_admin_component, admin_badge) =
 We then need to specify that only a holder of the admin badge may withdraw funds from a managed access component. 
 
 ```rust
-let auth = AccessRules::new()
-  .method("withdraw_all", auth!(require(admin_badge.resource_address())))
-  .default(auth!(allow_all));
+let rules = AccessRules::new()
+  .method("withdraw_all", rule!(require(admin_badge.resource_address())))
+  .default(rule!(allow_all));
 ```
 
 That gives us everything we need to populate our `struct`, instantiate, and return the results to our caller:
@@ -70,8 +70,9 @@ let component = Self {
     protected_vault: Vault::new(RADIX_TOKEN),
 }
 .instantiate()
-.add_access_check(auth)
+.add_access_check(rules)
 .globalize();
+
 (component, admin_badge)
 ```        
 
@@ -91,11 +92,11 @@ pub fn deposit(&mut self, to_deposit: Bucket) {
   self.protected_vault.put(to_deposit);
 }
 
-pub fn get_admin_badge_address(&self) -> Address {
-  self.admin_badge.address()
+pub fn get_admin_badge_address(&self) -> ResourceAddress {
+  self.admin_badge
 }
 
-pub fn get_flat_admin_controller_address(&self) -> Address {
+pub fn get_flat_admin_controller_address(&self) -> ComponentAddress {
   self.flat_admin_controller
 }
 ```

@@ -13,7 +13,7 @@ struct FlatAdmin {
 
 In order to be able to mint additional admin badges after our first, we'll need a vault to contain a badge which holds that minting permission.
 
-For user convenience, we'll also maintain the `ResourceDef` of the external admin badge that we'll be handing out, so that they can interrogate an instantiated `FlatAdmin` component about which badge it manages.
+For user convenience, we'll also maintain the `ResourceAddress` of the external admin badge that we'll be handing out, so that they can interrogate an instantiated `FlatAdmin` component about which badge it manages.
 
 ## Getting Ready for Instantiation
 Upon instantiation, we'll only ask the user to name the badge.  We'll return to the user the instantiated component, as well as the first admin badge managed by the component.
@@ -32,8 +32,8 @@ let admin_mint_badge = ResourceBuilder::new_fungible()
 let mut admin_badge = ResourceBuilder::new_fungible()
     .divisibility(DIVISIBILITY_NONE)
     .metadata("name", badge_name)
-    .mintable(auth!(require(admin_mint_badge.resource_address())), LOCKED)
-    .burnable(auth!(require(admin_mint_badge.resource_address())), LOCKED)
+    .mintable(rule!(require(admin_mint_badge.resource_address())), LOCKED)
+    .burnable(rule!(require(admin_mint_badge.resource_address())), LOCKED)
     .no_initial_supply();
 ```
 
@@ -45,16 +45,16 @@ let first_admin_badge = admin_mint_badge.authorize(|| {
     admin_badge_manager.mint(1)
 });
 
-let auth: AccessRules = AccessRules::new()
-    .method("create_additional_admin", auth!(require(admin_badge)))
-    .default(auth!(allow_all));
+let rules: AccessRules = AccessRules::new()
+    .method("create_additional_admin", rule!(require(admin_badge)))
+    .default(rule!(allow_all));
 
 let component = Self {
     admin_mint_badge: Vault::with_bucket(admin_mint_badge),
     admin_badge: admin_badge,
 }
 .instantiate()
-.add_access_check(auth)
+.add_access_check(rules)
 .globalize();
 
 (component, first_admin_badge)
@@ -63,10 +63,9 @@ let component = Self {
 ## Allowing Users to Mint and Burn Admin Badges
 In order for `FlatAdmin` to be more useful than just manually creating a single admin badge, it needs the capability to create and destroy admin badges.
 
-Obviously we don't want just anyone to be able to create additional admin badges at will, so that privilege is protected by having to prove that you're already in possession of an admin badge.
+Obviously we don't want just anyone to be able to create additional admin badges at will, so that privilege is protected by having to prove that you're already in possession of an admin badge. This protection is done through the `rules` defined above and added to the instantiated component.
 
 ```rust
-#[auth(admin_badge)]
 pub fn create_additional_admin(&self) -> Bucket {
     self.admin_mint_badge.authorize(|| {
         let admin_badge_manager = borrow_resource_manager!(self.admin_badge);
