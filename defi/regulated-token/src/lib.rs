@@ -85,11 +85,13 @@ blueprint! {
             
             self.internal_authority.authorize(|| {
                 if set_frozen {
-                    token_resource_manager.set_withdrawable( rule!(deny_all) );
+                    token_resource_manager.set_withdrawable(rule!(
+                        require(general_admin.resource_address()) || require(internal_admin.resource_address())
+                    ));
                     info!("Token transfer is now RESTRICTED");
                 }
                 else {
-                    token_resource_manager.set_withdrawable( rule!(require(self.internal_authority.resource_address())) );
+                    token_resource_manager.set_withdrawable( auth!(allow_all) );
                     info!("Token is now freely transferrable");
                 }  
             })   
@@ -108,54 +110,58 @@ blueprint! {
         pub fn advance_stage(&mut self) {            
             // Adding the internal admin badge to the component auth zone to allow for the operations below
             ComponentAuthZone::push(self.internal_authority.create_proof());
-
+        
             assert!(self.current_stage <= 2, "Already at final stage");
             let token_resource_manager: &ResourceManager = borrow_resource_manager!(self.token_supply.resource_address());
-
+        
             if self.current_stage == 1 {
                 // Advance to stage 2                
                 // Token will still be restricted transfer upon admin demand, but we will mint beyond the initial supply as required                
                 self.current_stage = 2;                
-
+        
                 // Update token's metadata to reflect the current stage
                 let mut metadata = token_resource_manager.metadata();
                 metadata.insert("stage".into(), "Stage 2 - Unlimited supply, may be restricted transfer".into());
                 token_resource_manager.update_metadata(metadata);
-
+        
                 // Enable minting for the token                
                 token_resource_manager.set_mintable(rule!(require(self.internal_authority.resource_address())));
                 info!("Advanced to stage 2");
+        
+                // Drop the last added proof to the component auth zone which is the internal admin badge
+                ComponentAuthZone::pop().drop();
             }
             else {
                 // Advance to stage 3
                 // Token will no longer be regulated
                 // Restricted transfer will be permanently turned off, supply will be made permanently immutable
                 self.current_stage = 3;
-
+        
                 // Update token's metadata to reflect the final stage
                 let mut metadata = token_resource_manager.metadata();                
                 metadata.insert("stage".into(), "Stage 3 - Unregulated token, fixed supply".into());
                 token_resource_manager.update_metadata(metadata);
-
+        
                 // Set our behavior appropriately now that the regulated period has ended
                 token_resource_manager.set_mintable(rule!(deny_all));
-                token_resource_manager.set_withdrawable(rule!(deny_all));
+                token_resource_manager.set_withdrawable(rule!(allow_all));
                 token_resource_manager.set_updateable_metadata(rule!(deny_all));
-
+        
                 // Permanently prevent the behavior of the token from changing
                 token_resource_manager.lock_mintable();
                 token_resource_manager.lock_withdrawable();
                 token_resource_manager.lock_updateable_metadata();
-
+        
                 // With the resource behavior forever locked, our internal authority badge no longer has any use
                 // We will burn our internal badge, and the holders of the other badges may burn them at will
-                // Our badge has the allows everybody to burn, so there's no need to provide a burning authority           
+                // Our badge has the allows everybody to burn, so there's no need to provide a burning authority       
+        
+                // Drop the last added proof to the component auth zone which is the internal admin badge    
+                ComponentAuthZone::pop().drop();
+        
                 self.internal_authority.take_all().burn();
                 info!("Advanced to stage 3");
             }
-
-            // Drop the last added proof to the component auth zone which is the internal admin badge
-            ComponentAuthZone::pop().drop();
         }
 
         /// Buy a quantity of tokens, if the supply on-hand is sufficient, or if current rules permit minting additional supply.
