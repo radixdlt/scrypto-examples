@@ -48,6 +48,7 @@ Self {
     sample_vault: Vault::with_bucket(my_bucket),
 }
 .instantiate()
+.globalize()
 ```
 
 ## ResourceDef, Vault and Bucket
@@ -57,10 +58,11 @@ In Scrypto, assets like tokens, NFTs, and more are not implemented as blueprints
 To define a new resource, we use the `ResourceBuilder`, specifying the metadata and initial supply. We can use the `ResourceBuilder` to create a simple fungible-supply token called `HelloToken` like this:
 
 ```rust
-let my_bucket: Bucket = ResourceBuilder::new_fungible(DIVISIBILITY_MAXIMUM)
+let my_bucket: Bucket = ResourceBuilder::new_fungible()
+    .divisibility(DIVISIBILITY_MAXIMUM)
     .metadata("name", "HelloToken")
     .metadata("symbol", "HT")
-    .initial_supply_fungible(1000);
+    .initial_supply(1000);
 ```
 
 Once created, the 1000 resource-based `HelloToken` tokens are held in transient container `my_bucket`. To permanently store the created resources, we need to put them into a `Vault` like this:

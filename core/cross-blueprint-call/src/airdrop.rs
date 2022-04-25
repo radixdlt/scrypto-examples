@@ -10,15 +10,17 @@ blueprint! {
     }
 
     impl Airdrop {
-        pub fn instantiate_airdrop() -> Component {
+        pub fn instantiate_airdrop() -> ComponentAddress {
             Self {
                 tokens: Vault::with_bucket(
-                    ResourceBuilder::new_fungible(DIVISIBILITY_MAXIMUM)
+                    ResourceBuilder::new_fungible()
+                        .divisibility(DIVISIBILITY_MAXIMUM)
                         .metadata("name", "FreeToken")
-                        .initial_supply_fungible(1000),
+                        .initial_supply(1000),
                 ),
             }
             .instantiate()
+            .globalize()
         }
 
         pub fn free_token(&mut self) -> Bucket {

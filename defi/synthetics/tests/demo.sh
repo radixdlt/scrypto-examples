@@ -1,32 +1,50 @@
-#!/bin/bash
+#!/usr/bin/env bash
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-set -e
-cd "$(dirname "$0")/../"
-(../demo.sh)
+# ======================================================================================================================
+# Setting up the envirnoment and deploying the packages
+# ======================================================================================================================
 
-#====================
-# Set up environment
-#====================
+resim reset
 
-acc1_address='0293c502780e23621475989d707cd8128e4506362e5fed6ac0c00a'
-acc1_pub_key='005feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9'
-acc1_mint_badge='031773788de8e4d2947d6592605302d4820ad060ceab06eb2d4711'
-btc='03aedb7960d1f87dc25138f4cd101da6c98d57323478d53c5fb951'
-usd='03de6e411593dcb3817187562c26c972cb024524f7b798f1c2980c'
-snx='0334ce39f5112ef14ba6ed06c4085db6bd82feb98dcee9918c0359'
-price_oracle_component='020bae515fc5ac81d75e5aba79f48ebe228e3d8411ee8a6d6bdea2'
-price_oracle_update_auth='03f3855116a57c2a25c559d558da38b8500c3d96f0ee1277e3e41f'
-synthetics_component='02c08be0470842c558144a6a91ddc2a947366db41c506f7057d74b'
+OP1=$(resim new-account)
+export acc1_private_key=$(echo "$OP1" | sed -nr "s/Private key: ([[:alnum:]_]+)/\1/p")
+export acc1_public_key=$(echo "$OP1" | sed -nr "s/Public key: ([[:alnum:]_]+)/\1/p")
+export acc1_account=$(echo "$OP1" | sed -nr "s/Account component address: ([[:alnum:]_]+)/\1/p")
 
-#====================
+export btc=$(echo "$(resim new-token-fixed --name Bitcoin --symbol BTC 100000000)" | sed -nr "s/└─ Resource: ([[:alnum:]_]+)/\1/p")
+export usd=$(echo "$(resim new-token-fixed --name Tether --symbol USDT 100000000)" | sed -nr "s/└─ Resource: ([[:alnum:]_]+)/\1/p")
+export snx=$(echo "$(resim new-token-fixed --name Synthetics --symbol SNX 100000000)" | sed -nr "s/└─ Resource: ([[:alnum:]_]+)/\1/p")
+
+export oracle_package=015d39c9a28c2ab646facfa9a7d303b1c9c7cf300611094a3ccc68
+resim publish "$SCRIPT_DIR/../../price-oracle" --package-address 015d39c9a28c2ab646facfa9a7d303b1c9c7cf300611094a3ccc68
+
+CP_OP=$(resim call-function $oracle_package PriceOracle instantiate_oracle 1)
+export oracle_component=$(echo "$CP_OP" | sed -nr "s/└─ Component: ([[:alnum:]_]+)/\1/p")
+export oracle_admin=$(echo "$CP_OP" | sed -nr "s/└─ Resource: ([[:alnum:]_]+)/\1/p")
+echo $oracle_component
+echo $oracle_admin
+
+echo "CALL_METHOD ComponentAddress(\"$acc1_account\") \"create_proof\" ResourceAddress(\"$oracle_admin\");" > tx.rtm 
+echo "CALL_METHOD ComponentAddress(\"$oracle_component\") \"update_price\" ResourceAddress(\"$snx\") ResourceAddress(\"$usd\") Decimal(\"12\");" >> tx.rtm 
+echo "CALL_METHOD ComponentAddress(\"$oracle_component\") \"update_price\" ResourceAddress(\"$btc\") ResourceAddress(\"$usd\") Decimal(\"12\");" >> tx.rtm 
+echo "CALL_METHOD ComponentAddress(\"$oracle_component\") \"update_price\" ResourceAddress(\"$snx\") ResourceAddress(\"$btc\") Decimal(\"12\");" >> tx.rtm 
+resim run tx.rtm
+rm tx.rtm
+
+export synthetics_package=$(echo "$(resim publish "$SCRIPT_DIR/..")" | sed -nr "s/Success! New Package: ([[:alnum:]_]+)/\1/p")
+export synthetics_component=$(echo "$(resim call-function $synthetics_package SyntheticPool instantiate_pool $oracle_component $snx $usd 1.2)" | sed -nr "s/└─ Component: ([[:alnum:]_]+)/\1/p")
+echo $synthetics_component
+
+# ======================================================================================================================
 # Test synthetics
-#====================
+# ======================================================================================================================
 
 # Create a Synthetics account
-user1=`resim call-method $synthetics_component new_user | tee /dev/tty | awk '/ResourceDef:/ {print $NF}'`
+user1=`resim call-method $synthetics_component new_user | tee /dev/tty | awk '/Resource:/ {print $NF}'`
 
 # Stake 1000 SNX
-vault_badge=`resim call-method $synthetics_component stake 1,$user1 1000,$snx | tee /dev/tty | awk '/ResourceDef:/ {print $NF}'`
+vault_badge=`resim call-method $synthetics_component stake 1,$user1 1000,$snx | tee /dev/tty | awk '/Resource:/ {print $NF}'`
 resim call-method $synthetics_component get_user_summary $user1
 
 # Unstake 200 SNX
@@ -34,7 +52,7 @@ resim call-method $synthetics_component unstake 1,$user1 200
 resim call-method $synthetics_component get_user_summary $user1
 
 # Add sBTC synth
-sbtc=`resim call-method $synthetics_component add_synthetic_token "BTC" $btc | tee /dev/tty | awk '/ResourceDef:/ {print $NF}'`
+sbtc=`resim call-method $synthetics_component add_synthetic_token "BTC" $btc | tee /dev/tty | awk '/Resource:/ {print $NF}'`
 resim call-method $synthetics_component get_user_summary $user1
 
 # Mint 0.01 sBTC

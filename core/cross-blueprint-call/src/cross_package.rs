@@ -3,52 +3,55 @@ use scrypto::prelude::*;
 import! {
 r#"
 {
-    "package": "01bda8686d6c2fa45dce04fac71a09b54efbc8028c23aac74bc00e",
-    "name": "Airdrop",
+    "package_address": "01e9917332573b6332ffaaadc96bc1509cc24ef8aa69d1cd117d39",
+    "blueprint_name": "Airdrop",
     "functions": [
-        {
-            "name": "instantiate_airdrop",
-            "inputs": [],
-            "output": {
-                "type": "Custom",
-                "name": "scrypto::core::Component",
-                "generics": []
-            }
+      {
+        "name": "instantiate_airdrop",
+        "inputs": [],
+        "output": {
+          "type": "Custom",
+          "name": "ComponentAddress",
+          "generics": []
         }
+      }
     ],
     "methods": [
-        {
-            "name": "free_token",
-            "mutability": "Immutable",
-            "inputs": [],
-            "output": {
-                "type": "Custom",
-                "name": "scrypto::resource::Bucket",
-                "generics": []
-            }
+      {
+        "name": "free_token",
+        "mutability": "Mutable",
+        "inputs": [],
+        "output": {
+          "type": "Custom",
+          "name": "Bucket",
+          "generics": []
         }
+      }
     ]
-}
+  }
 "#
 }
 
 blueprint! {
     struct Proxy1 {
-        airdrop: Airdrop,
+        airdrop: ComponentAddress,
     }
 
     impl Proxy1 {
-        pub fn instantiate_proxy() -> Component {
+        pub fn instantiate_proxy() -> ComponentAddress {
             Self {
-                // The instantiate_airdrop() function returns a generic Component. We use `.into()` to convert it into an `Airdrop`.
+                // The instantiate_airdrop() function returns a generic ComponentAddress which we store to make calls 
+                // to the component at a later point.
                 airdrop: Airdrop::instantiate_airdrop().into(),
             }
             .instantiate()
+            .globalize()
         }
 
         pub fn free_token(&self) -> Bucket {
-            // Calling a method on a component using `.method_name()`.
-            self.airdrop.free_token()
+            // Calling a method on a component using `.free_token()`.
+            let airdrop: Airdrop = self.airdrop.into();
+            airdrop.free_token()
         }
     }
 }

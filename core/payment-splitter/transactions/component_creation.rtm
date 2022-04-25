@@ -1,2 +1,8 @@
-CALL_FUNCTION Address("011773788de8e4d2947d6592605302d4820ad060ceab06eb2d4711") "PaymentSplitter" "new";
-CALL_METHOD_WITH_ALL_RESOURCES Address("0293c502780e23621475989d707cd8128e4506362e5fed6ac0c00a") "deposit_batch";
+CALL_FUNCTION 
+    PackageAddress("012ada5b160b5646574a931c8fec78853faa1d5fab2edf2186bd72") 
+    "PaymentSplitter" 
+    "instantiate_payment_splitter"
+    ResourceAddress("030000000000000000000000000000000000000000000000000004");
+CALL_METHOD_WITH_ALL_RESOURCES 
+    ComponentAddress("02dbbcc440e1f4b402675af83b2f39220cfa2ea77a4ad890cd8252") 
+    "deposit_batch";

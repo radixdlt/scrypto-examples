@@ -17,13 +17,13 @@ blueprint! {
     }
 
     impl HelloNft {
-        pub fn instantiate_hello_nft(price: Decimal) -> Component {
+        pub fn instantiate_hello_nft(price: Decimal) -> ComponentAddress {
             // Prepare ticket NFT data
             let mut tickets = Vec::new();
             for row in 1..5 {
                 for column in 1..5 {
                     tickets.push((
-                        NonFungibleKey::from(Uuid::generate()),
+                        NonFungibleId::random(),
                         Ticket { row, column },
                     ));
                 }
@@ -32,7 +32,7 @@ blueprint! {
             // Creates a fixed supply of NFTs.
             let ticket_bucket = ResourceBuilder::new_non_fungible()
                 .metadata("name", "Ticket")
-                .initial_supply_non_fungible(tickets);
+                .initial_supply(tickets);
 
             // Instantiate our component
             Self {
@@ -41,6 +41,7 @@ blueprint! {
                 collected_xrd: Vault::new(RADIX_TOKEN),
             }
             .instantiate()
+            .globalize()
         }
 
         pub fn buy_ticket(&mut self, mut payment: Bucket) -> (Bucket, Bucket) {
@@ -54,21 +55,21 @@ blueprint! {
             (ticket, payment)
         }
 
-        pub fn buy_ticket_by_id(&mut self, id: u128, mut payment: Bucket) -> (Bucket, Bucket) {
+        pub fn buy_ticket_by_id(&mut self, id: u64, mut payment: Bucket) -> (Bucket, Bucket) {
             // Take our price out of the payment bucket
             self.collected_xrd.put(payment.take(self.ticket_price));
 
             // Take the specific ticket
             let ticket = self
                 .available_tickets
-                .take_non_fungible(&NonFungibleKey::from(id));
+                .take_non_fungible(&NonFungibleId::from_u64(id));
 
             // Return the ticket and change
             (ticket, payment)
         }
 
-        pub fn available_ticket_ids(&self) -> Vec<NonFungibleKey> {
-            self.available_tickets.get_non_fungible_keys()
+        pub fn available_ticket_ids(&self) -> BTreeSet<NonFungibleId> {
+            self.available_tickets.non_fungible_ids()
         }
     }
 }

@@ -8,445 +8,460 @@ use scrypto::prelude::*;
 // 1. We immediately convert 0.75 XRD into SNX
 // 2. All SNX will be staked into a Synthetic Pool
 // 3. We mint Synthetic TESLA token a 1000% collateralization ratio
-// 4. The minted sTELSA and 0.25 XRD will be added to a sTESLA/XRD swap pool owned by us (with change returned to you)
+// dec!("4"). The minted sTELSA and 0.25 XRD will be added to a sTESLA/XRD swap pool owned by us (with change returned to you)
 // 5. Based on your contribution (in dollar amount), we issue MutualFund share tokens which allow you to redeem underlying assets and claim dividends.
 
 import! {
 r#"
 {
-    "package": "014eb598fe6ed7df56a5f02950df2d7b08530d9d1081f05a6398f9",
-    "name": "PriceOracle",
+    "package_address": "015d39c9a28c2ab646facfa9a7d303b1c9c7cf300611094a3ccc68",
+    "blueprint_name": "PriceOracle",
     "functions": [
-        {
-            "name": "instantiate_oracle",
-            "inputs": [
-                {
-                    "type": "U32"
-                }
-            ],
-            "output": {
-                "type": "Tuple",
-                "elements": [
-                    {
-                        "type": "Custom",
-                        "name": "scrypto::resource::Bucket",
-                        "generics": []
-                    },
-                    {
-                        "type": "Custom",
-                        "name": "scrypto::core::Component",
-                        "generics": []
-                    }
-                ]
+      {
+        "name": "instantiate_oracle",
+        "inputs": [
+          {
+            "type": "U32"
+          }
+        ],
+        "output": {
+          "type": "Tuple",
+          "elements": [
+            {
+              "type": "Custom",
+              "name": "Bucket",
+              "generics": []
+            },
+            {
+              "type": "Custom",
+              "name": "ComponentAddress",
+              "generics": []
             }
+          ]
         }
+      }
     ],
     "methods": [
-        {
-            "name": "get_price",
-            "mutability": "Immutable",
-            "inputs": [
-                {
-                    "type": "Custom",
-                    "name": "scrypto::types::Address",
-                    "generics": []
-                },
-                {
-                    "type": "Custom",
-                    "name": "scrypto::types::Address",
-                    "generics": []
-                }
-            ],
-            "output": {
-                "type": "Option",
-                "value": {
-                    "type": "Custom",
-                    "name": "scrypto::types::Decimal",
-                    "generics": []
-                }
-            }
-        },
-        {
-            "name": "update_price",
-            "mutability": "Immutable",
-            "inputs": [
-                {
-                    "type": "Custom",
-                    "name": "scrypto::types::Address",
-                    "generics": []
-                },
-                {
-                    "type": "Custom",
-                    "name": "scrypto::types::Address",
-                    "generics": []
-                },
-                {
-                    "type": "Custom",
-                    "name": "scrypto::types::Decimal",
-                    "generics": []
-                },
-                {
-                    "type": "Custom",
-                    "name": "scrypto::resource::BucketRef",
-                    "generics": []
-                }
-            ],
-            "output": {
-                "type": "Unit"
-            }
-        },
-        {
-            "name": "admin_badge_address",
-            "mutability": "Immutable",
-            "inputs": [],
-            "output": {
-                "type": "Custom",
-                "name": "scrypto::types::Address",
-                "generics": []
-            }
+      {
+        "name": "get_price",
+        "mutability": "Immutable",
+        "inputs": [
+          {
+            "type": "Custom",
+            "name": "ResourceAddress",
+            "generics": []
+          },
+          {
+            "type": "Custom",
+            "name": "ResourceAddress",
+            "generics": []
+          }
+        ],
+        "output": {
+          "type": "Option",
+          "value": {
+            "type": "Custom",
+            "name": "Decimal",
+            "generics": []
+          }
         }
+      },
+      {
+        "name": "update_price",
+        "mutability": "Immutable",
+        "inputs": [
+          {
+            "type": "Custom",
+            "name": "ResourceAddress",
+            "generics": []
+          },
+          {
+            "type": "Custom",
+            "name": "ResourceAddress",
+            "generics": []
+          },
+          {
+            "type": "Custom",
+            "name": "Decimal",
+            "generics": []
+          }
+        ],
+        "output": {
+          "type": "Unit"
+        }
+      },
+      {
+        "name": "admin_badge_address",
+        "mutability": "Immutable",
+        "inputs": [],
+        "output": {
+          "type": "Custom",
+          "name": "ResourceAddress",
+          "generics": []
+        }
+      }
     ]
-}
+  }
 "#
 }
 
 import! {
 r#"
 {
-    "package": "01e0983e33158b489e70313b77767abe80eb449e6acd46f9476328",
-    "name": "SyntheticPool",
+    "package_address": "01d897468d09529e7b6b72bafa726670e95cd1f19e08ad6deaa1f2",
+    "blueprint_name": "SyntheticPool",
     "functions": [
-        {
-            "name": "instantiate_pool",
-            "inputs": [
-                {
-                    "type": "Custom",
-                    "name": "scrypto::types::Address",
-                    "generics": []
-                },
-                {
-                    "type": "Custom",
-                    "name": "scrypto::types::Address",
-                    "generics": []
-                },
-                {
-                    "type": "Custom",
-                    "name": "scrypto::types::Address",
-                    "generics": []
-                },
-                {
-                    "type": "Custom",
-                    "name": "scrypto::types::Decimal",
-                    "generics": []
-                }
-            ],
-            "output": {
-                "type": "Custom",
-                "name": "scrypto::core::Component",
-                "generics": []
-            }
+      {
+        "name": "instantiate_pool",
+        "inputs": [
+          {
+            "type": "Custom",
+            "name": "ComponentAddress",
+            "generics": []
+          },
+          {
+            "type": "Custom",
+            "name": "ResourceAddress",
+            "generics": []
+          },
+          {
+            "type": "Custom",
+            "name": "ResourceAddress",
+            "generics": []
+          },
+          {
+            "type": "Custom",
+            "name": "Decimal",
+            "generics": []
+          }
+        ],
+        "output": {
+          "type": "Custom",
+          "name": "ComponentAddress",
+          "generics": []
         }
+      }
     ],
     "methods": [
-        {
-            "name": "add_synthetic_token",
-            "mutability": "Mutable",
-            "inputs": [
-                {
-                    "type": "String"
-                },
-                {
-                    "type": "Custom",
-                    "name": "scrypto::types::Address",
-                    "generics": []
-                }
-            ],
-            "output": {
-                "type": "Custom",
-                "name": "scrypto::types::Address",
-                "generics": []
-            }
-        },
-        {
-            "name": "stake",
-            "mutability": "Mutable",
-            "inputs": [
-                {
-                    "type": "Custom",
-                    "name": "scrypto::resource::BucketRef",
-                    "generics": []
-                },
-                {
-                    "type": "Custom",
-                    "name": "scrypto::resource::Bucket",
-                    "generics": []
-                }
-            ],
-            "output": {
-                "type": "Unit"
-            }
-        },
-        {
-            "name": "unstake",
-            "mutability": "Mutable",
-            "inputs": [
-                {
-                    "type": "Custom",
-                    "name": "scrypto::resource::BucketRef",
-                    "generics": []
-                },
-                {
-                    "type": "Custom",
-                    "name": "scrypto::types::Decimal",
-                    "generics": []
-                }
-            ],
-            "output": {
-                "type": "Custom",
-                "name": "scrypto::resource::Bucket",
-                "generics": []
-            }
-        },
-        {
-            "name": "mint",
-            "mutability": "Mutable",
-            "inputs": [
-                {
-                    "type": "Custom",
-                    "name": "scrypto::resource::BucketRef",
-                    "generics": []
-                },
-                {
-                    "type": "Custom",
-                    "name": "scrypto::types::Decimal",
-                    "generics": []
-                },
-                {
-                    "type": "String"
-                }
-            ],
-            "output": {
-                "type": "Custom",
-                "name": "scrypto::resource::Bucket",
-                "generics": []
-            }
-        },
-        {
-            "name": "burn",
-            "mutability": "Mutable",
-            "inputs": [
-                {
-                    "type": "Custom",
-                    "name": "scrypto::resource::BucketRef",
-                    "generics": []
-                },
-                {
-                    "type": "Custom",
-                    "name": "scrypto::resource::Bucket",
-                    "generics": []
-                }
-            ],
-            "output": {
-                "type": "Unit"
-            }
-        },
-        {
-            "name": "get_total_global_debt",
-            "mutability": "Immutable",
-            "inputs": [],
-            "output": {
-                "type": "Custom",
-                "name": "scrypto::types::Decimal",
-                "generics": []
-            }
-        },
-        {
-            "name": "get_snx_price",
-            "mutability": "Immutable",
-            "inputs": [],
-            "output": {
-                "type": "Custom",
-                "name": "scrypto::types::Decimal",
-                "generics": []
-            }
-        },
-        {
-            "name": "get_asset_price",
-            "mutability": "Immutable",
-            "inputs": [
-                {
-                    "type": "Custom",
-                    "name": "scrypto::types::Address",
-                    "generics": []
-                }
-            ],
-            "output": {
-                "type": "Custom",
-                "name": "scrypto::types::Decimal",
-                "generics": []
-            }
-        },
-        {
-            "name": "get_user_summary",
-            "mutability": "Mutable",
-            "inputs": [
-                {
-                    "type": "Custom",
-                    "name": "scrypto::types::Address",
-                    "generics": []
-                }
-            ],
-            "output": {
-                "type": "String"
-            }
-        },
-        {
-            "name": "new_user",
-            "mutability": "Immutable",
-            "inputs": [],
-            "output": {
-                "type": "Custom",
-                "name": "scrypto::resource::Bucket",
-                "generics": []
-            }
+      {
+        "name": "add_synthetic_token",
+        "mutability": "Mutable",
+        "inputs": [
+          {
+            "type": "String"
+          },
+          {
+            "type": "Custom",
+            "name": "ResourceAddress",
+            "generics": []
+          }
+        ],
+        "output": {
+          "type": "Custom",
+          "name": "ResourceAddress",
+          "generics": []
         }
+      },
+      {
+        "name": "stake",
+        "mutability": "Mutable",
+        "inputs": [
+          {
+            "type": "Custom",
+            "name": "Proof",
+            "generics": []
+          },
+          {
+            "type": "Custom",
+            "name": "Bucket",
+            "generics": []
+          }
+        ],
+        "output": {
+          "type": "Unit"
+        }
+      },
+      {
+        "name": "unstake",
+        "mutability": "Mutable",
+        "inputs": [
+          {
+            "type": "Custom",
+            "name": "Proof",
+            "generics": []
+          },
+          {
+            "type": "Custom",
+            "name": "Decimal",
+            "generics": []
+          }
+        ],
+        "output": {
+          "type": "Custom",
+          "name": "Bucket",
+          "generics": []
+        }
+      },
+      {
+        "name": "mint",
+        "mutability": "Mutable",
+        "inputs": [
+          {
+            "type": "Custom",
+            "name": "Proof",
+            "generics": []
+          },
+          {
+            "type": "Custom",
+            "name": "Decimal",
+            "generics": []
+          },
+          {
+            "type": "String"
+          }
+        ],
+        "output": {
+          "type": "Custom",
+          "name": "Bucket",
+          "generics": []
+        }
+      },
+      {
+        "name": "burn",
+        "mutability": "Mutable",
+        "inputs": [
+          {
+            "type": "Custom",
+            "name": "Proof",
+            "generics": []
+          },
+          {
+            "type": "Custom",
+            "name": "Bucket",
+            "generics": []
+          }
+        ],
+        "output": {
+          "type": "Unit"
+        }
+      },
+      {
+        "name": "get_total_global_debt",
+        "mutability": "Immutable",
+        "inputs": [],
+        "output": {
+          "type": "Custom",
+          "name": "Decimal",
+          "generics": []
+        }
+      },
+      {
+        "name": "get_snx_price",
+        "mutability": "Immutable",
+        "inputs": [],
+        "output": {
+          "type": "Custom",
+          "name": "Decimal",
+          "generics": []
+        }
+      },
+      {
+        "name": "get_asset_price",
+        "mutability": "Immutable",
+        "inputs": [
+          {
+            "type": "Custom",
+            "name": "ResourceAddress",
+            "generics": []
+          }
+        ],
+        "output": {
+          "type": "Custom",
+          "name": "Decimal",
+          "generics": []
+        }
+      },
+      {
+        "name": "get_user_summary",
+        "mutability": "Mutable",
+        "inputs": [
+          {
+            "type": "Custom",
+            "name": "ResourceAddress",
+            "generics": []
+          }
+        ],
+        "output": {
+          "type": "String"
+        }
+      },
+      {
+        "name": "new_user",
+        "mutability": "Immutable",
+        "inputs": [],
+        "output": {
+          "type": "Custom",
+          "name": "Bucket",
+          "generics": []
+        }
+      }
     ]
-}
+  }
 "#
 }
 
 import! {
 r#"
 {
-    "package": "01899b2991b37ee1bc51a84182a3752c1dc48ec3df01969d3516d3",
-    "name": "Radiswap",
+    "package_address": "0107467fe140289bec61d5ec6be68d6c7adc88ea5528d90c28b9f5",
+    "blueprint_name": "Radiswap",
     "functions": [
-        {
-            "name": "instantiate_pool",
-            "inputs": [
-                {
-                    "type": "Custom",
-                    "name": "scrypto::resource::Bucket",
-                    "generics": []
-                },
-                {
-                    "type": "Custom",
-                    "name": "scrypto::resource::Bucket",
-                    "generics": []
-                },
-                {
-                    "type": "Custom",
-                    "name": "scrypto::types::Decimal",
-                    "generics": []
-                },
-                {
-                    "type": "String"
-                },
-                {
-                    "type": "String"
-                },
-                {
-                    "type": "String"
-                },
-                {
-                    "type": "Custom",
-                    "name": "scrypto::types::Decimal",
-                    "generics": []
-                }
-            ],
-            "output": {
-                "type": "Tuple",
-                "elements": [
-                    {
-                        "type": "Custom",
-                        "name": "scrypto::core::Component",
-                        "generics": []
-                    },
-                    {
-                        "type": "Custom",
-                        "name": "scrypto::resource::Bucket",
-                        "generics": []
-                    }
-                ]
+      {
+        "name": "instantiate_pool",
+        "inputs": [
+          {
+            "type": "Custom",
+            "name": "Bucket",
+            "generics": []
+          },
+          {
+            "type": "Custom",
+            "name": "Bucket",
+            "generics": []
+          },
+          {
+            "type": "Custom",
+            "name": "Decimal",
+            "generics": []
+          },
+          {
+            "type": "String"
+          },
+          {
+            "type": "String"
+          },
+          {
+            "type": "String"
+          },
+          {
+            "type": "Custom",
+            "name": "Decimal",
+            "generics": []
+          }
+        ],
+        "output": {
+          "type": "Tuple",
+          "elements": [
+            {
+              "type": "Custom",
+              "name": "ComponentAddress",
+              "generics": []
+            },
+            {
+              "type": "Custom",
+              "name": "Bucket",
+              "generics": []
             }
+          ]
         }
+      }
     ],
     "methods": [
-        {
-            "name": "add_liquidity",
-            "mutability": "Immutable",
-            "inputs": [
-                {
-                    "type": "Custom",
-                    "name": "scrypto::resource::Bucket",
-                    "generics": []
-                },
-                {
-                    "type": "Custom",
-                    "name": "scrypto::resource::Bucket",
-                    "generics": []
-                }
-            ],
-            "output": {
-                "type": "Tuple",
-                "elements": [
-                    {
-                        "type": "Custom",
-                        "name": "scrypto::resource::Bucket",
-                        "generics": []
-                    },
-                    {
-                        "type": "Custom",
-                        "name": "scrypto::resource::Bucket",
-                        "generics": []
-                    }
-                ]
+      {
+        "name": "add_liquidity",
+        "mutability": "Mutable",
+        "inputs": [
+          {
+            "type": "Custom",
+            "name": "Bucket",
+            "generics": []
+          },
+          {
+            "type": "Custom",
+            "name": "Bucket",
+            "generics": []
+          }
+        ],
+        "output": {
+          "type": "Tuple",
+          "elements": [
+            {
+              "type": "Custom",
+              "name": "Bucket",
+              "generics": []
+            },
+            {
+              "type": "Custom",
+              "name": "Bucket",
+              "generics": []
             }
-        },
-        {
-            "name": "remove_liquidity",
-            "mutability": "Immutable",
-            "inputs": [
-                {
-                    "type": "Custom",
-                    "name": "scrypto::resource::Bucket",
-                    "generics": []
-                }
-            ],
-            "output": {
-                "type": "Tuple",
-                "elements": [
-                    {
-                        "type": "Custom",
-                        "name": "scrypto::resource::Bucket",
-                        "generics": []
-                    },
-                    {
-                        "type": "Custom",
-                        "name": "scrypto::resource::Bucket",
-                        "generics": []
-                    }
-                ]
-            }
-        },
-        {
-            "name": "swap",
-            "mutability": "Immutable",
-            "inputs": [
-                {
-                    "type": "Custom",
-                    "name": "scrypto::resource::Bucket",
-                    "generics": []
-                }
-            ],
-            "output": {
-                "type": "Custom",
-                "name": "scrypto::resource::Bucket",
-                "generics": []
-            }
+          ]
         }
+      },
+      {
+        "name": "remove_liquidity",
+        "mutability": "Mutable",
+        "inputs": [
+          {
+            "type": "Custom",
+            "name": "Bucket",
+            "generics": []
+          }
+        ],
+        "output": {
+          "type": "Tuple",
+          "elements": [
+            {
+              "type": "Custom",
+              "name": "Bucket",
+              "generics": []
+            },
+            {
+              "type": "Custom",
+              "name": "Bucket",
+              "generics": []
+            }
+          ]
+        }
+      },
+      {
+        "name": "swap",
+        "mutability": "Mutable",
+        "inputs": [
+          {
+            "type": "Custom",
+            "name": "Bucket",
+            "generics": []
+          }
+        ],
+        "output": {
+          "type": "Custom",
+          "name": "Bucket",
+          "generics": []
+        }
+      },
+      {
+        "name": "get_pair",
+        "mutability": "Immutable",
+        "inputs": [],
+        "output": {
+          "type": "Tuple",
+          "elements": [
+            {
+              "type": "Custom",
+              "name": "ResourceAddress",
+              "generics": []
+            },
+            {
+              "type": "Custom",
+              "name": "ResourceAddress",
+              "generics": []
+            }
+          ]
+        }
+      }
     ]
-}
+  }
 "#
 }
 
@@ -464,41 +479,42 @@ blueprint! {
         /// Asset symbol
         asset_symbol: String,
         /// Asset address
-        asset_address: Address,
+        asset_address: ResourceAddress,
         /// Synthetic asset address
-        synth_address: Address,
-        /// SNX resource definition address
-        snx_address: Address,
-        /// USD resource definition address
-        usd_address: Address,
+        synth_address: ResourceAddress,
+        /// SNX resource address
+        snx_address: ResourceAddress,
+        /// USD resource address
+        usd_address: ResourceAddress,
 
         /// Radiswap for sTESLA/XRD
         radiswap: Radiswap,
         /// Radiswap LP token vault
         radiswap_lp_tokens: Vault,
 
-        /// Mutual farm share resource definition
-        mutual_farm_share_resource_def: ResourceDef,
+        /// Mutual farm share resource address
+        mutual_farm_share_resource_address: ResourceAddress,
         /// Total contribution
         total_contribution_in_usd: Decimal,
     }
 
     impl MutualFarm {
         pub fn instantiate_farm(
-            price_oracle_address: Address,
-            xrd_snx_radiswap_address: Address,
-            synthetic_pool_address: Address,
+            price_oracle_address: ComponentAddress,
+            xrd_snx_radiswap_address: ComponentAddress,
+            synthetic_pool_address: ComponentAddress,
             asset_symbol: String,
-            asset_address: Address,
+            asset_address: ResourceAddress,
             initial_shares: Decimal,
             mut initial_xrd: Bucket,
-            snx_address: Address,
-            usd_address: Address,
-        ) -> (Bucket, Component) {
+            snx_address: ResourceAddress,
+            usd_address: ResourceAddress,
+        ) -> (Bucket, ComponentAddress) {
             debug!("Create an identity badge for accessing other components");
-            let identity_badge = ResourceBuilder::new_fungible(DIVISIBILITY_NONE)
+            let identity_badge = ResourceBuilder::new_fungible()
+                .divisibility(DIVISIBILITY_NONE)
                 .metadata("name", "ID")
-                .initial_supply_fungible(1);
+                .initial_supply(1);
             let identity_badge_address = identity_badge.resource_address();
 
             debug!("Fetch price info from oracle");
@@ -519,17 +535,18 @@ blueprint! {
             let price_oracle: PriceOracle = price_oracle_address.into();
             let synthetic_pool: SyntheticPool = synthetic_pool_address.into();
             synthetic_pool.add_synthetic_token(asset_symbol.clone(), asset_address);
-            synthetic_pool.stake(identity_badge.present(), snx);
+            synthetic_pool.stake(identity_badge.create_proof(), snx);
+            
             let quantity = snx_amount * snx_usd_price / 10 / tesla_usd_price;
             let synth =
-                synthetic_pool.mint(identity_badge.present(), quantity, asset_symbol.clone());
+                synthetic_pool.mint(identity_badge.create_proof(), quantity, asset_symbol.clone());
             let synth_address = synth.resource_address();
 
             debug!("Set up sTESLA/XRD swap pool");
             let (radiswap_comp, lp_tokens) = Radiswap::instantiate_pool(
                 synth,
                 initial_xrd,
-                1000000.into(),
+                dec!("1000000"),
                 "LP".to_owned(),
                 "LP Token".to_owned(),
                 "https://example.com/".to_owned(),
@@ -537,14 +554,16 @@ blueprint! {
             );
 
             debug!("Mint initial shares");
-            let mut mutual_farm_share_resource_def = ResourceBuilder::new_fungible(DIVISIBILITY_MAXIMUM)
+            let mutual_farm_share_resource_address = ResourceBuilder::new_fungible()
+                .divisibility(DIVISIBILITY_MAXIMUM)
                 .metadata("name", "MutualFarm share")
-                .flags(MINTABLE | BURNABLE)
-                .badge(identity_badge_address, MAY_MINT | MAY_BURN)
+                .mintable(rule!(require(identity_badge_address)), LOCKED)
+                .burnable(rule!(require(identity_badge_address)), LOCKED)
                 .no_initial_supply();
-            let shares =
-                mutual_farm_share_resource_def.mint(initial_shares, identity_badge.present());
-
+            let shares = identity_badge.authorize(|| {
+                borrow_resource_manager!(mutual_farm_share_resource_address).mint(initial_shares)
+            });
+            
             debug!("Instantiate MutualFund component");
             let component = Self {
                 identity_badge: Vault::with_bucket(identity_badge),
@@ -558,10 +577,11 @@ blueprint! {
                 usd_address,
                 radiswap: radiswap_comp.into(),
                 radiswap_lp_tokens: Vault::with_bucket(lp_tokens),
-                mutual_farm_share_resource_def,
+                mutual_farm_share_resource_address,
                 total_contribution_in_usd: xrd_amount * xrd_usd_price,
             }
-            .instantiate();
+            .instantiate()
+            .globalize();
 
             (shares, component)
         }
@@ -582,27 +602,20 @@ blueprint! {
                 .unwrap();
 
             debug!("Swap 3/4 of XRD for SNX");
-            let xrd_address = xrd.resource_def();
+            let xrd_address = xrd.resource_address();
             let xrd_amount = xrd.amount();
-            let snx = self.xrd_snx_radiswap.swap(xrd.take(xrd.amount() * 3 / 4));
+            let snx = self.xrd_snx_radiswap.swap(xrd.take(xrd.amount() * dec!("3") / dec!("4")));
             let snx_amount = snx.amount();
 
             debug!("Deposit SNX into synthetic pool and mint sTESLA (1/10 of our SNX).");
-            self.identity_badge.authorize(|auth| {
-                self.synthetic_pool.stake(auth, snx);
-            });
-            let quantity = snx_amount * snx_usd_price / 10 / tesla_usd_price;
-            let synth = self.identity_badge.authorize(|auth| {
-                self.synthetic_pool
-                    .mint(auth, quantity, self.asset_symbol.clone())
-            });
+            self.synthetic_pool.stake(self.identity_badge.create_proof(), snx);
+            let quantity = snx_amount * snx_usd_price / dec!("10") / tesla_usd_price;
+            let synth = self.synthetic_pool.mint(self.identity_badge.create_proof(), quantity, self.asset_symbol.clone());
 
             debug!("Add liquidity to sTESLA/XRD swap pool");
             let (lp_tokens, mut remainder) = self.radiswap.add_liquidity(synth, xrd);
             if remainder.resource_address() == self.synth_address {
-                self.identity_badge.authorize(|auth| {
-                    self.synthetic_pool.burn(auth, remainder);
-                });
+                self.synthetic_pool.burn(self.identity_badge.create_proof(), remainder);
                 remainder = Bucket::new(xrd_address);
             }
             self.radiswap_lp_tokens.put(lp_tokens);
@@ -610,11 +623,10 @@ blueprint! {
             debug!("Mint initial shares");
             let contribution = xrd_usd_price * (xrd_amount - remainder.amount());
             let num_shares_to_issue = contribution
-                / (self.total_contribution_in_usd / self.mutual_farm_share_resource_def.total_supply());
+                / (self.total_contribution_in_usd / borrow_resource_manager!(self.mutual_farm_share_resource_address).total_supply());
             self.total_contribution_in_usd += contribution;
-            let shares = self.identity_badge.authorize(|auth| {
-                self.mutual_farm_share_resource_def
-                    .mint(num_shares_to_issue, auth)
+            let shares = self.identity_badge.authorize(|| {
+                borrow_resource_manager!(self.mutual_farm_share_resource_address).mint(num_shares_to_issue)
             });
             (shares, remainder)
         }

@@ -1,3 +1,4 @@
+use scrypto::crypto::{EcdsaPrivateKey, EcdsaPublicKey};
 use radix_engine::ledger::*;
 use radix_engine::transaction::*;
 use scrypto::prelude::*;
@@ -7,83 +8,82 @@ use auto_lend::User;
 struct TestEnv<'a, L: SubstateStore> {
     executor: TransactionExecutor<'a, L>,
     key: EcdsaPublicKey,
-    account: Address,
-    usd: Address,
-    lending_pool: Address,
+    priv_key: EcdsaPrivateKey,
+    account: ComponentAddress,
+    usd: ResourceAddress,
+    lending_pool: ComponentAddress,
 }
 
 fn set_up_test_env<'a, L: SubstateStore>(ledger: &'a mut L) -> TestEnv<'a, L> {
     let mut executor = TransactionExecutor::new(ledger, false);
-    let key = executor.new_public_key();
-    let account = executor.new_account(key);
-    let package = executor.publish_package(include_code!("auto_lend")).unwrap();
+    let (key, priv_key, account) = executor.new_account();
+    let package = executor.publish_package(compile_package!()).unwrap();
 
     let receipt = executor
-        .run(
-            TransactionBuilder::new(&executor)
-                .new_token_fixed(HashMap::new(), 1_000_000.into())
+        .validate_and_execute(
+            &TransactionBuilder::new()
+                .new_token_fixed(HashMap::new(), dec!("1000000"))
                 .call_method_with_all_resources(account, "deposit_batch")
-                .build(vec![key])
-                .unwrap()
+                .build(executor.get_nonce([key]))
+                .sign([&priv_key]),
         )
         .unwrap();
-    let usd = receipt.resource_def(0).unwrap();
+    let usd = receipt.new_resource_addresses[0];
 
     let receipt = executor
-        .run(
-            TransactionBuilder::new(&executor)
+        .validate_and_execute(
+            &TransactionBuilder::new()
                 .call_function(
                     package,
                     "AutoLend",
                     "instantiate_autolend",
-                    vec![usd.to_string(), "USD".to_owned()],
-                    Some(account),
+                    vec![scrypto_encode(&usd), scrypto_encode("USD")],
                 )
                 .call_method_with_all_resources(account, "deposit_batch")
-                .build(vec![key])
-                .unwrap()
+                .build(executor.get_nonce([key]))
+                .sign([&priv_key]),
         )
         .unwrap();
-    let lending_pool = receipt.component(0).unwrap();
+    let lending_pool = receipt.new_component_addresses[0];
 
     TestEnv {
         executor,
         key,
+        priv_key,
         account,
         usd,
         lending_pool,
     }
 }
 
-fn create_user<'a, L: SubstateStore>(env: &mut TestEnv<'a, L>) -> Address {
+fn create_user<'a, L: SubstateStore>(env: &mut TestEnv<'a, L>) -> ResourceAddress {
     let receipt = env
         .executor
-        .run(
-            TransactionBuilder::new(&env.executor)
-                .call_method(env.lending_pool, "new_user", args![], Some(env.account))
+        .validate_and_execute(
+            &TransactionBuilder::new()
+                .call_method(env.lending_pool, "new_user", args![])
                 .call_method_with_all_resources(env.account, "deposit_batch")
-                .build(vec![env.key])
-                .unwrap()
+                .build(env.executor.get_nonce([env.key]))
+                .sign([&env.priv_key]),
         )
         .unwrap();
     assert!(receipt.result.is_ok());
-    receipt.resource_def(0).unwrap()
+    receipt.new_resource_addresses[0]
 }
 
-fn get_user_state<'a, L: SubstateStore>(env: &mut TestEnv<'a, L>, user_id: Address) -> User {
+fn get_user_state<'a, L: SubstateStore>(env: &mut TestEnv<'a, L>, user_id: ResourceAddress) -> User {
     let mut receipt = env
         .executor
-        .run(
-            TransactionBuilder::new(&env.executor)
+        .validate_and_execute(
+            &TransactionBuilder::new()
                 .call_method(
                     env.lending_pool,
                     "get_user",
-                    vec![user_id.to_string()],
-                    Some(env.account),
+                    vec![scrypto_encode(&user_id)],
                 )
                 .call_method_with_all_resources(env.account, "deposit_batch")
-                .build(vec![env.key])
-                .unwrap()
+                .build(env.executor.get_nonce([env.key]))
+                .sign([&env.priv_key]),
         )
         .unwrap();
     assert!(receipt.result.is_ok());
@@ -101,17 +101,27 @@ fn test_deposit_and_redeem() {
     // First, deposit 100 USD
     let receipt = env
         .executor
-        .run(
-            TransactionBuilder::new(&env.executor)
-                .call_method(
-                    env.lending_pool,
-                    "deposit",
-                    vec![format!("{},{}", 1, user_id), format!("{},{}", 100, env.usd)],
-                    Some(env.account),
-                )
+        .validate_and_execute(
+            &TransactionBuilder::new()
+                .withdraw_from_account_by_amount(dec!("1"), user_id, env.account)
+                .withdraw_from_account_by_amount(dec!("100"), env.usd, env.account)
+                .take_from_worktop(user_id, |builder, user_id_bucket_id| {
+                    builder.create_proof_from_bucket(user_id_bucket_id, |builder, user_id_proof_id| {
+                        builder.take_from_worktop(env.usd, |builder, usd_bucket_id| {
+                            builder.call_method(
+                                env.lending_pool,
+                                "deposit",
+                                vec![
+                                    scrypto_encode(&scrypto::resource::Proof(user_id_proof_id)),
+                                    scrypto_encode(&scrypto::resource::Bucket(usd_bucket_id)),
+                                ],
+                            )
+                        })
+                    })
+                })
                 .call_method_with_all_resources(env.account, "deposit_batch")
-                .build(vec![env.key])
-                .unwrap()
+                .build(env.executor.get_nonce([env.key]))
+                .sign([&env.priv_key]),
         )
         .unwrap();
     println!("{:?}", receipt);
@@ -131,17 +141,16 @@ fn test_deposit_and_redeem() {
     // Then, increase deposit interest rate to 5%
     let receipt = env
         .executor
-        .run(
-            TransactionBuilder::new(&env.executor)
+        .validate_and_execute(
+            &TransactionBuilder::new()
                 .call_method(
                     env.lending_pool,
                     "set_deposit_interest_rate",
-                    vec!["0.05".to_string()],
-                    Some(env.account),
+                    vec![scrypto_encode(&dec!("0.05"))],
                 )
                 .call_method_with_all_resources(env.account, "deposit_batch")
-                .build(vec![env.key])
-                .unwrap()
+                .build(env.executor.get_nonce([env.key]))
+                .sign([&env.priv_key]),
         )
         .unwrap();
     println!("{:?}", receipt);
@@ -149,17 +158,27 @@ fn test_deposit_and_redeem() {
     // After that, deposit another 100 USD
     let receipt = env
         .executor
-        .run(
-            TransactionBuilder::new(&env.executor)
-                .call_method(
-                    env.lending_pool,
-                    "deposit",
-                    vec![format!("{},{}", 1, user_id), format!("{},{}", 100, env.usd)],
-                    Some(env.account),
-                )
+        .validate_and_execute(
+            &TransactionBuilder::new()
+                .withdraw_from_account_by_amount(dec!("1"), user_id, env.account)
+                .withdraw_from_account_by_amount(dec!("100"), env.usd, env.account)
+                .take_from_worktop(user_id, |builder, user_id_bucket_id| {
+                    builder.create_proof_from_bucket(user_id_bucket_id, |builder, user_id_proof_id| {
+                        builder.take_from_worktop(env.usd, |builder, usd_bucket_id| {
+                            builder.call_method(
+                                env.lending_pool,
+                                "deposit",
+                                vec![
+                                    scrypto_encode(&scrypto::resource::Proof(user_id_proof_id)),
+                                    scrypto_encode(&scrypto::resource::Bucket(usd_bucket_id)),
+                                ],
+                            )
+                        })
+                    })
+                })
                 .call_method_with_all_resources(env.account, "deposit_batch")
-                .build(vec![env.key])
-                .unwrap()
+                .build(env.executor.get_nonce([env.key]))
+                .sign([&env.priv_key]),
         )
         .unwrap();
     println!("{:?}", receipt);
@@ -179,17 +198,22 @@ fn test_deposit_and_redeem() {
     // Finally, redeem with 150 aUSD
     let receipt = env
         .executor
-        .run(
-            TransactionBuilder::new(&env.executor)
-                .call_method(
-                    env.lending_pool,
-                    "redeem",
-                    vec![format!("{},{}", 1, user_id), "150".to_owned()],
-                    Some(env.account),
-                )
+        .validate_and_execute(
+            &TransactionBuilder::new()
+                .create_proof_from_account_by_amount(dec!("1"), user_id, env.account)
+                .create_proof_from_auth_zone(user_id, |builder, proof_id| {
+                    builder.call_method(
+                        env.lending_pool,
+                        "redeem",
+                        vec![
+                            scrypto_encode(&scrypto::resource::Proof(proof_id)),
+                            scrypto_encode(&dec!("150")),
+                        ],
+                    )
+                })
                 .call_method_with_all_resources(env.account, "deposit_batch")
-                .build(vec![env.key])
-                .unwrap()
+                .build(env.executor.get_nonce([env.key]))
+                .sign([&env.priv_key]),
         )
         .unwrap();
     println!("{:?}", receipt);
@@ -217,20 +241,27 @@ fn test_borrow_and_repay() {
     // First, deposit 1000 USD
     let receipt = env
         .executor
-        .run(
-            TransactionBuilder::new(&env.executor)
-                .call_method(
-                    env.lending_pool,
-                    "deposit",
-                    vec![
-                        format!("{},{}", 1, user_id),
-                        format!("{},{}", 1000, env.usd),
-                    ],
-                    Some(env.account),
-                )
+        .validate_and_execute(
+            &TransactionBuilder::new()
+                .withdraw_from_account_by_amount(dec!("1"), user_id, env.account)
+                .withdraw_from_account_by_amount(dec!("1000"), env.usd, env.account)
+                .take_from_worktop(user_id, |builder, user_id_bucket_id| {
+                    builder.create_proof_from_bucket(user_id_bucket_id, |builder, user_id_proof_id| {
+                        builder.take_from_worktop(env.usd, |builder, usd_bucket_id| {
+                            builder.call_method(
+                                env.lending_pool,
+                                "deposit",
+                                vec![
+                                    scrypto_encode(&scrypto::resource::Proof(user_id_proof_id)),
+                                    scrypto_encode(&scrypto::resource::Bucket(usd_bucket_id)),
+                                ],
+                            )
+                        })
+                    })
+                })
                 .call_method_with_all_resources(env.account, "deposit_batch")
-                .build(vec![env.key])
-                .unwrap()
+                .build(env.executor.get_nonce([env.key]))
+                .sign([&env.priv_key]),
         )
         .unwrap();
     println!("{:?}", receipt);
@@ -250,17 +281,22 @@ fn test_borrow_and_repay() {
     // Then, borrow 100 USD
     let receipt = env
         .executor
-        .run(
-            TransactionBuilder::new(&env.executor)
-                .call_method(
-                    env.lending_pool,
-                    "borrow",
-                    vec![format!("{},{}", 1, user_id), "100".to_owned()],
-                    Some(env.account),
-                )
+        .validate_and_execute(
+            &TransactionBuilder::new()
+                .create_proof_from_account_by_amount(dec!("1"), user_id, env.account)
+                .create_proof_from_auth_zone(user_id, |builder, proof_id| {
+                    builder.call_method(
+                        env.lending_pool,
+                        "borrow",
+                        vec![
+                            scrypto_encode(&scrypto::resource::Proof(proof_id)),
+                            scrypto_encode(&dec!("100")),
+                        ],
+                    )
+                })
                 .call_method_with_all_resources(env.account, "deposit_batch")
-                .build(vec![env.key])
-                .unwrap()
+                .build(env.executor.get_nonce([env.key]))
+                .sign([&env.priv_key]),
         )
         .unwrap();
     println!("{:?}", receipt);
@@ -280,17 +316,16 @@ fn test_borrow_and_repay() {
     // Then, increase borrow interest rate to 5%
     let receipt = env
         .executor
-        .run(
-            TransactionBuilder::new(&env.executor)
+        .validate_and_execute(
+            &TransactionBuilder::new()
                 .call_method(
                     env.lending_pool,
                     "set_borrow_interest_rate",
-                    vec!["0.05".to_string()],
-                    Some(env.account),
+                    vec![scrypto_encode(&dec!("0.05"))],
                 )
                 .call_method_with_all_resources(env.account, "deposit_batch")
-                .build(vec![env.key])
-                .unwrap()
+                .build(env.executor.get_nonce([env.key]))
+                .sign([&env.priv_key]),
         )
         .unwrap();
     println!("{:?}", receipt);
@@ -298,17 +333,22 @@ fn test_borrow_and_repay() {
     // After that, borrow another 100 USD
     let receipt = env
         .executor
-        .run(
-            TransactionBuilder::new(&env.executor)
-                .call_method(
-                    env.lending_pool,
-                    "borrow",
-                    vec![format!("{},{}", 1, user_id), "100".to_owned()],
-                    Some(env.account),
-                )
+        .validate_and_execute(
+            &TransactionBuilder::new()
+                .create_proof_from_account_by_amount(dec!("1"), user_id, env.account)
+                .create_proof_from_auth_zone(user_id, |builder, prood_id| {
+                    builder.call_method(
+                        env.lending_pool,
+                        "borrow",
+                        vec![
+                            scrypto_encode(&scrypto::resource::Proof(prood_id)),
+                            scrypto_encode(&dec!("100")),
+                        ],
+                    )
+                })
                 .call_method_with_all_resources(env.account, "deposit_batch")
-                .build(vec![env.key])
-                .unwrap()
+                .build(env.executor.get_nonce([env.key]))
+                .sign([&env.priv_key]),
         )
         .unwrap();
     println!("{:?}", receipt);
@@ -328,17 +368,25 @@ fn test_borrow_and_repay() {
     // Finally, repay with 150 USD
     let receipt = env
         .executor
-        .run(
-            TransactionBuilder::new(&env.executor)
-                .call_method(
-                    env.lending_pool,
-                    "repay",
-                    vec![format!("{},{}", 1, user_id), format!("{},{}", 150, env.usd)],
-                    Some(env.account),
-                )
+        .validate_and_execute(
+            &TransactionBuilder::new()
+                .create_proof_from_account_by_amount(dec!("1"), user_id, env.account)
+                .withdraw_from_account_by_amount(dec!("150"), env.usd, env.account)
+                .create_proof_from_auth_zone(user_id, |builder, user_id_proof_id| {
+                    builder.take_from_worktop(env.usd, |builder, usd_bucket_id| {
+                        builder.call_method(
+                            env.lending_pool,
+                            "repay",
+                            vec![
+                                scrypto_encode(&scrypto::resource::Proof(user_id_proof_id)),
+                                scrypto_encode(&scrypto::resource::Bucket(usd_bucket_id)),
+                            ],
+                        )
+                    })
+                })
                 .call_method_with_all_resources(env.account, "deposit_batch")
-                .build(vec![env.key])
-                .unwrap()
+                .build(env.executor.get_nonce([env.key]))
+                .sign([&env.priv_key]),
         )
         .unwrap();
     println!("{:?}", receipt);
@@ -358,20 +406,25 @@ fn test_borrow_and_repay() {
     // F*k it, repay everything
     let receipt = env
         .executor
-        .run(
-            TransactionBuilder::new(&env.executor)
-                .call_method(
-                    env.lending_pool,
-                    "repay",
-                    vec![
-                        format!("{},{}", 1, user_id),
-                        format!("{},{}", 1000, env.usd),
-                    ],
-                    Some(env.account),
-                )
+        .validate_and_execute(
+            &TransactionBuilder::new()
+                .create_proof_from_account_by_amount(dec!("1"), user_id, env.account)
+                .withdraw_from_account_by_amount(dec!("1000"), env.usd, env.account)
+                .create_proof_from_auth_zone(user_id, |builder, user_id_proof_id| {
+                    builder.take_from_worktop(env.usd, |builder, usd_bucket_id| {
+                        builder.call_method(
+                            env.lending_pool,
+                            "repay",
+                            vec![
+                                scrypto_encode(&scrypto::resource::Proof(user_id_proof_id)),
+                                scrypto_encode(&scrypto::resource::Bucket(usd_bucket_id)),
+                            ],
+                        )
+                    })
+                })
                 .call_method_with_all_resources(env.account, "deposit_batch")
-                .build(vec![env.key])
-                .unwrap()
+                .build(env.executor.get_nonce([env.key]))
+                .sign([&env.priv_key]),
         )
         .unwrap();
     println!("{:?}", receipt);

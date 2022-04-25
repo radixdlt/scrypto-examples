@@ -1,5 +1,6 @@
-use radix_engine::ledger::*;
+use scrypto::crypto::{EcdsaPublicKey, EcdsaPrivateKey};
 use radix_engine::transaction::*;
+use radix_engine::ledger::*;
 use scrypto::prelude::*;
 
 use x_perp_futures::Position;
@@ -7,84 +8,90 @@ use x_perp_futures::PositionType;
 
 struct TestEnv<'a, L: SubstateStore> {
     executor: TransactionExecutor<'a, L>,
-    key: EcdsaPublicKey,
-    account: Address,
-    usd: Address,
-    clearing_house: Address,
+    pk: EcdsaPublicKey,
+    sk: EcdsaPrivateKey,
+    account: ComponentAddress,
+    usd: ResourceAddress,
+    clearing_house: ComponentAddress,
 }
 
 fn set_up_test_env<'a, L: SubstateStore>(ledger: &'a mut L) -> TestEnv<'a, L> {
     let mut executor = TransactionExecutor::new(ledger, false);
-    let key = executor.new_public_key();
-    let account = executor.new_account(key);
-    let package = executor.publish_package(include_code!("x_perp_futures")).unwrap();
+    let (pk, sk, account) = executor.new_account();
+    let package = executor.publish_package(compile_package!()).unwrap();
 
     let receipt = executor
-        .run(
-            TransactionBuilder::new(&executor)
-                .new_token_fixed(HashMap::new(), 1_000_000.into())
+        .validate_and_execute(
+            &TransactionBuilder::new()
+                .new_token_fixed(HashMap::new(), dec!("1000000"))
                 .call_method_with_all_resources(account, "deposit_batch")
-                .build(vec![key])
-                .unwrap()
+                .build(executor.get_nonce([pk]))
+                .sign([&sk])
         )
         .unwrap();
-    let usd = receipt.resource_def(0).unwrap();
+    let usd = receipt.new_resource_addresses[0];
 
     let receipt = executor
-        .run(
-            TransactionBuilder::new(&executor)
+        .validate_and_execute(
+            &TransactionBuilder::new()
                 .call_function(
                     package,
                     "ClearingHouse",
                     "instantiate_clearing_house",
-                    vec![usd.to_string(), "1".to_owned(), "99999".to_owned()],
-                    Some(account),
+                    args![
+                        usd,
+                        dec!("1"),
+                        dec!("99999")
+                    ]
                 )
                 .call_method_with_all_resources(account, "deposit_batch")
-                .build(vec![key])
-                .unwrap()
+                .build(executor.get_nonce([pk]))
+                .sign([&sk])
         )
         .unwrap();
-    let clearing_house = receipt.component(0).unwrap();
+    let clearing_house = receipt.new_component_addresses[0];
 
     TestEnv {
         executor,
-        key,
+        pk,
+        sk,
         account,
         usd,
         clearing_house,
     }
 }
 
-fn create_user<'a, L: SubstateStore>(env: &mut TestEnv<'a, L>) -> Address {
+fn create_user<'a, L: SubstateStore>(env: &mut TestEnv<'a, L>) -> ResourceAddress {
     let receipt = env
         .executor
-        .run(
-            TransactionBuilder::new(&env.executor)
-                .call_method(env.clearing_house, "new_user", args![], Some(env.account))
+        .validate_and_execute(
+            &TransactionBuilder::new()
+                .call_method(env.clearing_house, "new_user", args![])
                 .call_method_with_all_resources(env.account, "deposit_batch")
-                .build(vec![env.key])
-                .unwrap()
+                .build(env.executor.get_nonce([env.pk]))
+                .sign([&env.sk])
         )
         .unwrap();
     assert!(receipt.result.is_ok());
-    receipt.resource_def(0).unwrap()
+    receipt.new_resource_addresses[0]
 }
 
-fn get_position<'a, L: SubstateStore>(env: &mut TestEnv<'a, L>, user_id: Address, nth: usize) -> Position {
+fn get_position<'a, L: SubstateStore>(env: &mut TestEnv<'a, L>, user_id: ResourceAddress, nth: usize) -> Position {
     let mut receipt = env
         .executor
-        .run(
-            TransactionBuilder::new(&env.executor)
+        .validate_and_execute(
+            &TransactionBuilder::new()
                 .call_method(
                     env.clearing_house,
                     "get_position",
-                    vec![user_id.to_string(), nth.to_string()],
-                    Some(env.account),
+                    args![
+                        user_id,
+                        nth
+                    ]
                 )
                 .call_method_with_all_resources(env.account, "deposit_batch")
-                .build(vec![env.key])
-                .unwrap()
+                .build(env.executor.get_nonce([env.pk]))
+                .sign([&env.sk])
         )
         .unwrap();
     assert!(receipt.result.is_ok());
@@ -103,22 +110,27 @@ fn test_long() {
     // First, user1 longs BTC with 500 USD x4
     let receipt = env
         .executor
-        .run(
-            TransactionBuilder::new(&env.executor)
-                .call_method(
-                    env.clearing_house,
-                    "new_position",
-                    vec![
-                        format!("{},{}", 1, user1),
-                        format!("{},{}", 500, env.usd),
-                        4.to_string(),
-                        "Long".to_owned(),
-                    ],
-                    Some(env.account),
-                )
+        .validate_and_execute(
+            &TransactionBuilder::new()
+                .create_proof_from_account_by_amount(dec!("1"), user1, env.account)
+                .withdraw_from_account_by_amount(dec!("500"), env.usd, env.account)
+                .create_proof_from_auth_zone(user1, |builder, proof_id| {
+                    builder.take_from_worktop(env.usd, |builder, bucket_id| {
+                        builder.call_method(
+                            env.clearing_house,
+                            "new_position",
+                            args![
+                                scrypto::resource::Proof(proof_id),
+                                scrypto::resource::Bucket(bucket_id),
+                                dec!("4"),
+                                String::from("Long")
+                            ],
+                        )
+                    })
+                })
                 .call_method_with_all_resources(env.account, "deposit_batch")
-                .build(vec![env.key])
-                .unwrap()
+                .build(env.executor.get_nonce([env.pk]))
+                .sign([&env.sk])
         )
         .unwrap();
     println!("{:?}", receipt);
@@ -136,22 +148,27 @@ fn test_long() {
     // First, user2 longs BTC with 500 USD x1
     let receipt = env
         .executor
-        .run(
-            TransactionBuilder::new(&env.executor)
-                .call_method(
-                    env.clearing_house,
-                    "new_position",
-                    vec![
-                        format!("{},{}", 1, user2),
-                        format!("{},{}", 500, env.usd),
-                        4.to_string(),
-                        "Long".to_owned(),
-                    ],
-                    Some(env.account),
-                )
+        .validate_and_execute(
+            &TransactionBuilder::new()
+                .create_proof_from_account_by_amount(dec!("1"), user2, env.account)
+                .withdraw_from_account_by_amount(dec!("500"), env.usd, env.account)
+                .create_proof_from_auth_zone(user2, |builder, proof_id| {
+                    builder.take_from_worktop(env.usd, |builder, bucket_id| {
+                        builder.call_method(
+                            env.clearing_house,
+                            "new_position",
+                            args![
+                                scrypto::resource::Proof(proof_id),
+                                scrypto::resource::Bucket(bucket_id),
+                                dec!("4"),
+                                String::from("Long")
+                            ],
+                        )
+                    })
+                })
                 .call_method_with_all_resources(env.account, "deposit_batch")
-                .build(vec![env.key])
-                .unwrap()
+                .build(env.executor.get_nonce([env.pk]))
+                .sign([&env.sk])
         )
         .unwrap();
     println!("{:?}", receipt);
@@ -169,17 +186,22 @@ fn test_long() {
     // user1 settles his position
     let receipt = env
         .executor
-        .run(
-            TransactionBuilder::new(&env.executor)
-                .call_method(
-                    env.clearing_house,
-                    "settle_position",
-                    vec![format!("{},{}", 1, user1), "0".to_owned()],
-                    Some(env.account),
-                )
+        .validate_and_execute(
+            &TransactionBuilder::new()
+                .create_proof_from_account(user1, env.account)
+                .create_proof_from_auth_zone(user1, |builder, proof_id| {
+                    builder.call_method(
+                        env.clearing_house,
+                        "settle_position",
+                        args![
+                            scrypto::resource::Proof(proof_id),
+                            0usize
+                        ]
+                    )
+                })
                 .call_method_with_all_resources(env.account, "deposit_batch")
-                .build(vec![env.key])
-                .unwrap()
+                .build(env.executor.get_nonce([env.pk]))
+                .sign([&env.sk])
         )
         .unwrap();
     println!("{:?}", receipt);
@@ -196,22 +218,27 @@ fn test_short() {
     // First, user1 shorts BTC with 500 USD x4
     let receipt = env
         .executor
-        .run(
-            TransactionBuilder::new(&env.executor)
-                .call_method(
-                    env.clearing_house,
-                    "new_position",
-                    vec![
-                        format!("{},{}", 1, user1),
-                        format!("{},{}", 500, env.usd),
-                        4.to_string(),
-                        "Short".to_owned(),
-                    ],
-                    Some(env.account),
-                )
+        .validate_and_execute(
+            &TransactionBuilder::new()
+                .create_proof_from_account_by_amount(dec!("1"), user1, env.account)
+                .withdraw_from_account_by_amount(dec!("500"), env.usd, env.account)
+                .create_proof_from_auth_zone(user1, |builder, proof_id| {
+                    builder.take_from_worktop(env.usd, |builder, bucket_id| {
+                        builder.call_method(
+                            env.clearing_house,
+                            "new_position",
+                            args![
+                                scrypto::resource::Proof(proof_id),
+                                scrypto::resource::Bucket(bucket_id),
+                                dec!("4"),
+                                String::from("Short")
+                            ],
+                        )
+                    })
+                })
                 .call_method_with_all_resources(env.account, "deposit_batch")
-                .build(vec![env.key])
-                .unwrap()
+                .build(env.executor.get_nonce([env.pk]))
+                .sign([&env.sk])
         )
         .unwrap();
     println!("{:?}", receipt);
@@ -229,22 +256,27 @@ fn test_short() {
     // First, user2 shorts BTC with 500 USD x1
     let receipt = env
         .executor
-        .run(
-            TransactionBuilder::new(&env.executor)
-                .call_method(
-                    env.clearing_house,
-                    "new_position",
-                    vec![
-                        format!("{},{}", 1, user2),
-                        format!("{},{}", 500, env.usd),
-                        4.to_string(),
-                        "Short".to_owned(),
-                    ],
-                    Some(env.account),
-                )
+        .validate_and_execute(
+            &TransactionBuilder::new()
+                .create_proof_from_account_by_amount(dec!("1"), user2, env.account)
+                .withdraw_from_account_by_amount(dec!("500"), env.usd, env.account)
+                .create_proof_from_auth_zone(user2, |builder, proof_id| {
+                    builder.take_from_worktop(env.usd, |builder, bucket_id| {
+                        builder.call_method(
+                            env.clearing_house,
+                            "new_position",
+                            args![
+                                scrypto::resource::Proof(proof_id),
+                                scrypto::resource::Bucket(bucket_id),
+                                dec!("4"),
+                                String::from("Short")
+                            ],
+                        )
+                    })
+                })
                 .call_method_with_all_resources(env.account, "deposit_batch")
-                .build(vec![env.key])
-                .unwrap()
+                .build(env.executor.get_nonce([env.pk]))
+                .sign([&env.sk])
         )
         .unwrap();
     println!("{:?}", receipt);
@@ -262,17 +294,22 @@ fn test_short() {
     // user1 settles his position
     let receipt = env
         .executor
-        .run(
-            TransactionBuilder::new(&env.executor)
-                .call_method(
-                    env.clearing_house,
-                    "settle_position",
-                    vec![format!("{},{}", 1, user1), "0".to_owned()],
-                    Some(env.account),
-                )
+        .validate_and_execute(
+            &TransactionBuilder::new()
+                .create_proof_from_account(user1, env.account)
+                .create_proof_from_auth_zone(user1, |builder, proof_id| {
+                    builder.call_method(
+                        env.clearing_house,
+                        "settle_position",
+                        args![
+                            scrypto::resource::Proof(proof_id),
+                            0usize
+                        ]
+                    )
+                })
                 .call_method_with_all_resources(env.account, "deposit_batch")
-                .build(vec![env.key])
-                .unwrap()
+                .build(env.executor.get_nonce([env.pk]))
+                .sign([&env.sk])
         )
         .unwrap();
     println!("{:?}", receipt);

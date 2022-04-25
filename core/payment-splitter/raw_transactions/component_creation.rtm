@@ -1,0 +1,8 @@
+CALL_FUNCTION 
+    PackageAddress("<<<package_address>>>") 
+    "PaymentSplitter" 
+    "instantiate_payment_splitter"
+    ResourceAddress("030000000000000000000000000000000000000000000000000004");
+CALL_METHOD_WITH_ALL_RESOURCES 
+    ComponentAddress("<<<account1_address>>>") 
+    "deposit_batch";

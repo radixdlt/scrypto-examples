@@ -1,0 +1,20 @@
+# Withdrawing 1,000,000 XRD from the admin's account to fund the splitter with.
+CALL_METHOD 
+    ComponentAddress("<<<account1_address>>>") 
+    "withdraw" 
+    ResourceAddress("030000000000000000000000000000000000000000000000000004");
+TAKE_FROM_WORKTOP 
+    ResourceAddress("030000000000000000000000000000000000000000000000000004") 
+    Bucket("xrd_bucket");
+
+# Depositing the funds into the payment splitter
+CALL_METHOD 
+    ComponentAddress("<<<splitter_component_address>>>") 
+    "deposit" 
+    Bucket("xrd_bucket");
+
+# The deposit method returns a bucket of the remaining XRD which we did not divide due to rounding. We need to deposit
+# that back into the admin's account
+CALL_METHOD_WITH_ALL_RESOURCES 
+    ComponentAddress("<<<account1_address>>>") 
+    "deposit_batch";

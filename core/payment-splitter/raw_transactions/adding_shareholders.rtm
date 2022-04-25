@@ -1,0 +1,58 @@
+# We need to withdraw the admin badge from the admin's account and put it in the auth zone. Once its there, we do not 
+# need to worry about about auth in any way as everything will be handeled for us. 
+CALL_METHOD 
+    ComponentAddress("<<<account1_address>>>") 
+    "create_proof" 
+    ResourceAddress("<<<admin_badge>>>");
+
+# Adding the first shareholder to the payment splitter component
+CALL_METHOD 
+    ComponentAddress("<<<splitter_component_address>>>") 
+    "add_shareholder" 
+    Decimal("148.00");
+TAKE_FROM_WORKTOP 
+    ResourceAddress("<<<shareholder_badge>>>") 
+    Bucket("shareholder_badge1");
+CALL_METHOD 
+    ComponentAddress("<<<account1_address>>>") 
+    "deposit" 
+    Bucket("shareholder_badge1");
+
+# Adding the second shareholder to the payment splitter component
+CALL_METHOD 
+    ComponentAddress("<<<splitter_component_address>>>") 
+    "add_shareholder" 
+    Decimal("200.00");
+TAKE_FROM_WORKTOP 
+    ResourceAddress("<<<shareholder_badge>>>") 
+    Bucket("shareholder_badge2");
+CALL_METHOD 
+    ComponentAddress("<<<account2_address>>>") 
+    "deposit" 
+    Bucket("shareholder_badge2");
+
+# Adding the third shareholder to the payment splitter component
+CALL_METHOD 
+    ComponentAddress("<<<splitter_component_address>>>") 
+    "add_shareholder" 
+    Decimal("32.00");
+TAKE_FROM_WORKTOP 
+    ResourceAddress("<<<shareholder_badge>>>") 
+    Bucket("shareholder_badge3");
+CALL_METHOD 
+    ComponentAddress("<<<account3_address>>>") 
+    "deposit" 
+    Bucket("shareholder_badge3");
+
+# Adding the fourth shareholder to the payment splitter component
+CALL_METHOD 
+    ComponentAddress("<<<splitter_component_address>>>") 
+    "add_shareholder" 
+    Decimal("90.00");
+TAKE_FROM_WORKTOP 
+    ResourceAddress("<<<shareholder_badge>>>") 
+    Bucket("shareholder_badge4");
+CALL_METHOD 
+    ComponentAddress("<<<account3_address>>>") 
+    "deposit" 
+    Bucket("shareholder_badge4");

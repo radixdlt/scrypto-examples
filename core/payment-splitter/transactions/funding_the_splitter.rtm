@@ -1,5 +1,20 @@
-CALL_METHOD Address("0293c502780e23621475989d707cd8128e4506362e5fed6ac0c00a") "withdraw" Decimal("90000.00") Address("030000000000000000000000000000000000000000000000000004")  BucketRef(1u32);
-TAKE_FROM_WORKTOP Decimal("90000.00") Address("030000000000000000000000000000000000000000000000000004") Bucket("xrd_bucket");
-CALL_METHOD Address("026273d5754d78080aabeeead8a9d0e01986e35b672c28c52e80de") "deposit_xrd" Bucket("xrd_bucket");
+# Withdrawing 1,000,000 XRD from the admin's account to fund the splitter with.
+CALL_METHOD 
+    ComponentAddress("02dbbcc440e1f4b402675af83b2f39220cfa2ea77a4ad890cd8252") 
+    "withdraw" 
+    ResourceAddress("030000000000000000000000000000000000000000000000000004");
+TAKE_FROM_WORKTOP 
+    ResourceAddress("030000000000000000000000000000000000000000000000000004") 
+    Bucket("xrd_bucket");
 
-CALL_METHOD_WITH_ALL_RESOURCES Address("0293c502780e23621475989d707cd8128e4506362e5fed6ac0c00a") "deposit_batch";
+# Depositing the funds into the payment splitter
+CALL_METHOD 
+    ComponentAddress("02d942d04eefd1acc5bc417919693e6a359ada9cdb8f8562a99fc3") 
+    "deposit" 
+    Bucket("xrd_bucket");
+
+# The deposit method returns a bucket of the remaining XRD which we did not divide due to rounding. We need to deposit
+# that back into the admin's account
+CALL_METHOD_WITH_ALL_RESOURCES 
+    ComponentAddress("02dbbcc440e1f4b402675af83b2f39220cfa2ea77a4ad890cd8252") 
+    "deposit_batch";

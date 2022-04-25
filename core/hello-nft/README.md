@@ -41,9 +41,9 @@ for row in 1..5 {
 Then, the whole vector of NFT data is passed to `ResourceBuilder` as the initial supply.
 
 ```rust
-let ticket_bucket: Bucket = ResourceBuilder::new_non_fungible()
+let ticket_bucket = ResourceBuilder::new_non_fungible()
     .metadata("name", "Ticket")
-    .initial_supply_non_fungible(tickets);
+    .initial_supply(tickets);
 ```
 
 After that, we get a bucket of NFT units stored in `ticket_bucket`.
@@ -82,17 +82,17 @@ resim new-account
 ```
 resim publish .
 ```
-3. Call the `instantiate_hello` function to instantiate a component, and save the component address
+3. Call the `instantiate_hello_nft` function to instantiate a component, and save the component address
 ```
-resim call-function <PACKAGE_ADDRESS> HelloNft instantiate_hello 5
+resim call-function <PACKAGE_ADDRESS> HelloNft instantiate_hello_nft 5
 ```
 4. Call the `available_ticket_ids`
 ```
-resim call-method <COMPONENT_ADDRESS> get_available_ticket_ids
+resim call-method <COMPONENT_ADDRESS> available_ticket_ids
 ```
-5. Call the `buy_ticket_by_id` method
+5. Call the `buy_ticket` method
 ```
-resim call-method <COMPONENT_ADDRESS> buy_ticket <TICKET_ID> "100,030000000000000000000000000000000000000000000000000004"
+resim call-method <COMPONENT_ADDRESS> buy_ticket "100,030000000000000000000000000000000000000000000000000004"
 ```
 6. Check out our balance
 ```

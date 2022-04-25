@@ -32,7 +32,7 @@ deposit_per_year=50, fee_address_update=10 and fee_renewal_per_year=25 (all valu
 Save the address of the admin badge to `$admin_badge` (first new entity), the address of the DomainName resource
 to `$name_resource` (third new entity) and the component address to `$component` (fourth new entity)
 ```
-resim call-function $package RadixNameService new 50 10 25 
+resim call-function $package RadixNameService instantiate_rns 50 10 25 
 ```
 5. Simulate that a user comes along and uses the RNS component.  
 Save the account address to `$user_account` and the public key to `$user_pubkey`
@@ -56,8 +56,8 @@ Taking a look at the account, please note that the user is now the owner of a Do
 ownership of the "satoshi.xrd" name:
 ```
 Resources:
-├─ { amount: 999500, resource_def: 030000000000000000000000000000000000000000000000000004, name: "Radix", symbol: "XRD" }
-└─ { amount: 1, resource_def: 03d8541671ab09116ae450d468f91e5488a9b22c705d70dcfe9e09, name: "DomainName" }
+├─ { amount: 999500, resource address: 030000000000000000000000000000000000000000000000000004, name: "Radix", symbol: "XRD" }
+└─ { amount: 1, resource address: 03d8541671ab09116ae450d468f91e5488a9b22c705d70dcfe9e09, name: "DomainName" }
   └─ NFT { id: 339715316826500606461318410874891739268, immutable_data: Struct {  }, mutable_data: Struct { 02b8dd9f4232ce3c00dcb3496956fb57096d5d50763b989ca56f3b, 150000, 500 } }
 ```
 The NFT has an ID of 339715316826500606461318410874891739268 because that is, what "satoshi.xrd" is hashed to.
@@ -79,13 +79,17 @@ resim new-account
 ```
 11. The name mapping can be changed by calling the update_address method on the RNS component.  
 The parameters to this method are:  
-1: A BucketRef with the DomainName NFT that demonstrates the user's ownership of the name and his right to change  
+1: A Proof with the DomainName NFT that demonstrates the user's ownership of the name and his right to change  
 the mapped address (#339715316826500606461318410874891739268,$name_resource)  
 2: The address of the newly created account ($new_user_account)  
 3: A bucket that contains the fee for the name update (10,$tokenXRD)
 ```
 resim call-method $component update_address "#339715316826500606461318410874891739268,$name_resource" $new_user_account "10,030000000000000000000000000000000000000000000000000004"
 ```
+
+|**NOTE**| The above command uses `FF92CA45964EA42935A62DD2645F2084` which is the hexadecimal representation of the non-fungible id `339715316826500606461318410874891739268` as this is the format accepted by resim.|
+|----|-----|
+
 12. Call the lookup_address method one more time to see that the mapping has changed  
 and that the name "satoshi.xrd" now points to the user's new account  
 (02fbffedd2e0f3d0f3c5381b57b02c0f3b30bad1c57120f1c334bd).
@@ -94,12 +98,12 @@ resim call-method $component lookup_address satoshi.xrd
 ```
 13. To simulate a renewal of the name mapping, call the renew_name method.  
 The method must be called with the following parameters:  
-1: A BucketRef with the DomainName NFT that demonstrates the user's ownership of the name and his right to change  
+1: A Proof with the DomainName NFT that demonstrates the user's ownership of the name and his right to change  
 the mapped address (#339715316826500606461318410874891739268,$name_resource)  
 2: The number of years for which the name should be renewed (10)  
 3: A bucket that contains the fee for the name renewal (250,$tokenXRD)  
 ```
-resim call-method $component renew_name "#339715316826500606461318410874891739268,$name_resource" 10 "250,030000000000000000000000000000000000000000000000000004"
+resim call-method $component renew_name "#FF92CA45964EA42935A62DD2645F2084,$name_resource" 10 "250,030000000000000000000000000000000000000000000000000004"
 ```
 
 14. Again, display the user's account and note that the name is now reserved until epoch 300000.  
@@ -112,7 +116,7 @@ resim show $user_account
 
 15. Finally, simulate that the user decides he now longer needs the domain name and wants to unregister it.  
 This is done by calling the unregister_name method with a single argument.
-This argument has to be a Bucket (not BucketRef) containing the DomainName NFT that should be unregistered
+This argument has to be a Bucket (not Proof) containing the DomainName NFT that should be unregistered
 (#339715316826500606461318410874891739268,$name_resource).
 In exchange for the DomainName NFT the user gets refunded his initial deposit of $XRD 500.
 All other fees are kept by the RNS component.

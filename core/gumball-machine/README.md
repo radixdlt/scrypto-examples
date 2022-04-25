@@ -19,17 +19,18 @@ We'll also need to maintain the price, which we're using `Decimal` for.  `Decima
 In order to instantiate a new gumball machine, the only input we need from the caller is to set the price of each gumball.  After creation, we'll be returning the address of our new component, so we'll set our function signature up appropriately:
 
 ```rust
-pub fn instantiate_gumball_machine(price: Decimal) -> Component {
+pub fn instantiate_gumball_machine(price: Decimal) -> ComponentAddress {
 ```
 
 Within the `instantiate_gumball_machine` function, the first thing we need to do is create a new supply of gumballs which we intend to populate our new component with:
 
 ```rust
-let bucket_of_gumballs = ResourceBuilder::new_fungible(DIVISIBILITY_MAXIMUM)
+let bucket_of_gumballs = ResourceBuilder::new_fungible()
+  .divisibility(DIVISIBILITY_MAXIMUM)
   .metadata("name", "Gumball")
   .metadata("symbol", "GUM")
   .metadata("description", "A delicious gumball")
-  .initial_supply_fungible(100);
+  .initial_supply(100);
 ```
 
 All that's left is to populate our `GumballMachine` struct with our supply of gumballs, the user-specified price, and an empty Vault which we will force to contain XRD.  Then we'll instantiate it, which returns the address, and we'll return that to the caller.
@@ -41,6 +42,7 @@ Self {
   price: price
 }
 .instantiate()
+.globalize()
 ```
 
 ## Allowing Callers to Buy Gumballs

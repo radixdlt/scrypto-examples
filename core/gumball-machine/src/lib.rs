@@ -9,13 +9,14 @@ blueprint! {
 
     impl GumballMachine {
         // given a price in XRD, creates a ready-to-use gumball machine
-        pub fn instantiate_gumball_machine(price: Decimal) -> Component {
+        pub fn instantiate_gumball_machine(price: Decimal) -> ComponentAddress {
             // create a new Gumball resource, with a fixed quantity of 100
-            let bucket_of_gumballs = ResourceBuilder::new_fungible(DIVISIBILITY_MAXIMUM)
+            let bucket_of_gumballs = ResourceBuilder::new_fungible()
+                .divisibility(DIVISIBILITY_MAXIMUM)
                 .metadata("name", "Gumball")
                 .metadata("symbol", "GUM")
                 .metadata("description", "A delicious gumball")
-                .initial_supply_fungible(100);
+                .initial_supply(100);
 
             // populate a GumballMachine struct and instantiate a new component
             Self {
@@ -24,6 +25,7 @@ blueprint! {
                 price: price,
             }
             .instantiate()
+            .globalize()
         }
 
         pub fn get_price(&self) -> Decimal {

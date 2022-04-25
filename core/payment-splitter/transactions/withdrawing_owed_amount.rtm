@@ -1,7 +1,20 @@
-CALL_METHOD Address("0236ca00316c8eb5ad51b0cb5e3f232cb871803a85ec3847b36bb4") "withdraw" Decimal("1.0") Address("03467d8a533602e8cba096a92098b42f1a3c00e764bccee4ac1b63") BucketRef(1u32);
-TAKE_FROM_WORKTOP Decimal("1.0") Address("03467d8a533602e8cba096a92098b42f1a3c00e764bccee4ac1b63") Bucket("shareholder_badge_bucket");
-CREATE_BUCKET_REF Bucket("shareholder_badge_bucket") BucketRef("shareholder_badge_bucket_ref");
+# To withdraw the funds from the payment splitter, we need to show our shareholder badge to the withdraw method. So,
+# we will begin by withdrawing our badge from our account and putting it in a proof
+CALL_METHOD 
+    ComponentAddress("02c026ae65349ab7f248eebfd40cfcb3c7804b1aab4f1c177d9dca") 
+    "create_proof" 
+    ResourceAddress("036628ca83d832095fdb3819c25c74732b1208107a435d9f62ca4f");
+CREATE_PROOF_FROM_AUTH_ZONE
+    ResourceAddress("036628ca83d832095fdb3819c25c74732b1208107a435d9f62ca4f")
+    Proof("shareholder_badge");
 
-CALL_METHOD Address("026273d5754d78080aabeeead8a9d0e01986e35b672c28c52e80de") "withdraw_xrd" BucketRef("shareholder_badge_bucket_ref");
+# Withdrawing the funds from the splitter
+CALL_METHOD 
+    ComponentAddress("02d942d04eefd1acc5bc417919693e6a359ada9cdb8f8562a99fc3") 
+    "withdraw" 
+    Proof("shareholder_badge");
 
-CALL_METHOD_WITH_ALL_RESOURCES Address("0236ca00316c8eb5ad51b0cb5e3f232cb871803a85ec3847b36bb4") "deposit_batch";
+# Depositing everything back into our account
+CALL_METHOD_WITH_ALL_RESOURCES 
+    ComponentAddress("02c026ae65349ab7f248eebfd40cfcb3c7804b1aab4f1c177d9dca") 
+    "deposit_batch";

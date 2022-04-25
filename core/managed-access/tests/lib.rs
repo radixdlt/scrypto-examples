@@ -7,44 +7,40 @@ fn test_withdraw_all() {
     // Set up environment.
     let mut ledger = InMemorySubstateStore::with_bootstrap();
     let mut executor = TransactionExecutor::new(&mut ledger, false);
-    let key = executor.new_public_key();
-    let account = executor.new_account(key);
-    let package = executor
-        .publish_package(include_code!("managed_access"))
-        .unwrap();
+    let (pk, sk, account) = executor.new_account();
+    let package = executor.publish_package(compile_package!()).unwrap();
 
+    println!("Publishing");
     // Publish FlatAdmin
     executor.overwrite_package(
-        "01ca59a8d6ea4f7efa1765cef702d14e47570c079aedd44992dd09"
-            .parse()
-            .unwrap(),
-        include_code!("../../flat-admin", "flat_admin"),
+        PackageAddress::from_str("01a99c5f6d0f4b92e81968405bde0e14709ab6630dc0e215a38eef").unwrap(),
+        compile_package!("../flat-admin"),
     );
 
     // Test the `instantiate_managed_access` function.
-    let transaction1 = TransactionBuilder::new(&executor)
-        .call_function(package, "ManagedAccess", "instantiate_managed_access", vec![], None)
+    let transaction1 = TransactionBuilder::new()
+        .call_function(package, "ManagedAccess", "instantiate_managed_access", vec![])
         .call_method_with_all_resources(account, "deposit_batch")
-        .build(vec![key])
-        .unwrap();
-    let receipt1 = executor.run(transaction1).unwrap();
+        .build(executor.get_nonce([pk]))
+        .sign([&sk]);
+    let receipt1 = executor.validate_and_execute(&transaction1).unwrap();
     println!("{:?}\n", receipt1);
     assert!(receipt1.result.is_ok());
 
     // Test the `withdraw_all` method.
-    let managed_access = receipt1.component(1).unwrap();
-    let admin_badge = receipt1.resource_def(1).unwrap();
-    let transaction2 = TransactionBuilder::new(&executor)
+    let managed_access = receipt1.new_component_addresses[1];
+    let admin_badge = receipt1.new_resource_addresses[1];
+    let transaction2 = TransactionBuilder::new()
+        .create_proof_from_account_by_amount(dec!("1"), admin_badge, account)
         .call_method(
             managed_access,
             "withdraw_all",
-            vec![format!("1,{}", admin_badge)],
-            Some(account),
+            args![],
         )
         .call_method_with_all_resources(account, "deposit_batch")
-        .build(vec![key])
-        .unwrap();
-    let receipt2 = executor.run(transaction2).unwrap();
+        .build(executor.get_nonce([pk]))
+        .sign([&sk]);
+    let receipt2 = executor.validate_and_execute(&transaction2).unwrap();
     println!("{:?}\n", receipt2);
     assert!(receipt2.result.is_ok());
 }
