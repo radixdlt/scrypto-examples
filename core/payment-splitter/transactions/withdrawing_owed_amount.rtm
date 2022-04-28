@@ -1,20 +1,20 @@
 # To withdraw the funds from the payment splitter, we need to show our shareholder badge to the withdraw method. So,
 # we will begin by withdrawing our badge from our account and putting it in a proof
 CALL_METHOD 
-    ComponentAddress("02c026ae65349ab7f248eebfd40cfcb3c7804b1aab4f1c177d9dca") 
+    ComponentAddress("02e0905317d684478c275540e2ed7170f217e0c557805f7fd2a0d3") 
     "create_proof" 
-    ResourceAddress("036628ca83d832095fdb3819c25c74732b1208107a435d9f62ca4f");
+    ResourceAddress("03fb20c636cbf8235a81012fcfe424363f33c1b0cdf3c2f72622e2");
 CREATE_PROOF_FROM_AUTH_ZONE
-    ResourceAddress("036628ca83d832095fdb3819c25c74732b1208107a435d9f62ca4f")
+    ResourceAddress("03fb20c636cbf8235a81012fcfe424363f33c1b0cdf3c2f72622e2")
     Proof("shareholder_badge");
 
 # Withdrawing the funds from the splitter
 CALL_METHOD 
-    ComponentAddress("02d942d04eefd1acc5bc417919693e6a359ada9cdb8f8562a99fc3") 
+    ComponentAddress("0289fdd1b7e1b31e7e43380c2062f8e5d989809b5d189326dac966") 
     "withdraw" 
     Proof("shareholder_badge");
 
 # Depositing everything back into our account
 CALL_METHOD_WITH_ALL_RESOURCES 
-    ComponentAddress("02c026ae65349ab7f248eebfd40cfcb3c7804b1aab4f1c177d9dca") 
+    ComponentAddress("02e0905317d684478c275540e2ed7170f217e0c557805f7fd2a0d3") 
     "deposit_batch";

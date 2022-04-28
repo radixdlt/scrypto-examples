@@ -273,11 +273,7 @@ blueprint! {
 
             // At this point we have verified that the caller has presented a valid shareholder badge. We may now begin
             // checking the NonFungibleId of the badge and then withdraw the amount owed to them
-            let non_fungible_id: NonFungibleId = shareholder_badge
-                .non_fungible_ids()
-                .into_iter()
-                .collect::<Vec<NonFungibleId>>()[0]
-                .clone();
+            let non_fungible_id: NonFungibleId = shareholder_badge.non_fungible::<Shareholder>().id();
 
             // Withdrawing the funds associated with the `non_fungible_id` from the vaults, into a bucket, and returning
             // it to them.
@@ -318,11 +314,7 @@ blueprint! {
 
             // At this point we have verified that the caller has presented a valid shareholder badge. We may now begin
             // checking the NonFungibleId of the badge and then withdraw the amount owed to them
-            let non_fungible_id: NonFungibleId = shareholder_badge
-                .non_fungible_ids()
-                .into_iter()
-                .collect::<Vec<NonFungibleId>>()[0]
-                .clone();
+            let non_fungible_id: NonFungibleId = shareholder_badge.non_fungible::<Shareholder>().id();
 
             // Getting the vault where the funds are stored and checking if enough funds exist for the withdrawal
             let vault: &mut Vault = self.vaults.get_mut(&non_fungible_id).unwrap();
@@ -371,11 +363,7 @@ blueprint! {
             assert!(shareholder_badge.amount() == dec!("1"), "[Withdraw Give-up Shares]: Invalid badge amount presented");
 
             // Getting the amount of shares that the shareholder owns
-            let non_fungible_id: NonFungibleId = shareholder_badge
-                .non_fungible_ids()
-                .into_iter()
-                .collect::<Vec<NonFungibleId>>()[0]
-                .clone();
+            let non_fungible_id: NonFungibleId = shareholder_badge.non_fungible::<Shareholder>().id();
             
             // Withdrawing the shareholder's share of tokens from the splitter
             let shareholder_token_share: Bucket = self.vaults.get_mut(&non_fungible_id).unwrap().take_all();
