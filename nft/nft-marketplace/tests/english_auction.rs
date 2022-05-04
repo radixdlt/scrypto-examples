@@ -16,6 +16,16 @@ pub static BLUEPRINT_NAME: &str = "EnglishAuction";
 pub static INSTANTIATION_FUNCTION_NAME: &str = "instantiate_english_auction_sale";
 pub static BIDDING_PERIOD: u64 = 50u64;
 
+// There are three main actors used throughout the tests you see here:
+// * Admin Account: This is the instantiator of the component, i.e. the seller of the tokens 
+// * Account[0]: This is the account that submitted the losing bid (lower bid).
+// * Account[1]: This is the account that submitted the winning bid (higher bid).
+
+// =====================================================================================================================
+// The following are stateful tests which test the behavior of the code at different states to ensure that the blueprint
+// is behaving correctly throughout it's entire lifetime and under all states.
+// =====================================================================================================================
+
 #[test]
 pub fn state_setup_works(){
     let funcs: Vec<&dyn Fn(&mut Environment) -> (ComponentAddress, ResourceAddress, ResourceAddress, ResourceAddress)> = vec![
@@ -79,7 +89,6 @@ pub fn test_auction_cancellation(){
         } else {
             receipt.result.expect_err(assertion_error.as_str());
         };
-
     }
 }
 
@@ -128,7 +137,6 @@ pub fn test_payment_withdrawal(){
         } else {
             receipt.result.expect_err(assertion_error.as_str());
         };
-
     }
 }
 
@@ -164,14 +172,14 @@ pub fn test_bidding(){
             .withdraw_from_account_by_amount(
                 dec!("1000"), 
                 RADIX_TOKEN, 
-                env.admin_account.component_address
+                env.accounts[3].component_address
             )
             .take_from_worktop(RADIX_TOKEN, |builder, bucket_id| {
                 builder.call_method(component_address, "bid", args![scrypto::resource::Bucket(bucket_id)])
             })
-            .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
-            .build(env.executor.get_nonce([env.admin_account.public_key]))
-            .sign([&env.admin_account.private_key]);
+            .call_method_with_all_resources(env.accounts[3].component_address, "deposit_batch")
+            .build(env.executor.get_nonce([env.accounts[3].public_key]))
+            .sign([&env.accounts[3].private_key]);
         let receipt: Receipt = env.executor.validate_and_execute(&transaction).unwrap();
 
         // Checking that the behavior is as expected.
@@ -218,19 +226,19 @@ pub fn test_increase_bid(){
             .withdraw_from_account_by_amount(
                 dec!("1000"), 
                 RADIX_TOKEN, 
-                env.admin_account.component_address
+                env.accounts[5].component_address
             )
             .take_from_worktop(RADIX_TOKEN, |builder, bucket_id| {
                 builder.call_method(component_address, "bid", args![scrypto::resource::Bucket(bucket_id)])
             })
-            .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
-            .build(env.executor.get_nonce([env.admin_account.public_key]))
-            .sign([&env.admin_account.private_key]);
+            .call_method_with_all_resources(env.accounts[5].component_address, "deposit_batch")
+            .build(env.executor.get_nonce([env.accounts[5].public_key]))
+            .sign([&env.accounts[5].private_key]);
         let receipt: Receipt = env.executor.validate_and_execute(&transaction).unwrap();
         
         let transaction: SignedTransaction = TransactionBuilder::new()
-            .create_proof_from_account(bidders_badge, env.admin_account.component_address)
-            .withdraw_from_account_by_amount(dec!("1000"), RADIX_TOKEN, env.admin_account.component_address)
+            .create_proof_from_account(bidders_badge, env.accounts[5].component_address)
+            .withdraw_from_account_by_amount(dec!("1000"), RADIX_TOKEN, env.accounts[5].component_address)
             .take_from_worktop(RADIX_TOKEN, |builder, bucket_id| {
                 builder.create_proof_from_auth_zone(bidders_badge, |builder, proof_id| {
                     builder.call_method(component_address, "increase_bid", args![
@@ -240,9 +248,9 @@ pub fn test_increase_bid(){
                 })
             })
             
-            .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
-            .build(env.executor.get_nonce([env.admin_account.public_key]))
-            .sign([&env.admin_account.private_key]);
+            .call_method_with_all_resources(env.accounts[5].component_address, "deposit_batch")
+            .build(env.executor.get_nonce([env.accounts[5].public_key]))
+            .sign([&env.accounts[5].private_key]);
         let receipt: Receipt = env.executor.validate_and_execute(&transaction).unwrap();
 
         // Checking that the behavior is as expected.
@@ -285,26 +293,22 @@ pub fn test_non_winner_cancel_bid(){
         ): (ComponentAddress, ResourceAddress, ResourceAddress, ResourceAddress) = state_func(&mut env);
 
         // Performing the actual transaction for the test.
-        let transaction: SignedTransaction = TransactionBuilder::new()
-            .withdraw_from_account_by_amount(dec!("1000"), RADIX_TOKEN, env.admin_account.component_address)
-            .take_from_worktop(RADIX_TOKEN, |builder, bucket_id| {
-                builder.call_method(component_address, "bid", args![scrypto::resource::Bucket(bucket_id)])
-            })
-            .call_method_with_all_resources(env.accounts[0].component_address, "deposit_batch")
-            .build(env.executor.get_nonce([env.admin_account.public_key]))
-            .sign([&env.admin_account.private_key]);
-        let receipt: Receipt = env.executor.validate_and_execute(&transaction).unwrap();
+        if state_name.to_string() == "open".to_string() {
+            let bidding_tx: SignedTransaction = TransactionBuilder::new()
+                .withdraw_from_account_by_amount(
+                    dec!("1000000"), 
+                    RADIX_TOKEN, 
+                    env.accounts[0].component_address
+                )
+                .take_from_worktop_by_amount(dec!("100"), RADIX_TOKEN, |builder, bucket_id| {
+                    builder.call_method(component_address, "bid", args![scrypto::resource::Bucket(bucket_id)])
+                })
+                .call_method_with_all_resources(env.accounts[0].component_address, "deposit_batch")
+                .build(env.executor.get_nonce([env.accounts[0].public_key]))
+                .sign([&env.accounts[0].private_key]);
+            let bidding_receipt: Receipt = env.executor.validate_and_execute(&bidding_tx).unwrap();
+        }
 
-        let transaction: SignedTransaction = TransactionBuilder::new()
-            .withdraw_from_account_by_amount(dec!("2000"), RADIX_TOKEN, env.admin_account.component_address)
-            .take_from_worktop(RADIX_TOKEN, |builder, bucket_id| {
-                builder.call_method(component_address, "bid", args![scrypto::resource::Bucket(bucket_id)])
-            })
-            .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
-            .build(env.executor.get_nonce([env.admin_account.public_key]))
-            .sign([&env.admin_account.private_key]);
-        let receipt: Receipt = env.executor.validate_and_execute(&transaction).unwrap();
-        
         let transaction: SignedTransaction = TransactionBuilder::new()
             .withdraw_from_account_by_amount(dec!("1"), bidders_badge, env.accounts[0].component_address)
             .take_from_worktop(bidders_badge, |builder, bucket_id| {
@@ -328,7 +332,6 @@ pub fn test_non_winner_cancel_bid(){
         };
     }
 }
-
 #[test]
 pub fn test_winner_cancel_bid(){
     // Defining the tests to perform along with the states that hey each correspond to.
@@ -351,43 +354,177 @@ pub fn test_winner_cancel_bid(){
         let mut env: Environment = Environment::new(&mut ledger, 10);
         let (
             component_address,
-            _ownership_badge, 
+            ownership_badge, 
             _internal_admin, 
             bidders_badge
         ): (ComponentAddress, ResourceAddress, ResourceAddress, ResourceAddress) = state_func(&mut env);
 
         // Performing the actual transaction for the test.
-        let transaction: SignedTransaction = TransactionBuilder::new()
-            .withdraw_from_account_by_amount(dec!("1000"), RADIX_TOKEN, env.admin_account.component_address)
-            .take_from_worktop(RADIX_TOKEN, |builder, bucket_id| {
-                builder.call_method(component_address, "bid", args![scrypto::resource::Bucket(bucket_id)])
-            })
-            .call_method_with_all_resources(env.accounts[0].component_address, "deposit_batch")
-            .build(env.executor.get_nonce([env.admin_account.public_key]))
-            .sign([&env.admin_account.private_key]);
-        let _receipt: Receipt = env.executor.validate_and_execute(&transaction).unwrap();
+        if state_name.to_string() == "open".to_string() {
+            let bidding_tx: SignedTransaction = TransactionBuilder::new()
+                .withdraw_from_account_by_amount(
+                    dec!("1000000"), 
+                    RADIX_TOKEN, 
+                    env.accounts[1].component_address
+                )
+                .take_from_worktop_by_amount(dec!("100"), RADIX_TOKEN, |builder, bucket_id| {
+                    builder.call_method(component_address, "bid", args![scrypto::resource::Bucket(bucket_id)])
+                })
+                .call_method_with_all_resources(env.accounts[1].component_address, "deposit_batch")
+                .build(env.executor.get_nonce([env.accounts[1].public_key]))
+                .sign([&env.accounts[1].private_key]);
+            let bidding_receipt: Receipt = env.executor.validate_and_execute(&bidding_tx).unwrap();
+        }
 
         let transaction: SignedTransaction = TransactionBuilder::new()
-            .withdraw_from_account_by_amount(dec!("2000"), RADIX_TOKEN, env.admin_account.component_address)
-            .take_from_worktop(RADIX_TOKEN, |builder, bucket_id| {
-                builder.call_method(component_address, "bid", args![scrypto::resource::Bucket(bucket_id)])
-            })
-            .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
-            .build(env.executor.get_nonce([env.admin_account.public_key]))
-            .sign([&env.admin_account.private_key]);
-        let _receipt: Receipt = env.executor.validate_and_execute(&transaction).unwrap();
-        
-        let transaction: SignedTransaction = TransactionBuilder::new()
-            .withdraw_from_account_by_amount(dec!("1"), bidders_badge, env.admin_account.component_address)
+            .withdraw_from_account_by_amount(dec!("1"), bidders_badge, env.accounts[1].component_address)
             .take_from_worktop(bidders_badge, |builder, bucket_id| {
                 builder.call_method(component_address, "cancel_bid", args![
                     scrypto::resource::Bucket(bucket_id)
                 ])
             })
-            .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
-            .build(env.executor.get_nonce([env.admin_account.public_key]))
-            .sign([&env.admin_account.private_key]);
+            .call_method_with_all_resources(env.accounts[1].component_address, "deposit_batch")
+            .build(env.executor.get_nonce([env.accounts[1].public_key]))
+            .sign([&env.accounts[1].private_key]);
         let receipt: Receipt = env.executor.validate_and_execute(&transaction).unwrap();
+
+        // Checking that the behavior is as expected.
+        let expected_result_string: &str = if expected_result.clone() {"succeed"} else {"fail"};
+        let assertion_error: String = format!("Expected \"{}\" state test to {} but it did not", state_name, expected_result_string);
+
+        if expected_result.clone() {
+            receipt.result.expect(assertion_error.as_str());
+        } else {
+            receipt.result.expect_err(assertion_error.as_str());
+        };
+    }
+
+}
+
+#[test]
+pub fn test_non_winner_claim_nfts(){
+    // Defining the tests to perform along with the states that hey each correspond to.
+    let tests: Vec<(
+        &str, // This is the name of the state being tested.
+        &dyn Fn(&mut Environment) -> (ComponentAddress, ResourceAddress, ResourceAddress, ResourceAddress), // This is the state function
+        bool // This is a boolean of whether this test should succeed or fail
+    )> = vec![
+        ("open", &setup_open_state, false),
+        ("locked", &setup_locked_state, false),
+        ("settled", &setup_settled_state, false),
+        ("funds_withdrawn", &setup_funds_withdrawn_state, false),
+        ("nfts_claim", &setup_nfts_claim_state, false),
+        ("zombie", &setup_zombie_state, false)
+    ];
+
+    for (state_name, state_func, expected_result) in tests.iter() {
+        // Setting up the state for this test
+        let mut ledger: InMemorySubstateStore = InMemorySubstateStore::with_bootstrap();
+        let mut env: Environment = Environment::new(&mut ledger, 10);
+        let (
+            component_address,
+            ownership_badge, 
+            _internal_admin, 
+            bidders_badge
+        ): (ComponentAddress, ResourceAddress, ResourceAddress, ResourceAddress) = state_func(&mut env);
+
+        // Performing the actual transaction for the test.
+        if state_name.to_string() == "open".to_string() {
+            let bidding_tx: SignedTransaction = TransactionBuilder::new()
+                .withdraw_from_account_by_amount(
+                    dec!("1000000"), 
+                    RADIX_TOKEN, 
+                    env.accounts[0].component_address
+                )
+                .take_from_worktop_by_amount(dec!("100"), RADIX_TOKEN, |builder, bucket_id| {
+                    builder.call_method(component_address, "bid", args![scrypto::resource::Bucket(bucket_id)])
+                })
+                .call_method_with_all_resources(env.accounts[0].component_address, "deposit_batch")
+                .build(env.executor.get_nonce([env.accounts[0].public_key]))
+                .sign([&env.accounts[0].private_key]);
+            let bidding_receipt: Receipt = env.executor.validate_and_execute(&bidding_tx).unwrap();
+        }
+
+        let transaction: SignedTransaction = TransactionBuilder::new()
+            .withdraw_from_account_by_amount(dec!("1"), bidders_badge, env.accounts[0].component_address)
+            .take_from_worktop(bidders_badge, |builder, bucket_id| {
+                builder.call_method(component_address, "claim_nfts", args![
+                    scrypto::resource::Bucket(bucket_id)
+                ])
+            })
+            .call_method_with_all_resources(env.accounts[0].component_address, "deposit_batch")
+            .build(env.executor.get_nonce([env.accounts[0].public_key]))
+            .sign([&env.accounts[0].private_key]);
+        let receipt: Receipt = env.executor.validate_and_execute(&transaction).unwrap();
+        println!("At state: {}: {:?}", state_name, receipt);
+
+        // Checking that the behavior is as expected.
+        let expected_result_string: &str = if expected_result.clone() {"succeed"} else {"fail"};
+        let assertion_error: String = format!("Expected \"{}\" state test to {} but it did not", state_name, expected_result_string);
+
+        if expected_result.clone() {
+            receipt.result.expect(assertion_error.as_str());
+        } else {
+            receipt.result.expect_err(assertion_error.as_str());
+        };
+    }
+}
+#[test]
+pub fn test_winner_claim_nfts(){
+    // Defining the tests to perform along with the states that hey each correspond to.
+    let tests: Vec<(
+        &str, // This is the name of the state being tested.
+        &dyn Fn(&mut Environment) -> (ComponentAddress, ResourceAddress, ResourceAddress, ResourceAddress), // This is the state function
+        bool // This is a boolean of whether this test should succeed or fail
+    )> = vec![
+        ("open", &setup_open_state, false),
+        ("locked", &setup_locked_state, false),
+        ("settled", &setup_settled_state, true),
+        ("funds_withdrawn", &setup_funds_withdrawn_state, true),
+        ("nfts_claim", &setup_nfts_claim_state, false),
+        ("zombie", &setup_zombie_state, false)
+    ];
+
+    for (state_name, state_func, expected_result) in tests.iter() {
+        // Setting up the state for this test
+        let mut ledger: InMemorySubstateStore = InMemorySubstateStore::with_bootstrap();
+        let mut env: Environment = Environment::new(&mut ledger, 10);
+        let (
+            component_address,
+            ownership_badge, 
+            _internal_admin, 
+            bidders_badge
+        ): (ComponentAddress, ResourceAddress, ResourceAddress, ResourceAddress) = state_func(&mut env);
+
+        // Performing the actual transaction for the test.
+        if state_name.to_string() == "open".to_string() {
+            let bidding_tx: SignedTransaction = TransactionBuilder::new()
+                .withdraw_from_account_by_amount(
+                    dec!("1000000"), 
+                    RADIX_TOKEN, 
+                    env.accounts[1].component_address
+                )
+                .take_from_worktop_by_amount(dec!("100"), RADIX_TOKEN, |builder, bucket_id| {
+                    builder.call_method(component_address, "bid", args![scrypto::resource::Bucket(bucket_id)])
+                })
+                .call_method_with_all_resources(env.accounts[1].component_address, "deposit_batch")
+                .build(env.executor.get_nonce([env.accounts[1].public_key]))
+                .sign([&env.accounts[1].private_key]);
+            let bidding_receipt: Receipt = env.executor.validate_and_execute(&bidding_tx).unwrap();
+        }
+
+        let transaction: SignedTransaction = TransactionBuilder::new()
+            .withdraw_from_account_by_amount(dec!("1"), bidders_badge, env.accounts[1].component_address)
+            .take_from_worktop(bidders_badge, |builder, bucket_id| {
+                builder.call_method(component_address, "claim_nfts", args![
+                    scrypto::resource::Bucket(bucket_id)
+                ])
+            })
+            .call_method_with_all_resources(env.accounts[1].component_address, "deposit_batch")
+            .build(env.executor.get_nonce([env.accounts[1].public_key]))
+            .sign([&env.accounts[1].private_key]);
+        let receipt: Receipt = env.executor.validate_and_execute(&transaction).unwrap();
+        println!("At state: {}: {:?}", state_name, receipt);
 
         // Checking that the behavior is as expected.
         let expected_result_string: &str = if expected_result.clone() {"succeed"} else {"fail"};
@@ -402,55 +539,49 @@ pub fn test_winner_cancel_bid(){
 }
 
 #[test]
-pub fn authenticated_methods_require_badges() {
-    // Setting up the environment
-    let mut ledger: InMemorySubstateStore = InMemorySubstateStore::with_bootstrap();
-    let mut env: Environment = Environment::new(&mut ledger, 10);
-    let (
-        component_address,
-        ownership_badge, 
-        internal_admin, 
-        bidders_badge
-    ): (ComponentAddress, ResourceAddress, ResourceAddress, ResourceAddress) = setup_open_state(&mut env);
+pub fn test_determine_winner(){
+    // Defining the tests to perform along with the states that hey each correspond to.
+    let tests: Vec<(
+        &str, // This is the name of the state being tested.
+        &dyn Fn(&mut Environment) -> (ComponentAddress, ResourceAddress, ResourceAddress, ResourceAddress), // This is the state function
+        bool // This is a boolean of whether this test should succeed or fail
+    )> = vec![
+        ("open", &setup_open_state, false),
+        ("locked", &setup_locked_state, true),
+        ("settled", &setup_settled_state, false),
+        ("funds_withdrawn", &setup_funds_withdrawn_state, false),
+        ("nfts_claim", &setup_nfts_claim_state, false),
+        ("zombie", &setup_zombie_state, false)
+    ];
 
-    // The methods which we would like to perform tests on
-    let authenticated_methods: Vec<String> = vec!["cancel_auction", "withdraw_payment"]
-        .iter()
-        .map(|x| x.to_string())
-        .collect::<Vec<String>>();
+    for (state_name, state_func, expected_result) in tests.iter() {
+        // Setting up the state for this test
+        let mut ledger: InMemorySubstateStore = InMemorySubstateStore::with_bootstrap();
+        let mut env: Environment = Environment::new(&mut ledger, 10);
+        let (
+            component_address,
+            ownership_badge, 
+            _internal_admin, 
+            _bidders_badge
+        ): (ComponentAddress, ResourceAddress, ResourceAddress, ResourceAddress) = state_func(&mut env);
 
-    // Calls to methods should fail with an authorization error when the correct badge is not provided.
-    for method_name in authenticated_methods.iter() {
-        let method_tx: SignedTransaction = TransactionBuilder::new() 
-            .call_method(component_address, method_name, args![])
+        // Performing the actual transaction for the test.
+        let transaction: SignedTransaction = TransactionBuilder::new()
+            .call_method(component_address, "determine_winner", args![])
+            .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
             .build(env.executor.get_nonce([env.admin_account.public_key]))
             .sign([&env.admin_account.private_key]);
-        let method_receipt: Receipt = env.executor.validate_and_execute(&method_tx).unwrap();
-        
-        let runtime_error: RuntimeError = method_receipt.result.expect_err("Transaction should fail");
-        assert_auth_error!(runtime_error);
-    }
-    
-    // Calls to methods should fail with an invoke error when the correct badge is provided (but args are messed up)
-    for method_name in authenticated_methods.iter() {
-        let method_tx: SignedTransaction = TransactionBuilder::new() 
-            .create_proof_from_account_by_amount(dec!("1"), ownership_badge, env.admin_account.component_address)
-            .call_method(component_address, method_name, args![])
-            .build(env.executor.get_nonce([env.admin_account.public_key]))
-            .sign([&env.admin_account.private_key]);
-        let method_receipt: Receipt = env.executor.validate_and_execute(&method_tx).unwrap();
-        
-        let runtime_error: RuntimeError = method_receipt.result.expect_err("Transaction should fail");
-        if matches!(
-            runtime_error,
-            RuntimeError::AuthorizationError {
-                authorization: _,
-                function: _,
-                error: ::radix_engine::model::MethodAuthorizationError::NotAuthorized
-            }
-        ) {
-            panic!("Found an unexpected authorization error");
-        }
+        let receipt: Receipt = env.executor.validate_and_execute(&transaction).unwrap();
+
+        // Checking that the behavior is as expected.
+        let expected_result_string: &str = if expected_result.clone() {"succeed"} else {"fail"};
+        let assertion_error: String = format!("Expected \"{}\" state test to {} but it did not", state_name, expected_result_string);
+
+        if expected_result.clone() {
+            receipt.result.expect(assertion_error.as_str());
+        } else {
+            receipt.result.expect_err(assertion_error.as_str());
+        };
     }
 }
 
@@ -512,7 +643,7 @@ fn setup_locked_state(
     // Making multiple bids
     let bidding_tx: SignedTransaction = TransactionBuilder::new()
         .withdraw_from_account_by_amount(
-            dec!("1000"), 
+            dec!("1000000"), 
             RADIX_TOKEN, 
             environment.admin_account.component_address
         )
@@ -525,13 +656,15 @@ fn setup_locked_state(
         .take_from_worktop_by_amount(dec!("300"), RADIX_TOKEN, |builder, bucket_id| {
             builder.call_method(component_address, "bid", args![scrypto::resource::Bucket(bucket_id)])
         })
+        // Account 0 has the losing bids.
         .take_from_worktop(bidders_badge, |builder, bucket_id| {
             builder.call_method(environment.accounts[0].component_address, "deposit", args![scrypto::resource::Bucket(bucket_id)])
         })
-        .take_from_worktop_by_amount(dec!("400"), RADIX_TOKEN, |builder, bucket_id| {
+        // Account 1 has the winning bids
+        .take_from_worktop(RADIX_TOKEN, |builder, bucket_id| {
             builder.call_method(component_address, "bid", args![scrypto::resource::Bucket(bucket_id)])
         })
-        .call_method_with_all_resources(environment.admin_account.component_address, "deposit_batch")
+        .call_method_with_all_resources(environment.accounts[1].component_address, "deposit_batch")
         .build(environment.executor.get_nonce([environment.admin_account.public_key]))
         .sign([&environment.admin_account.private_key]);
     let bidding_receipt: Receipt = environment.executor.validate_and_execute(&bidding_tx).unwrap();
@@ -621,13 +754,13 @@ fn setup_nfts_claim_state(
 
     // Withdrawing the nfts so that the component is now completely empty of nfts
     let withdraw_nfts_tx: SignedTransaction = TransactionBuilder::new()
-        .withdraw_from_account(bidders_badge, environment.admin_account.component_address)
+        .withdraw_from_account(bidders_badge, environment.accounts[1].component_address)
         .take_from_worktop(bidders_badge, |builder, bucket_id| {
             builder.call_method(component_address, "claim_nfts", args![scrypto::resource::Bucket(bucket_id)])
         })
-        .call_method_with_all_resources(environment.admin_account.component_address, "deposit_batch")
-        .build(environment.executor.get_nonce([environment.admin_account.public_key]))
-        .sign([&environment.admin_account.private_key]);
+        .call_method_with_all_resources(environment.accounts[1].component_address, "deposit_batch")
+        .build(environment.executor.get_nonce([environment.accounts[1].public_key]))
+        .sign([&environment.accounts[1].private_key]);
     let withdraw_nfts_receipt: Receipt = environment.executor.validate_and_execute(&withdraw_nfts_tx).unwrap();
     assert!(withdraw_nfts_receipt.result.is_ok());
 
@@ -653,13 +786,13 @@ fn setup_zombie_state(
 
     // Withdrawing the nfts so that the component is now completely empty of nfts
     let withdraw_nfts_tx: SignedTransaction = TransactionBuilder::new()
-        .withdraw_from_account(bidders_badge, environment.admin_account.component_address)
+        .withdraw_from_account(bidders_badge, environment.accounts[1].component_address)
         .take_from_worktop(bidders_badge, |builder, bucket_id| {
             builder.call_method(component_address, "claim_nfts", args![scrypto::resource::Bucket(bucket_id)])
         })
-        .call_method_with_all_resources(environment.admin_account.component_address, "deposit_batch")
-        .build(environment.executor.get_nonce([environment.admin_account.public_key]))
-        .sign([&environment.admin_account.private_key]);
+        .call_method_with_all_resources(environment.accounts[1].component_address, "deposit_batch")
+        .build(environment.executor.get_nonce([environment.accounts[1].public_key]))
+        .sign([&environment.accounts[1].private_key]);
     let withdraw_nfts_receipt: Receipt = environment.executor.validate_and_execute(&withdraw_nfts_tx).unwrap();
     assert!(withdraw_nfts_receipt.result.is_ok());
 
