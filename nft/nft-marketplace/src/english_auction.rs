@@ -525,14 +525,8 @@ blueprint! {
         /// * **Check 2:** Checks that no winner has been selected so far.
         pub fn determine_winner(&mut self) {
             // Performing the required checks before determining the winner
-            assert!(
-                self.has_auction_ended(),
-                "[Determine Winner]: The auction has not yet ended"
-            );
-            assert!(
-                !self.is_winner_determined(),
-                "[Determine Winner]: This auction already has a winner."
-            );
+            assert!(self.has_auction_ended(), "[Determine Winner]: The auction has not yet ended");
+            assert!(!self.is_winner_determined(), "[Determine Winner]: This auction already has a winner.");
 
             // At this point we can determine the winner of the bid. Here we determine the non-fungible key associated
             // with the vault that holds the most amount of tokens

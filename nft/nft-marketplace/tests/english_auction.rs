@@ -456,7 +456,6 @@ pub fn test_non_winner_claim_nfts(){
             .build(env.executor.get_nonce([env.accounts[0].public_key]))
             .sign([&env.accounts[0].private_key]);
         let receipt: Receipt = env.executor.validate_and_execute(&transaction).unwrap();
-        println!("At state: {}: {:?}", state_name, receipt);
 
         // Checking that the behavior is as expected.
         let expected_result_string: &str = if expected_result.clone() {"succeed"} else {"fail"};
@@ -524,7 +523,6 @@ pub fn test_winner_claim_nfts(){
             .build(env.executor.get_nonce([env.accounts[1].public_key]))
             .sign([&env.accounts[1].private_key]);
         let receipt: Receipt = env.executor.validate_and_execute(&transaction).unwrap();
-        println!("At state: {}: {:?}", state_name, receipt);
 
         // Checking that the behavior is as expected.
         let expected_result_string: &str = if expected_result.clone() {"succeed"} else {"fail"};
