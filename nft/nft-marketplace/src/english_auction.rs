@@ -706,3 +706,10 @@ struct BidderBadge {
     #[scrypto(mutable)]
     is_winner: bool,
 }
+
+enum AuctionState {
+    Open,
+    Locked,
+    Settled,
+    Canceled,
+}

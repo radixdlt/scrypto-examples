@@ -30,7 +30,8 @@ pub static BIDDING_PERIOD: u64 = 50u64;
 pub fn state_setup_works(){
     let funcs: Vec<&dyn Fn(&mut Environment) -> (ComponentAddress, ResourceAddress, ResourceAddress, ResourceAddress)> = vec![
         &setup_open_state, 
-        &setup_locked_state,
+        &setup_locked_state_with_bids,
+        &setup_locked_state_without_bids,
         &setup_settled_state,
         &setup_funds_withdrawn_state,
         &setup_nfts_claim_state,
@@ -53,7 +54,8 @@ pub fn test_auction_cancellation(){
         bool // This is a boolean of whether this test should succeed or fail
     )> = vec![
         ("open", &setup_open_state, true),
-        ("locked", &setup_locked_state, false),
+        ("locked_with_bids", &setup_locked_state_with_bids, false),
+        ("locked_without_bids", &setup_locked_state_without_bids, false),
         ("settled", &setup_settled_state, false),
         ("funds_withdrawn", &setup_funds_withdrawn_state, false),
         ("nfts_claim", &setup_nfts_claim_state, false),
@@ -101,7 +103,7 @@ pub fn test_payment_withdrawal(){
         bool // This is a boolean of whether this test should succeed or fail
     )> = vec![
         ("open", &setup_open_state, false),
-        ("locked", &setup_locked_state, false),
+        ("locked_with_bids", &setup_locked_state_with_bids, false),
         ("settled", &setup_settled_state, true),
         ("funds_withdrawn", &setup_funds_withdrawn_state, true),
         ("nfts_claim", &setup_nfts_claim_state, true),
@@ -149,7 +151,7 @@ pub fn test_bidding(){
         bool // This is a boolean of whether this test should succeed or fail
     )> = vec![
         ("open", &setup_open_state, true),
-        ("locked", &setup_locked_state, false),
+        ("locked_with_bids", &setup_locked_state_with_bids, false),
         ("settled", &setup_settled_state, false),
         ("funds_withdrawn", &setup_funds_withdrawn_state, false),
         ("nfts_claim", &setup_nfts_claim_state, false),
@@ -203,7 +205,7 @@ pub fn test_increase_bid(){
         bool // This is a boolean of whether this test should succeed or fail
     )> = vec![
         ("open", &setup_open_state, true),
-        ("locked", &setup_locked_state, false),
+        ("locked_with_bids", &setup_locked_state_with_bids, false),
         ("settled", &setup_settled_state, false),
         ("funds_withdrawn", &setup_funds_withdrawn_state, false),
         ("nfts_claim", &setup_nfts_claim_state, false),
@@ -274,7 +276,7 @@ pub fn test_non_winner_cancel_bid(){
         bool // This is a boolean of whether this test should succeed or fail
     )> = vec![
         ("open", &setup_open_state, true),
-        ("locked", &setup_locked_state, false),
+        ("locked_with_bids", &setup_locked_state_with_bids, false),
         ("settled", &setup_settled_state, true),
         ("funds_withdrawn", &setup_funds_withdrawn_state, true),
         ("nfts_claim", &setup_nfts_claim_state, true),
@@ -341,7 +343,7 @@ pub fn test_winner_cancel_bid(){
         bool // This is a boolean of whether this test should succeed or fail
     )> = vec![
         ("open", &setup_open_state, true),
-        ("locked", &setup_locked_state, false),
+        ("locked_with_bids", &setup_locked_state_with_bids, false),
         ("settled", &setup_settled_state, false),
         ("funds_withdrawn", &setup_funds_withdrawn_state, false),
         ("nfts_claim", &setup_nfts_claim_state, false),
@@ -410,7 +412,7 @@ pub fn test_non_winner_claim_nfts(){
         bool // This is a boolean of whether this test should succeed or fail
     )> = vec![
         ("open", &setup_open_state, false),
-        ("locked", &setup_locked_state, false),
+        ("locked_with_bids", &setup_locked_state_with_bids, false),
         ("settled", &setup_settled_state, false),
         ("funds_withdrawn", &setup_funds_withdrawn_state, false),
         ("nfts_claim", &setup_nfts_claim_state, false),
@@ -477,7 +479,7 @@ pub fn test_winner_claim_nfts(){
         bool // This is a boolean of whether this test should succeed or fail
     )> = vec![
         ("open", &setup_open_state, false),
-        ("locked", &setup_locked_state, false),
+        ("locked_with_bids", &setup_locked_state_with_bids, false),
         ("settled", &setup_settled_state, true),
         ("funds_withdrawn", &setup_funds_withdrawn_state, true),
         ("nfts_claim", &setup_nfts_claim_state, false),
@@ -545,7 +547,7 @@ pub fn test_determine_winner(){
         bool // This is a boolean of whether this test should succeed or fail
     )> = vec![
         ("open", &setup_open_state, false),
-        ("locked", &setup_locked_state, true),
+        ("locked_with_bids", &setup_locked_state_with_bids, true),
         ("settled", &setup_settled_state, false),
         ("funds_withdrawn", &setup_funds_withdrawn_state, false),
         ("nfts_claim", &setup_nfts_claim_state, false),
@@ -627,7 +629,7 @@ fn setup_open_state(
     );
 }
 
-fn setup_locked_state(
+fn setup_locked_state_with_bids(
     environment: &mut Environment
 ) -> (ComponentAddress, ResourceAddress, ResourceAddress, ResourceAddress) {
     // Using the `setup_open_state` to move setup the open state so we can move forward on the state to the next state.
@@ -680,6 +682,29 @@ fn setup_locked_state(
     )
 }
 
+fn setup_locked_state_without_bids(
+    environment: &mut Environment
+) -> (ComponentAddress, ResourceAddress, ResourceAddress, ResourceAddress) {
+    // Using the `setup_open_state` to move setup the open state so we can move forward on the state to the next state.
+    let (
+        component_address,
+        ownership_badge, 
+        internal_admin, 
+        bidders_badge
+    ): (ComponentAddress, ResourceAddress, ResourceAddress, ResourceAddress) = setup_open_state(environment);
+
+    // Advancing the epochs by the `BIDDING_PERIOD`
+    environment.executor.substate_store_mut().set_epoch(BIDDING_PERIOD + 1);
+
+    // At the current moment of time the component should be locked. The addresses may now be returned.
+    return (
+        component_address,
+        ownership_badge, 
+        internal_admin, 
+        bidders_badge
+    )
+}
+
 fn setup_settled_state(
     environment: &mut Environment
 ) -> (ComponentAddress, ResourceAddress, ResourceAddress, ResourceAddress) {
@@ -689,7 +714,7 @@ fn setup_settled_state(
         ownership_badge, 
         internal_admin, 
         bidders_badge
-    ): (ComponentAddress, ResourceAddress, ResourceAddress, ResourceAddress) = setup_locked_state(environment);
+    ): (ComponentAddress, ResourceAddress, ResourceAddress, ResourceAddress) = setup_locked_state_with_bids(environment);
 
     // Calling the method used to determine the winner
     let determine_winner_tx: SignedTransaction = TransactionBuilder::new()
