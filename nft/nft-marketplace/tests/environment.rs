@@ -1,9 +1,9 @@
-use scrypto::crypto::{EcdsaPublicKey, EcdsaPrivateKey};
+use scrypto::crypto::{EcdsaPrivateKey, EcdsaPublicKey};
 use scrypto::prelude::*;
 
-use radix_engine::model::{SignedTransaction, Receipt};
-use radix_engine::transaction::*;
 use radix_engine::ledger::*;
+use radix_engine::model::{Receipt, SignedTransaction};
+use radix_engine::transaction::*;
 
 /// A struct which defines the environment used for testing.
 pub struct Environment<'a> {
@@ -28,28 +28,31 @@ pub struct Environment<'a> {
 impl<'a> Environment<'a> {
     pub fn new(ledger: &'a mut InMemorySubstateStore, number_of_accounts: u8) -> Self {
         // Setting up the executor from the substate store
-        let mut executor: TransactionExecutor<InMemorySubstateStore> = TransactionExecutor::new(ledger, false);
-        
+        let mut executor: TransactionExecutor<InMemorySubstateStore> =
+            TransactionExecutor::new(ledger, false);
+
         // Publishing the package and getting it's address.
         let package: PackageAddress = executor.publish_package(compile_package!()).unwrap();
 
         // Creating the admin account
-        let (pk, sk, account): (EcdsaPublicKey, EcdsaPrivateKey, ComponentAddress) = executor.new_account();
+        let (pk, sk, account): (EcdsaPublicKey, EcdsaPrivateKey, ComponentAddress) =
+            executor.new_account();
         let admin_account: Account = Account {
             public_key: pk,
             private_key: sk,
-            component_address: account
+            component_address: account,
         };
 
         // Creating the required number of accounts
         let accounts: Vec<Account> = (0..number_of_accounts)
             .into_iter()
             .map(|_| {
-                let (pk, sk, account): (EcdsaPublicKey, EcdsaPrivateKey, ComponentAddress) = executor.new_account();
+                let (pk, sk, account): (EcdsaPublicKey, EcdsaPrivateKey, ComponentAddress) =
+                    executor.new_account();
                 Account {
                     public_key: pk,
                     private_key: sk,
-                    component_address: account
+                    component_address: account,
                 }
             })
             .collect::<Vec<Account>>();
@@ -61,7 +64,9 @@ impl<'a> Environment<'a> {
             .build(executor.get_nonce([admin_account.public_key]))
             .sign([&admin_account.private_key]);
         let bootstrap_receipt: Receipt = executor.validate_and_execute(&bootstrap_tx).unwrap();
-        bootstrap_receipt.result.expect("Bootstrap transaction failed");
+        bootstrap_receipt
+            .result
+            .expect("Bootstrap transaction failed");
 
         // Getting the addresses of the newly created NFTs
         let (car, phone, laptop): (ResourceAddress, ResourceAddress, ResourceAddress) = (
@@ -87,16 +92,17 @@ impl<'a> Environment<'a> {
 pub struct Account {
     pub public_key: EcdsaPublicKey,
     pub private_key: EcdsaPrivateKey,
-    pub component_address: ComponentAddress
+    pub component_address: ComponentAddress,
 }
 
 impl Account {
     pub fn new<T: SubstateStore>(executor: &mut TransactionExecutor<T>) -> Self {
-        let (pk, sk, account): (EcdsaPublicKey, EcdsaPrivateKey, ComponentAddress) = executor.new_account();
+        let (pk, sk, account): (EcdsaPublicKey, EcdsaPrivateKey, ComponentAddress) =
+            executor.new_account();
         Self {
             public_key: pk,
             private_key: sk,
-            component_address: account
+            component_address: account,
         }
     }
 }
@@ -107,13 +113,13 @@ impl Clone for Account {
         Self {
             public_key: self.public_key.clone(),
             private_key: EcdsaPrivateKey::from_bytes(&self.private_key.to_bytes()[0..32]).unwrap(),
-            component_address: self.component_address.clone()
+            component_address: self.component_address.clone(),
         }
     }
 }
 
 #[test]
-pub fn test_env(){
+pub fn test_env() {
     let mut ledger: InMemorySubstateStore = InMemorySubstateStore::with_bootstrap();
     Environment::new(&mut ledger, 10);
 }
