@@ -46,6 +46,9 @@ blueprint! {
     }
 
     impl EnglishAuction{
+        // =============================================================================================================
+        // The following are methods which only the seller (auctioneer) needs and can call.
+        // =============================================================================================================
 
         /// Instantiates a new english auction sale for the passed NFTs.
         ///
@@ -185,6 +188,323 @@ blueprint! {
             return (english_auction_sale, ownership_badge);
         }
 
+        /// Cancels the auctioning of tokens and returns them back to their owner.
+        ///
+        /// This method performs a single check before canceling the auction.
+        ///
+        /// * **Check 1:** Checks that the auction is either `Open` or `Canceled`. 
+        ///
+        /// # Returns:
+        ///
+        /// * `Vec<Bucket>` - A vector of buckets of the non-fungible tokens which were being sold.
+        ///
+        /// # Note:
+        ///
+        /// * This is an authenticated method which may only be called by the holder of the `ownership_badge`.
+        pub fn cancel_auction(&mut self) -> Vec<Bucket> {
+            // Mandatory call to ensure that the `ensure_auction_settlement` method to ensure that if the conditions are
+            // met, that the auction will proceed to the next stage/state.
+            self.ensure_auction_settlement();
+
+            // Checking if the auction can be canceled.
+            assert!(
+                matches!(self.state, AuctionState::Open) || matches!(self.state, AuctionState::Canceled),
+                "[Cancel Auction]: Can not cancel the auction unless we're still "
+            );
+
+            // At this point we know that the auction can be canceled. So, we withdraw the NFTs and return them to the
+            // caller
+            self.state = AuctionState::Canceled;
+            
+            let resource_addresses: Vec<ResourceAddress> =
+                self.nft_vaults.keys().cloned().collect();
+            let mut tokens: Vec<Bucket> = Vec::new();
+            for resource_address in resource_addresses.into_iter() {
+                tokens.push(
+                    self.nft_vaults
+                        .get_mut(&resource_address)
+                        .unwrap()
+                        .take_all(),
+                )
+            }
+
+            return tokens;
+        }
+
+        /// Withdraws the payment owed from the sale.
+        ///
+        /// This method performs a single check before canceling the sale:
+        ///
+        /// * **Check 1:** Checks that the auction is settled.
+        ///
+        /// # Returns:
+        ///
+        /// * `Bucket` - A bucket containing the payment.
+        ///
+        /// # Note:
+        ///
+        /// * This is an authenticated method which may only be called by the holder of the `ownership_badge`.
+        /// * There is no danger in not checking if the sale has occurred or not and attempting to return the tokens
+        /// anyway. If we do not have the payment tokens then the worst case scenario would be that an empty bucket is
+        /// returned. This is bad from a UX point of view but does not pose any security risk.
+        pub fn withdraw_payment(&mut self) -> Bucket {
+            // Mandatory call to ensure that the `ensure_auction_settlement` method to ensure that if the conditions are
+            // met, that the auction will proceed to the next stage/state.
+            self.ensure_auction_settlement();
+
+            // Checking if the payment can be withdrawn
+            assert!(
+                matches!(self.state, AuctionState::Settled),
+                "[Withdraw Payment]: The payment can only be withdrawn when the auction is settled"
+            );
+
+            // At this point we know that the payment can be withdrawn
+            return self.payment_vault.take_all();
+        }
+
+        // =============================================================================================================
+        // The following are methods which only bidders need and can call.
+        // =============================================================================================================
+        
+        /// Allows the caller to Bid in this auction.
+        ///
+        /// This method allows the caller to bid in this auction with their funds. This method will lock up the bidding
+        /// funds and provide the caller with a Bidder's badge in return. The locked up funds can be unlocked at any
+        /// point before the auction ends without any issues. However, after the auction ends, the locked up funds may
+        /// only be unlocked if the bidder did not win the bid.
+        ///
+        /// This method performs a number of checks before the bid can be made:
+        ///
+        /// * **Check 1:** Checks that the auction is in the `Open` state. 
+        ///
+        /// # Arguments:
+        ///
+        /// * `funds` (Bucket) - A bucket of the funds to bid.
+        ///
+        /// # Returns:
+        ///
+        /// * `Bucket` - A bucket of the bidder's badge.
+        pub fn bid(&mut self, funds: Bucket) -> Bucket {
+            // Mandatory call to ensure that the `ensure_auction_settlement` method to ensure that if the conditions are
+            // met, that the auction will proceed to the next stage/state.
+            self.ensure_auction_settlement();
+
+            // Performing checks to ensure that the bid can be added
+            assert!(
+                matches!(self.state, AuctionState::Open),
+                "[Bid]: Bids may only be added while the auction is open."
+            );
+
+            // At this point we know that a bid can be added.
+
+            // Issuing a bidder's NFT to this bidder with information on the amount that they're bidding
+            let non_fungible_id: NonFungibleId = NonFungibleId::random();
+
+            let bidders_badge: Bucket = self.internal_admin_badge.authorize(|| {
+                let bidders_resource_manager: &ResourceManager =
+                    borrow_resource_manager!(self.bidders_badge);
+                bidders_resource_manager.mint_non_fungible(
+                    &non_fungible_id.clone(),
+                    BidderBadge {
+                        bid_amount: funds.amount(),
+                        is_winner: false,
+                    },
+                )
+            });
+
+            // Taking the bidder's funds and depositing them into a newly created vault where their funds will now live
+            self.bid_vaults
+                .insert(non_fungible_id, Vault::with_bucket(funds));
+
+            // Returning the bidder's badge back to the caller
+            return bidders_badge;
+        }
+
+        /// Allows a bidder to increase their Bid.
+        ///
+        /// This is an authenticated which which allows bidders to increase the amount that they are bidding in the
+        /// auction to increase their chances of winning the bid.
+        ///
+        /// This method performs a number of checks before the bid can be increased:
+        ///
+        /// * **Check 1:** Checks that the auction is in the `Open` state.
+        /// * **Check 2:** Checks that the payment was provided in the required token.
+        /// * **Check 3:** Checks that the badge provided is a valid bidder's badge.
+        /// * **Check 4:** Checks that the `Proof` contains a single bidder's badge.
+        ///
+        /// # Arguments:
+        ///
+        /// * `funds` (Bucket) - A bucket of the funds the bidder wishes to add to their bid.
+        /// * `bidders_badge` (Proof) - A `Proof` of the bidder's badge.
+        pub fn increase_bid(&mut self, funds: Bucket, bidders_badge: Proof) {
+            // Mandatory call to ensure that the `ensure_auction_settlement` method to ensure that if the conditions are
+            // met, that the auction will proceed to the next stage/state.
+            self.ensure_auction_settlement();
+            
+            // Checking if the bid can be increased or not.
+            assert!(
+                matches!(self.state, AuctionState::Open),
+                "[Increase Bid]: Bids may only be increased while the auction is open."
+            );
+            assert_eq!(
+                funds.resource_address(),
+                self.accepted_payment_token,
+                "[Increase Bid]: Invalid tokens were provided as bid. Bids are only allowed in {}",
+                self.accepted_payment_token
+            );
+
+            assert_eq!(
+                bidders_badge.resource_address(),
+                self.bidders_badge,
+                "[Increase Bid]: Badge provided is not a valid bidder's badge"
+            );
+            assert_eq!(
+                bidders_badge.amount(), Decimal::one(),
+                "[Increase Bid]: This method requires that exactly one bidder's badge is passed to the method"
+            );
+
+            // At this point we know that the bidder's bid can be increased.
+
+            // Updating the metadata of the bidder's badge to reflect on the update of the bidder's bid
+            self.internal_admin_badge.authorize(|| {
+                let mut bidders_badge_data: BidderBadge = bidders_badge.non_fungible().data();
+                bidders_badge_data.bid_amount += funds.amount();
+                bidders_badge.non_fungible().update_data(bidders_badge_data);
+            });
+
+            // Adding the funds to the vault of the bidder
+            self.bid_vaults
+                .get_mut(&bidders_badge.non_fungible::<BidderBadge>().id())
+                .unwrap()
+                .put(funds);
+        }
+
+        /// Allows bidders to cancel their bids.
+        ///
+        /// This method allows bidders to cancel their bids, burning their badge in the process and taking out the funds
+        /// which were locked up in the component for the bid.
+        ///
+        /// A bid may be canceled in one of the following situations:
+        ///
+        /// 1. Before the auction has ended if the bidder is no longer interested in bidding in this auction.
+        /// 2. After the end of the auction if the bidder is not the winner of the auction.
+        ///
+        /// This method performs a number of checks before the bid is cancelled
+        ///
+        /// * **Check 1:** Checks that the auction is in the `Open` state.
+        /// * **Check 2:** Checks that the badge provided is a valid bidder's badge.
+        /// * **Check 3:** Checks that the `Proof` contains a single bidder's badge.
+        /// * **Check 4:** Checks that the badge provided is not the winner's badge.
+        ///
+        /// # Arguments:
+        ///
+        /// * `bidders_badge` (Bucket) - A `Bucket` of the bidder's badge.
+        ///
+        /// # Returns:
+        ///
+        /// * `Bucket` - A bucket of the funds owed to the bidder.
+        pub fn cancel_bid(&mut self, bidders_badge: Bucket) -> Bucket {
+            // Mandatory call to ensure that the `ensure_auction_settlement` method to ensure that if the conditions are
+            // met, that the auction will proceed to the next stage/state.
+            self.ensure_auction_settlement();
+
+            // Checking if the bid can be canceled or not.
+            assert!(
+                matches!(self.state, AuctionState::Open),
+                "[Cancel Bid]: Bids may only be canceled while the auction is open."
+            );
+            assert_eq!(
+                bidders_badge.resource_address(),
+                self.bidders_badge,
+                "[Cancel Bid]: Badge provided is not a valid bidder's badge"
+            );
+            assert_eq!(
+                bidders_badge.amount(), Decimal::one(),
+                "[Cancel Bid]: This method requires that exactly one bidder's badge is passed to the method"
+            );
+            assert!(
+                !bidders_badge.non_fungible::<BidderBadge>().data().is_winner,
+                "[Cancel Bid]: You can not cancel your bid after winning the auction."
+            );
+            // At this point we know that the bid cancellation can go on.
+            // Take out the bidder's funds from their vault
+            let funds: Bucket = self
+                .bid_vaults
+                .get_mut(&bidders_badge.non_fungible::<BidderBadge>().id())
+                .unwrap()
+                .take_all();
+            // This bidder will no longer need their badge. We can now safely burn the badge.
+            self.internal_admin_badge.authorize(|| bidders_badge.burn());
+            // The bidder's funds may now be returned to them
+            return funds;
+        }
+
+        /// Allows the winning bidder to claim their NFTs.
+        ///
+        /// This is a method which allows the winning bidder to claim their NFTs from the component. This method
+        /// requires that the bidder passes a bucket with their winning bidder's badge which is burned and in exchange
+        /// for that, the caller is given the NFTs which had been locked up in this component.
+        ///
+        /// This method performs a number of checks before unlocking the NFTs:
+        ///
+        /// * **Check 1:** Checks that the auction state is `Settled`.
+        /// * **Check 2:** Checks that the badge provided is a valid bidder's badge.
+        /// * **Check 3:** Checks that the `Proof` contains a single bidder's badge.
+        /// * **Check 4:** Checks that the badge provided is the winner's badge.
+        ///
+        /// # Arguments:
+        ///
+        /// * `bidders_badge` (Bucket) - A `Bucket` of the bidder's badge.
+        ///
+        /// # Returns:
+        ///
+        /// * `Vec<Bucket>` - A vector of buckets of the non-fungible tokens which were being auctioned.
+        pub fn claim_nfts(&mut self, bidders_badge: Bucket) -> Vec<Bucket> {
+            // Mandatory call to ensure that the `ensure_auction_settlement` method to ensure that if the conditions are
+            // met, that the auction will proceed to the next stage/state.
+            self.ensure_auction_settlement();
+
+            // Checking if the NFTs in this component can be claimed
+            assert!(
+                matches!(self.state, AuctionState::Settled),
+                "[Claim NFTs]: NFTs can only be claimed when the auction has settled."
+            );
+
+            assert_eq!(
+                bidders_badge.resource_address(),
+                self.bidders_badge,
+                "[Claim NFTs]: Badge provided is not a valid bidder's badge"
+            );
+            assert_eq!(
+                bidders_badge.amount(), Decimal::one(),
+                "[Claim NFTs]: This method requires that exactly one bidder's badge is passed to the method"
+            );
+            assert!(
+                bidders_badge.non_fungible::<BidderBadge>().data().is_winner,
+                "[Claim NFTs]: Badge provided is not the winner's badge."
+            );
+
+            // At this point we know that the NFTs can be claimed from the component
+
+            // We can safely burn the bidder's badge at this point as it is no longer needed by the bidder.
+            self.internal_admin_badge.authorize(|| bidders_badge.burn());
+
+            // Getting all of the NFTs from the auction and returning them to the caller
+            let resource_addresses: Vec<ResourceAddress> =
+                self.nft_vaults.keys().cloned().collect();
+            let mut tokens: Vec<Bucket> = Vec::new();
+            for resource_address in resource_addresses.into_iter() {
+                tokens.push(
+                    self.nft_vaults
+                        .get_mut(&resource_address)
+                        .unwrap()
+                        .take_all(),
+                )
+            }
+
+            return tokens;
+        }
+
         /// Attempts to transition the state from Open to Settled.
         ///
         /// The transition of state from `Open` to `Settled` happens when enough epochs pass; therefore, there is no
@@ -235,6 +555,8 @@ blueprint! {
                                 .unwrap()
                                 .take_all(),
                         );
+
+                        self.state = AuctionState::Settled
                     } else {
                         self.state = AuctionState::Canceled
                     }
@@ -271,9 +593,23 @@ struct BidderBadge {
 
 /// The English auction is by definition stateful and during different periods and states of the auction different
 /// actions may be allowed or disallowed. This enum describes the state of the English auction component.
-#[derive(Encode, Decode, TypeId, Describe)]
+#[derive(Encode, Decode, TypeId, Describe, Debug)]
 enum AuctionState {
+    /// An auction is said to be open if the end epoch of the auction has not yet passed and if the seller has not 
+    /// decided to cancel their auction. During the `Open` state, bidders can submit bids, increase their bids, or 
+    /// cancel their bids if they wish to do so. Also, during this period, the seller is free to cancel the auction at
+    /// any point during this period. 
     Open,
+
+    /// An auction is said to be settled if the period of the auction has ended and we have successfully been able to 
+    /// determine a winner of the auction. If the auction had not bids then it is not possible for it to be settled. 
+    /// When an auction is in this state, the seller can withdraw the payment that they've received from auctioning off
+    /// their tokens. The bidders who did not win the bid can withdraw and cancel their bids, and the bidder who won the
+    /// bid can no longer withdraw their funds, only their NFTs.
     Settled,
+
+    /// An auction is said to be canceled if the seller decided that they no longer with to sell their NFTs during the 
+    /// period in which the auction is open. Or, if there are no bids on the auction and therefore it had to be 
+    /// canceled.
     Canceled,
 }
