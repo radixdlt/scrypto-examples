@@ -5,7 +5,7 @@ use scrypto::prelude::*;
 use radix_engine::ledger::*;
 use radix_engine::model::{Receipt, SignedTransaction};
 use radix_engine::transaction::*;
-use tiered_fund::WithdrawLimit;
+use limited_withdraw_vault::WithdrawLimit;
 
 #[test]
 pub fn withdraw_limit_arithmetic_is_correct() {
@@ -41,14 +41,14 @@ pub fn authed_methods_require_correct_badge() {
     let access_rule: AccessRule = rule!(require(badge1) && require(badge2));
 
     let custom_auth_component: ComponentAddress =
-        env.new_custom_tiered_fund(RADIX_TOKEN, access_rule.clone());
+        env.new_custom_limited_withdraw_vault(RADIX_TOKEN, access_rule.clone());
 
     // Iterating over the authed methods and ensuring that all of their transactions end with an AuthorizationError
     let authed_methods: Vec<&str> = vec![
-        "add_tier",
-        "remove_tier",
-        "reset_tier_history",
-        "update_tier_limit",
+        "add_withdraw_authority",
+        "remove_withdraw_authority",
+        "reset_withdraw_history_of_authority",
+        "update_withdraw_authority_limit",
     ];
     for method_name in authed_methods.iter() {
         let method_test_tx: SignedTransaction = TransactionBuilder::new()
@@ -98,7 +98,7 @@ pub fn non_authed_methods_dont_require_a_badge() {
     let access_rule: AccessRule = rule!(require(badge1) && require(badge2));
 
     let custom_auth_component: ComponentAddress =
-        env.new_custom_tiered_fund(RADIX_TOKEN, access_rule.clone());
+        env.new_custom_limited_withdraw_vault(RADIX_TOKEN, access_rule.clone());
 
     // Iterating over the authed methods and ensuring that all of their transactions end with an AuthorizationError
     let non_authed_methods: Vec<&str> = vec![
@@ -186,7 +186,7 @@ pub fn correct_badges_and_within_limit_succeeds() {
     let admin_access_rule: AccessRule = rule!(require(creator_badge1) && require(creator_badge2));
 
     let custom_auth_component: ComponentAddress =
-        env.new_custom_tiered_fund(RADIX_TOKEN, admin_access_rule.clone());
+        env.new_custom_limited_withdraw_vault(RADIX_TOKEN, admin_access_rule.clone());
     env.deposit_tokens_to_fund(
         custom_auth_component,
         env.accounts[0].clone(),
@@ -195,20 +195,20 @@ pub fn correct_badges_and_within_limit_succeeds() {
     );
 
     for (access_rule, withdraw_limit) in withdraw_limits.iter() {
-        let add_tier_tx: SignedTransaction = TransactionBuilder::new()
+        let add_withdraw_authority_tx: SignedTransaction = TransactionBuilder::new()
             .create_proof_from_account(creator_badge1, env.admin_account.component_address)
             .create_proof_from_account(creator_badge2, env.admin_account.component_address)
             .call_method(
                 custom_auth_component,
-                "add_tier",
+                "add_withdraw_authority",
                 args![access_rule.clone(), withdraw_limit.clone()],
             )
             .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
             .build(env.executor.get_nonce([env.admin_account.public_key]))
             .sign([&env.admin_account.private_key]);
-        let add_tier_receipt: Receipt = env.executor.validate_and_execute(&add_tier_tx).unwrap();
+        let add_withdraw_authority_receipt: Receipt = env.executor.validate_and_execute(&add_withdraw_authority_tx).unwrap();
 
-        assert!(add_tier_receipt.result.is_ok(), "Unable to add tier");
+        assert!(add_withdraw_authority_receipt.result.is_ok(), "Unable to add authority");
     }
 
     // Builds the transaction with the above proofs.
@@ -309,7 +309,7 @@ pub fn satisfy_two_or_more_rules_withdraws_maximum() {
     let admin_access_rule: AccessRule = rule!(require(creator_badge1) && require(creator_badge2));
 
     let custom_auth_component: ComponentAddress =
-        env.new_custom_tiered_fund(RADIX_TOKEN, admin_access_rule.clone());
+        env.new_custom_limited_withdraw_vault(RADIX_TOKEN, admin_access_rule.clone());
     env.deposit_tokens_to_fund(
         custom_auth_component,
         env.accounts[0].clone(),
@@ -318,20 +318,20 @@ pub fn satisfy_two_or_more_rules_withdraws_maximum() {
     );
 
     for (access_rule, withdraw_limit) in withdraw_limits.iter() {
-        let add_tier_tx: SignedTransaction = TransactionBuilder::new()
+        let add_withdraw_authority_tx: SignedTransaction = TransactionBuilder::new()
             .create_proof_from_account(creator_badge1, env.admin_account.component_address)
             .create_proof_from_account(creator_badge2, env.admin_account.component_address)
             .call_method(
                 custom_auth_component,
-                "add_tier",
+                "add_withdraw_authority",
                 args![access_rule.clone(), withdraw_limit.clone()],
             )
             .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
             .build(env.executor.get_nonce([env.admin_account.public_key]))
             .sign([&env.admin_account.private_key]);
-        let add_tier_receipt: Receipt = env.executor.validate_and_execute(&add_tier_tx).unwrap();
+        let add_withdraw_authority_receipt: Receipt = env.executor.validate_and_execute(&add_withdraw_authority_tx).unwrap();
 
-        assert!(add_tier_receipt.result.is_ok(), "Unable to add tier");
+        assert!(add_withdraw_authority_receipt.result.is_ok(), "Unable to add authority");
     }
 
     // Builds the transaction with the above proofs.
@@ -433,7 +433,7 @@ pub fn satisfy_two_or_more_rules_withdraws_maximum_and_drains_others() {
     let admin_access_rule: AccessRule = rule!(require(creator_badge1) && require(creator_badge2));
 
     let custom_auth_component: ComponentAddress =
-        env.new_custom_tiered_fund(RADIX_TOKEN, admin_access_rule.clone());
+        env.new_custom_limited_withdraw_vault(RADIX_TOKEN, admin_access_rule.clone());
     env.deposit_tokens_to_fund(
         custom_auth_component,
         env.accounts[0].clone(),
@@ -442,20 +442,20 @@ pub fn satisfy_two_or_more_rules_withdraws_maximum_and_drains_others() {
     );
 
     for (access_rule, withdraw_limit) in withdraw_limits.iter() {
-        let add_tier_tx: SignedTransaction = TransactionBuilder::new()
+        let add_withdraw_authority_tx: SignedTransaction = TransactionBuilder::new()
             .create_proof_from_account(creator_badge1, env.admin_account.component_address)
             .create_proof_from_account(creator_badge2, env.admin_account.component_address)
             .call_method(
                 custom_auth_component,
-                "add_tier",
+                "add_withdraw_authority",
                 args![access_rule.clone(), withdraw_limit.clone()],
             )
             .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
             .build(env.executor.get_nonce([env.admin_account.public_key]))
             .sign([&env.admin_account.private_key]);
-        let add_tier_receipt: Receipt = env.executor.validate_and_execute(&add_tier_tx).unwrap();
+        let add_withdraw_authority_receipt: Receipt = env.executor.validate_and_execute(&add_withdraw_authority_tx).unwrap();
 
-        assert!(add_tier_receipt.result.is_ok(), "Unable to add tier");
+        assert!(add_withdraw_authority_receipt.result.is_ok(), "Unable to add authority");
     }
 
     // Builds the transaction with the above proofs.
@@ -601,7 +601,7 @@ pub fn badges_may_withdraw_again_after_reset() {
     let admin_access_rule: AccessRule = rule!(require(creator_badge1) && require(creator_badge2));
 
     let custom_auth_component: ComponentAddress =
-        env.new_custom_tiered_fund(RADIX_TOKEN, admin_access_rule.clone());
+        env.new_custom_limited_withdraw_vault(RADIX_TOKEN, admin_access_rule.clone());
     env.deposit_tokens_to_fund(
         custom_auth_component,
         env.accounts[0].clone(),
@@ -610,20 +610,20 @@ pub fn badges_may_withdraw_again_after_reset() {
     );
 
     for (access_rule, withdraw_limit) in withdraw_limits.iter() {
-        let add_tier_tx: SignedTransaction = TransactionBuilder::new()
+        let add_withdraw_authority_tx: SignedTransaction = TransactionBuilder::new()
             .create_proof_from_account(creator_badge1, env.admin_account.component_address)
             .create_proof_from_account(creator_badge2, env.admin_account.component_address)
             .call_method(
                 custom_auth_component,
-                "add_tier",
+                "add_withdraw_authority",
                 args![access_rule.clone(), withdraw_limit.clone()],
             )
             .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
             .build(env.executor.get_nonce([env.admin_account.public_key]))
             .sign([&env.admin_account.private_key]);
-        let add_tier_receipt: Receipt = env.executor.validate_and_execute(&add_tier_tx).unwrap();
+        let add_withdraw_authority_receipt: Receipt = env.executor.validate_and_execute(&add_withdraw_authority_tx).unwrap();
 
-        assert!(add_tier_receipt.result.is_ok(), "Unable to add tier");
+        assert!(add_withdraw_authority_receipt.result.is_ok(), "Unable to add authority");
     }
 
     // Performing this twice and resetting the auth rule's history after each run to ensure that the reset of history
@@ -670,7 +670,7 @@ pub fn badges_may_withdraw_again_after_reset() {
             .create_proof_from_account(creator_badge2, env.admin_account.component_address)
             .call_method(
                 custom_auth_component,
-                "reset_tier_history",
+                "reset_withdraw_history_of_authority",
                 args![
                     rule!(
                         require_amount(dec!("20"), user_badge1)
@@ -751,7 +751,7 @@ pub fn removed_tier_can_nolonger_withdraw() {
     let admin_access_rule: AccessRule = rule!(require(creator_badge1) && require(creator_badge2));
 
     let custom_auth_component: ComponentAddress =
-        env.new_custom_tiered_fund(RADIX_TOKEN, admin_access_rule.clone());
+        env.new_custom_limited_withdraw_vault(RADIX_TOKEN, admin_access_rule.clone());
     env.deposit_tokens_to_fund(
         custom_auth_component,
         env.accounts[0].clone(),
@@ -760,29 +760,29 @@ pub fn removed_tier_can_nolonger_withdraw() {
     );
 
     for (access_rule, withdraw_limit) in withdraw_limits.iter() {
-        let add_tier_tx: SignedTransaction = TransactionBuilder::new()
+        let add_withdraw_authority_tx: SignedTransaction = TransactionBuilder::new()
             .create_proof_from_account(creator_badge1, env.admin_account.component_address)
             .create_proof_from_account(creator_badge2, env.admin_account.component_address)
             .call_method(
                 custom_auth_component,
-                "add_tier",
+                "add_withdraw_authority",
                 args![access_rule.clone(), withdraw_limit.clone()],
             )
             .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
             .build(env.executor.get_nonce([env.admin_account.public_key]))
             .sign([&env.admin_account.private_key]);
-        let add_tier_receipt: Receipt = env.executor.validate_and_execute(&add_tier_tx).unwrap();
+        let add_withdraw_authority_receipt: Receipt = env.executor.validate_and_execute(&add_withdraw_authority_tx).unwrap();
 
-        assert!(add_tier_receipt.result.is_ok(), "Unable to add tier");
+        assert!(add_withdraw_authority_receipt.result.is_ok(), "Unable to add authority");
     }
 
-    // Removing the tier
-    let remove_tier_tx: SignedTransaction = TransactionBuilder::new()
+    // Removing the authority
+    let remove_withdraw_authority_tx: SignedTransaction = TransactionBuilder::new()
         .create_proof_from_account(creator_badge1, env.admin_account.component_address)
         .create_proof_from_account(creator_badge2, env.admin_account.component_address)
         .call_method(
             custom_auth_component,
-            "remove_tier",
+            "remove_withdraw_authority",
             args![
                 rule!(
                     require_amount(dec!("20"), user_badge1)
@@ -794,9 +794,9 @@ pub fn removed_tier_can_nolonger_withdraw() {
         .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
         .build(env.executor.get_nonce([env.admin_account.public_key]))
         .sign([&env.admin_account.private_key]);
-    let remove_tier_receipt: Receipt = env.executor.validate_and_execute(&remove_tier_tx).unwrap();
+    let remove_withdraw_authority_receipt: Receipt = env.executor.validate_and_execute(&remove_withdraw_authority_tx).unwrap();
 
-    assert!(remove_tier_receipt.result.is_ok(), "Unable to add tier");
+    assert!(remove_withdraw_authority_receipt.result.is_ok(), "Unable to add authority");
 
     // Builds the transaction with the above proofs.
     let mut proof_ids: Vec<u32> = Vec::new();
@@ -896,7 +896,7 @@ pub fn more_funds_available_after_limit_increase() {
     let admin_access_rule: AccessRule = rule!(require(creator_badge1) && require(creator_badge2));
 
     let custom_auth_component: ComponentAddress =
-        env.new_custom_tiered_fund(RADIX_TOKEN, admin_access_rule.clone());
+        env.new_custom_limited_withdraw_vault(RADIX_TOKEN, admin_access_rule.clone());
     env.deposit_tokens_to_fund(
         custom_auth_component,
         env.accounts[0].clone(),
@@ -905,20 +905,20 @@ pub fn more_funds_available_after_limit_increase() {
     );
 
     for (access_rule, withdraw_limit) in withdraw_limits.iter() {
-        let add_tier_tx: SignedTransaction = TransactionBuilder::new()
+        let add_withdraw_authority_tx: SignedTransaction = TransactionBuilder::new()
             .create_proof_from_account(creator_badge1, env.admin_account.component_address)
             .create_proof_from_account(creator_badge2, env.admin_account.component_address)
             .call_method(
                 custom_auth_component,
-                "add_tier",
+                "add_withdraw_authority",
                 args![access_rule.clone(), withdraw_limit.clone()],
             )
             .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
             .build(env.executor.get_nonce([env.admin_account.public_key]))
             .sign([&env.admin_account.private_key]);
-        let add_tier_receipt: Receipt = env.executor.validate_and_execute(&add_tier_tx).unwrap();
+        let add_withdraw_authority_receipt: Receipt = env.executor.validate_and_execute(&add_withdraw_authority_tx).unwrap();
 
-        assert!(add_tier_receipt.result.is_ok(), "Unable to add tier");
+        assert!(add_withdraw_authority_receipt.result.is_ok(), "Unable to add authority");
     }
 
     // Builds the transaction with the above proofs.
@@ -1001,7 +1001,7 @@ pub fn more_funds_available_after_limit_increase() {
         .create_proof_from_account(creator_badge2, env.admin_account.component_address)
         .call_method(
             custom_auth_component,
-            "update_tier_limit",
+            "update_withdraw_authority_limit",
             args![
                 rule!(
                     require_amount(dec!("20"), user_badge1)
@@ -1016,7 +1016,7 @@ pub fn more_funds_available_after_limit_increase() {
         .sign([&env.admin_account.private_key]);
     let tier_update_receipt: Receipt = env.executor.validate_and_execute(&tier_update_tx).unwrap();
 
-    assert!(tier_update_receipt.result.is_ok(), "Unable to increase the tier limit");
+    assert!(tier_update_receipt.result.is_ok(), "Unable to increase the authority limit");
 
     // Attempting to withdraw again to ensure failture
     let mut proof_ids: Vec<u32> = Vec::new();
@@ -1116,15 +1116,15 @@ impl<'a> Environment<'a> {
         }
     }
 
-    pub fn new_simple_tiered_fund(
+    pub fn new_simple_limited_withdraw_vault(
         &mut self,
         tokens_resource_address: ResourceAddress,
     ) -> (ComponentAddress, ResourceAddress) {
         let component_instantiation_tx: SignedTransaction = TransactionBuilder::new()
             .call_function(
                 self.package_address,
-                "TieredFund",
-                "instantiate_simple_tiered_fund",
+                "LimitedWithdrawVault",
+                "instantiate_simple_limited_withdraw_vault",
                 args![tokens_resource_address],
             )
             .call_method_with_all_resources(self.admin_account.component_address, "deposit_batch")
@@ -1145,7 +1145,7 @@ impl<'a> Environment<'a> {
         );
     }
 
-    pub fn new_custom_tiered_fund(
+    pub fn new_custom_limited_withdraw_vault(
         &mut self,
         tokens_resource_address: ResourceAddress,
         administration_rule: AccessRule,
@@ -1153,8 +1153,8 @@ impl<'a> Environment<'a> {
         let component_instantiation_tx: SignedTransaction = TransactionBuilder::new()
             .call_function(
                 self.package_address,
-                "TieredFund",
-                "instantiate_custom_tiered_fund",
+                "LimitedWithdrawVault",
+                "instantiate_custom_limited_withdraw_vault",
                 args![administration_rule, tokens_resource_address],
             )
             .call_method_with_all_resources(self.admin_account.component_address, "deposit_batch")
