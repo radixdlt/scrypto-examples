@@ -66,8 +66,87 @@ Therefore, this blueprint defines three different functions from which limited w
 | `instantiate_custom_limited_withdraw_vault`       | Intermediate      | This function is more customizable and allows for limited withdraw vaults to be created whose administrative `AccessRule` is user-defined. The administrative is the rule which governs who can add authorized withdraw entities, remove them, and update their limits. This function depends on the `instantiate_bare_bone_limited_withdraw_vault` function for what it does.
 | `instantiate_bare_bone_limited_withdraw_vault`    | Expert            | This function instantiates a "bare bone" limited withdraw vault, meaning that this function creates the minimum amount of resources and components which need to be created in order to get a minimal limited withdraw vault to work (in this case, it creates additional components or resources). This function takes in an `AccessRules` object and uses it as the rules which the component will adhere to for its methods. While this function provides a great deal of flexibility to developers, it is also very error-prone defining incorrect rules could potentially lead to this component getting locked. So, while this function is available to use and is publicly visible, it is recommended that--unless you know very well what you are doing--you use the `instantiate_custom_limited_withdraw_vault` function to instantiate your component.
 
-
-
 | Note | The "expert" functions are not named as such to be a competition to developers, this is a name given to them because they require a good understanding of how access rules work in Scrypto and a very good understanding of how the blueprint works in order to use. Misconfiguring the component authorization when using the "expert" functions will most certainly result in great loss.
 | -----| :------ |
 
+## Example of Usage
+
+First of all, please run the `build_rtm.sh` file to build the transaction manifest files which will be used for this example. This script will ensure that the manfiest files contain a valid set of addresses for your machine. To run this bash script, run the following command:
+
+```sh
+./build_rtm.sh
+```
+
+To demonstrate how this blueprint can be used, we will add a number of withdraw authoroties to one of its components. The withdraw authoroties will have the following access rules and withdraw limits asociated with them: 
+
+| `AccessRule`                                 | Withdraw Limit |
+| -------------------------------------------- | -------------- |
+| `20 Employees && 10 Managers && 1 Executive` | 100 XRD        |
+| `20 Employees && 12 Managers && 1 Executive` | 500 XRD        |
+| `20 Employees && 15 Managers && 1 Executive` | 1,000 XRD      |
+| `20 Employees && 20 Managers && 1 Executive` | No Limit       |
+
+### Setup
+
+First thing we need is to reset resim in order to ensure that the addresses which come up will be in line with those created by the `build_rtm.sh` script. 
+
+```sh
+resim reset
+```
+
+We then to create a new account to use in resim to test this blueprint
+
+```sh
+OP1=$(resim new-account)
+export privkey1=$(echo "$OP1" | sed -nr "s/Private key: ([[:alnum:]_]+)/\1/p")
+export account1=$(echo "$OP1" | sed -nr "s/Account component address: ([[:alnum:]_]+)/\1/p")
+```
+
+The examples here will be using a "custom" limited withdraw vault, meaning that we are expected to provide the blueprint with which badges we wish to use for authorization. Thus, we need to create a number of badges to use for testing. 
+
+```sh
+export admin_badge1=$(resim new-token-fixed 1 | sed -nr "s/.*Resource: ([[:alnum:]_]+)/\1/p" | sed '1!d')
+export admin_badge2=$(resim new-token-fixed 1 | sed -nr "s/.*Resource: ([[:alnum:]_]+)/\1/p" | sed '1!d')
+
+export employee_badge=$(resim new-token-fixed 20 | sed -nr "s/.*Resource: ([[:alnum:]_]+)/\1/p" | sed '1!d')
+export manager_badge=$(resim new-token-fixed 20 | sed -nr "s/.*Resource: ([[:alnum:]_]+)/\1/p" | sed '1!d')
+export executive_badge=$(resim new-token-fixed 1 | sed -nr "s/.*Resource: ([[:alnum:]_]+)/\1/p" | sed '1!d')
+```
+
+With the creation of test badges out of the way, we can now finally publish our package to resim and begin using it!
+
+```sh
+export package=$(resim publish . | sed -nr "s/Success! New Package: ([[:alnum:]_]+)/\1/p")
+```
+
+### Working with Component
+
+With the package published to resim, we may now create a new limited withdraw vault component. In this example, we do not wish to create a simple component which uses a single admin badge for the adminstrative rights. Instead, we wish to create a more complex component which uses more complex authorization rules for adminstrative methods. Therefore, the component we're creating will have an adminstrative rule of: `admin_badge1 && admin_badge2`.
+
+To create the component, you can run the `component_creation.rtm` transaction manifest file by running:
+
+```sh
+resim run ./transactions/component_creation.rtm
+```
+
+To test the component, we will need to fund it with XRD which we can withdraw later as the user of the system. To fund the component:
+
+```sh
+resim call-method $component deposit 1000000,030000000000000000000000000000000000000000000000000004
+```
+
+With the component created, and funded, the authorized withdraw entities can now be added to the component. You can add them by running the `adding_withdraw_authorities.rtm` transaction manifest
+
+```sh
+resim run ./transactions/adding_withdraw_authorities.rtm
+```
+
+Finally, to test the withdrawal of tokens from the component, you can run the `withdraw_withtin_limit.rtm` transaction manifest.
+
+```sh
+resim run ./transactions/withdraw_withtin_limit.rtm
+```
+
+## Notes:
+
+* This blueprint has not had it's efficiency with gas tested in any capacity and might very well be gas-inefficient. This is something which you must keep in mind before replicating similar behavior into your blueprint.

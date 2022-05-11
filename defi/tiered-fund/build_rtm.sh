@@ -12,9 +12,9 @@ export account1=$(echo "$OP1" | sed -nr "s/Account component address: ([[:alnum:
 export admin_badge1=$(resim new-token-fixed 1 | sed -nr "s/.*Resource: ([[:alnum:]_]+)/\1/p" | sed '1!d')
 export admin_badge2=$(resim new-token-fixed 1 | sed -nr "s/.*Resource: ([[:alnum:]_]+)/\1/p" | sed '1!d')
 
-export user_badge1=$(resim new-token-fixed 20 | sed -nr "s/.*Resource: ([[:alnum:]_]+)/\1/p" | sed '1!d')
-export user_badge2=$(resim new-token-fixed 20 | sed -nr "s/.*Resource: ([[:alnum:]_]+)/\1/p" | sed '1!d')
-export user_badge3=$(resim new-token-fixed 1 | sed -nr "s/.*Resource: ([[:alnum:]_]+)/\1/p" | sed '1!d')
+export employee_badge=$(resim new-token-fixed 20 | sed -nr "s/.*Resource: ([[:alnum:]_]+)/\1/p" | sed '1!d')
+export manager_badge=$(resim new-token-fixed 20 | sed -nr "s/.*Resource: ([[:alnum:]_]+)/\1/p" | sed '1!d')
+export executive_badge=$(resim new-token-fixed 1 | sed -nr "s/.*Resource: ([[:alnum:]_]+)/\1/p" | sed '1!d')
 
 export package=$(resim publish . | sed -nr "s/Success! New Package: ([[:alnum:]_]+)/\1/p")
 
@@ -32,23 +32,23 @@ resim call-method $component deposit 1000000,03000000000000000000000000000000000
 echo "CALL_METHOD ComponentAddress(\"$account1\") \"create_proof\" ResourceAddress(\"$admin_badge1\");
 CALL_METHOD ComponentAddress(\"$account1\") \"create_proof\" ResourceAddress(\"$admin_badge2\");
 
-CALL_METHOD ComponentAddress(\"$component\") \"add_withdraw_authority\" Enum(\"Protected\", Enum(\"AllOf\", Vec<Enum>(Enum(\"ProofRule\", Enum(\"AmountOf\", Enum(\"Static\", Decimal(\"20\")), Enum(\"Static\", ResourceAddress(\"$user_badge1\")))), Enum(\"ProofRule\", Enum(\"AmountOf\", Enum(\"Static\", Decimal(\"15\")), Enum(\"Static\", ResourceAddress(\"$user_badge2\")))), Enum(\"ProofRule\", Enum(\"AmountOf\", Enum(\"Static\", Decimal(\"1\")), Enum(\"Static\", ResourceAddress(\"$user_badge3\"))))))) Enum(\"Finite\", Decimal(\"1000\"));
-CALL_METHOD ComponentAddress(\"$component\") \"add_withdraw_authority\" Enum(\"Protected\", Enum(\"AllOf\", Vec<Enum>(Enum(\"ProofRule\", Enum(\"AmountOf\", Enum(\"Static\", Decimal(\"20\")), Enum(\"Static\", ResourceAddress(\"$user_badge1\")))), Enum(\"ProofRule\", Enum(\"AmountOf\", Enum(\"Static\", Decimal(\"12\")), Enum(\"Static\", ResourceAddress(\"$user_badge2\")))), Enum(\"ProofRule\", Enum(\"AmountOf\", Enum(\"Static\", Decimal(\"1\")), Enum(\"Static\", ResourceAddress(\"$user_badge3\"))))))) Enum(\"Finite\", Decimal(\"500\"));
-CALL_METHOD ComponentAddress(\"$component\") \"add_withdraw_authority\" Enum(\"Protected\", Enum(\"AllOf\", Vec<Enum>(Enum(\"ProofRule\", Enum(\"AmountOf\", Enum(\"Static\", Decimal(\"20\")), Enum(\"Static\", ResourceAddress(\"$user_badge1\")))), Enum(\"ProofRule\", Enum(\"AmountOf\", Enum(\"Static\", Decimal(\"10\")), Enum(\"Static\", ResourceAddress(\"$user_badge2\")))), Enum(\"ProofRule\", Enum(\"AmountOf\", Enum(\"Static\", Decimal(\"1\")), Enum(\"Static\", ResourceAddress(\"$user_badge3\"))))))) Enum(\"Finite\", Decimal(\"100\"));
-CALL_METHOD ComponentAddress(\"$component\") \"add_withdraw_authority\" Enum(\"Protected\", Enum(\"AllOf\", Vec<Enum>(Enum(\"ProofRule\", Enum(\"AmountOf\", Enum(\"Static\", Decimal(\"20\")), Enum(\"Static\", ResourceAddress(\"$user_badge1\")))), Enum(\"ProofRule\", Enum(\"AmountOf\", Enum(\"Static\", Decimal(\"20\")), Enum(\"Static\", ResourceAddress(\"$user_badge2\")))), Enum(\"ProofRule\", Enum(\"AmountOf\", Enum(\"Static\", Decimal(\"1\")), Enum(\"Static\", ResourceAddress(\"$user_badge3\"))))))) Enum(\"Infinite\");
+CALL_METHOD ComponentAddress(\"$component\") \"add_withdraw_authority\" Enum(\"Protected\", Enum(\"AllOf\", Vec<Enum>(Enum(\"ProofRule\", Enum(\"AmountOf\", Enum(\"Static\", Decimal(\"20\")), Enum(\"Static\", ResourceAddress(\"$employee_badge\")))), Enum(\"ProofRule\", Enum(\"AmountOf\", Enum(\"Static\", Decimal(\"15\")), Enum(\"Static\", ResourceAddress(\"$manager_badge\")))), Enum(\"ProofRule\", Enum(\"AmountOf\", Enum(\"Static\", Decimal(\"1\")), Enum(\"Static\", ResourceAddress(\"$executive_badge\"))))))) Enum(\"Finite\", Decimal(\"1000\"));
+CALL_METHOD ComponentAddress(\"$component\") \"add_withdraw_authority\" Enum(\"Protected\", Enum(\"AllOf\", Vec<Enum>(Enum(\"ProofRule\", Enum(\"AmountOf\", Enum(\"Static\", Decimal(\"20\")), Enum(\"Static\", ResourceAddress(\"$employee_badge\")))), Enum(\"ProofRule\", Enum(\"AmountOf\", Enum(\"Static\", Decimal(\"12\")), Enum(\"Static\", ResourceAddress(\"$manager_badge\")))), Enum(\"ProofRule\", Enum(\"AmountOf\", Enum(\"Static\", Decimal(\"1\")), Enum(\"Static\", ResourceAddress(\"$executive_badge\"))))))) Enum(\"Finite\", Decimal(\"500\"));
+CALL_METHOD ComponentAddress(\"$component\") \"add_withdraw_authority\" Enum(\"Protected\", Enum(\"AllOf\", Vec<Enum>(Enum(\"ProofRule\", Enum(\"AmountOf\", Enum(\"Static\", Decimal(\"20\")), Enum(\"Static\", ResourceAddress(\"$employee_badge\")))), Enum(\"ProofRule\", Enum(\"AmountOf\", Enum(\"Static\", Decimal(\"10\")), Enum(\"Static\", ResourceAddress(\"$manager_badge\")))), Enum(\"ProofRule\", Enum(\"AmountOf\", Enum(\"Static\", Decimal(\"1\")), Enum(\"Static\", ResourceAddress(\"$executive_badge\"))))))) Enum(\"Finite\", Decimal(\"100\"));
+CALL_METHOD ComponentAddress(\"$component\") \"add_withdraw_authority\" Enum(\"Protected\", Enum(\"AllOf\", Vec<Enum>(Enum(\"ProofRule\", Enum(\"AmountOf\", Enum(\"Static\", Decimal(\"20\")), Enum(\"Static\", ResourceAddress(\"$employee_badge\")))), Enum(\"ProofRule\", Enum(\"AmountOf\", Enum(\"Static\", Decimal(\"20\")), Enum(\"Static\", ResourceAddress(\"$manager_badge\")))), Enum(\"ProofRule\", Enum(\"AmountOf\", Enum(\"Static\", Decimal(\"1\")), Enum(\"Static\", ResourceAddress(\"$executive_badge\"))))))) Enum(\"Infinite\");
 
 CALL_METHOD_WITH_ALL_RESOURCES ComponentAddress(\"$account1\") \"deposit_batch\";
 " > transactions/adding_withdraw_authorities.rtm
 resim run transactions/adding_withdraw_authorities.rtm
 
 # Building tx manifest for the withdrawal of tokens
-echo "CALL_METHOD ComponentAddress(\"$account1\") \"create_proof_by_amount\" Decimal(\"20\") ResourceAddress(\"$user_badge1\");
-CALL_METHOD ComponentAddress(\"$account1\") \"create_proof_by_amount\" Decimal(\"10\") ResourceAddress(\"$user_badge2\"); 
-CALL_METHOD ComponentAddress(\"$account1\") \"create_proof_by_amount\" Decimal(\"1\") ResourceAddress(\"$user_badge3\"); 
+echo "CALL_METHOD ComponentAddress(\"$account1\") \"create_proof_by_amount\" Decimal(\"20\") ResourceAddress(\"$employee_badge\");
+CALL_METHOD ComponentAddress(\"$account1\") \"create_proof_by_amount\" Decimal(\"10\") ResourceAddress(\"$manager_badge\"); 
+CALL_METHOD ComponentAddress(\"$account1\") \"create_proof_by_amount\" Decimal(\"1\") ResourceAddress(\"$executive_badge\"); 
 
-CREATE_PROOF_FROM_AUTH_ZONE ResourceAddress(\"$user_badge1\") Proof(\"Proof1\");
-CREATE_PROOF_FROM_AUTH_ZONE ResourceAddress(\"$user_badge2\") Proof(\"Proof2\");
-CREATE_PROOF_FROM_AUTH_ZONE ResourceAddress(\"$user_badge3\") Proof(\"Proof3\");
+CREATE_PROOF_FROM_AUTH_ZONE ResourceAddress(\"$employee_badge\") Proof(\"Proof1\");
+CREATE_PROOF_FROM_AUTH_ZONE ResourceAddress(\"$manager_badge\") Proof(\"Proof2\");
+CREATE_PROOF_FROM_AUTH_ZONE ResourceAddress(\"$executive_badge\") Proof(\"Proof3\");
 
 CALL_METHOD ComponentAddress(\"$component\") \"withdraw\" Decimal(\"100\") Vec<Proof>(Proof(\"Proof1\"), Proof(\"Proof2\"), Proof(\"Proof3\"));
 

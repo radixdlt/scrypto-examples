@@ -7,9 +7,6 @@ use radix_engine::model::{Receipt, SignedTransaction};
 use radix_engine::transaction::*;
 use limited_withdraw_vault::WithdrawLimit;
 
-mod decompiler;
-use crate::decompiler::decompile;
-
 #[test]
 pub fn withdraw_limit_arithmetic_is_correct() {
     assert_eq!(WithdrawLimit::Infinite, WithdrawLimit::Infinite);
@@ -1181,92 +1178,6 @@ pub fn more_funds_available_after_limit_increase() {
         .unwrap();
     println!("{:?}", withdraw_funds_receipt);
     assert!(withdraw_funds_receipt.result.is_ok());
-}
-
-#[test]
-pub fn SAMPLE() {
-    // Setting up the ledger. Creating 2 badges which will be used for the admin auth
-    let mut ledger: InMemorySubstateStore = InMemorySubstateStore::with_bootstrap();
-    let mut env: Environment = Environment::new(&mut ledger, 10);
-
-    // ==========================================================================================
-    // In this portion we setup the test parameters. To add more tests, only modify this portion
-    // ==========================================================================================
-    let user_badge1: ResourceAddress = env.new_token_fixed(20.into(), HashMap::new());
-    let user_badge2: ResourceAddress = env.new_token_fixed(20.into(), HashMap::new());
-    let user_badge3: ResourceAddress = env.new_token_fixed(1.into(), HashMap::new());
-
-    let mut withdraw_limits: HashMap<AccessRule, WithdrawLimit> = HashMap::new();
-    withdraw_limits.insert(
-        rule!(
-            require_amount(dec!("20"), user_badge1)
-                && require_amount(dec!("10"), user_badge2)
-                && require_amount(dec!("1"), user_badge3)
-        ),
-        WithdrawLimit::Finite(dec!("100")),
-    );
-    withdraw_limits.insert(
-        rule!(
-            require_amount(dec!("20"), user_badge1)
-                && require_amount(dec!("12"), user_badge2)
-                && require_amount(dec!("1"), user_badge3)
-        ),
-        WithdrawLimit::Finite(dec!("500")),
-    );
-    withdraw_limits.insert(
-        rule!(
-            require_amount(dec!("20"), user_badge1)
-                && require_amount(dec!("15"), user_badge2)
-                && require_amount(dec!("1"), user_badge3)
-        ),
-        WithdrawLimit::Finite(dec!("1000")),
-    );
-    withdraw_limits.insert(
-        rule!(
-            require_amount(dec!("20"), user_badge1)
-                && require_amount(dec!("20"), user_badge2)
-                && require_amount(dec!("1"), user_badge3)
-        ),
-        WithdrawLimit::Infinite,
-    );
-
-    // Defines the proofs which we will be using for the withdraw transaction
-    let mut proofs_to_create: HashMap<ResourceAddress, Decimal> = HashMap::new();
-    proofs_to_create.insert(user_badge1, dec!("20"));
-    proofs_to_create.insert(user_badge2, dec!("10"));
-    proofs_to_create.insert(user_badge3, dec!("1"));
-
-    let withdraw_amount: Decimal = dec!("100");
-    // ==========================================================================================
-
-    let creator_badge1: ResourceAddress = env.new_token_fixed(1.into(), HashMap::new());
-    let creator_badge2: ResourceAddress = env.new_token_fixed(1.into(), HashMap::new());
-    let admin_access_rule: AccessRule = rule!(require(creator_badge1) && require(creator_badge2));
-
-    let custom_auth_component: ComponentAddress =
-        env.new_custom_limited_withdraw_vault(RADIX_TOKEN, admin_access_rule.clone());
-    env.deposit_tokens_to_fund(
-        custom_auth_component,
-        env.accounts[0].clone(),
-        RADIX_TOKEN,
-        1_000_000.into(),
-    );
-
-    let mut transaction_builder: &mut TransactionBuilder = &mut TransactionBuilder::new();
-    transaction_builder = transaction_builder
-        .create_proof_from_account(creator_badge1, env.admin_account.component_address)
-        .create_proof_from_account(creator_badge2, env.admin_account.component_address);
-    for (access_rule, withdraw_limit) in withdraw_limits.iter() {
-        transaction_builder = transaction_builder
-            .call_method(
-                custom_auth_component,
-                "add_withdraw_authority",
-                args![access_rule.clone(), withdraw_limit.clone()],
-            )
-            .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch");
-    }
-
-    println!("{:?}", &decompile(&transaction_builder.build(env.executor.get_nonce([env.admin_account.public_key]))));
 }
 
 // =====================================================================================================================
