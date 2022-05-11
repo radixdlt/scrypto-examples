@@ -113,11 +113,9 @@ blueprint! {
 
             // Defining the access rules for the component.
             let access_rules: AccessRules = AccessRules::new()
-                .method("add_tier", administration_rule.clone())
-                .method("remove_tier", administration_rule.clone())
-                .method("reset_tier_history", administration_rule.clone())
-                .method("update_tier_limit", administration_rule.clone())
-                .default(rule!(allow_all));
+                .method("withdraw", rule!(allow_all))
+                .method("deposit", rule!(allow_all))
+                .default(administration_rule);
 
             // Instantiating the component and returning its address
             return Self {
@@ -193,6 +191,11 @@ blueprint! {
 
             // At this point we know that the tier's history can be reset
             *self.withdraw_history.get_mut(&access_rule).unwrap() = Decimal::zero();
+            info!(
+                "[Reset Tier History]: Access Rule {:?} now has a withdraw history of: {}",
+                access_rule,
+                self.withdraw_history.get(&access_rule).unwrap()
+            );
         }
 
         /// Updates the withdrawal limit for a given tier.
@@ -222,23 +225,23 @@ blueprint! {
         /// Withdraws funds from the component.
         ///
         /// This method is used to withdraw funds from the component with the limit of the amount that can be withdrawn
-        /// varying depending on the access rules which the vector of provided proofs satisfies. In the case that the 
-        /// vector of proofs satisfies multiple `AccessRules` then the withdrawal limit will be set to the maximum of 
+        /// varying depending on the access rules which the vector of provided proofs satisfies. In the case that the
+        /// vector of proofs satisfies multiple `AccessRules` then the withdrawal limit will be set to the maximum of
         /// the rules.
-        /// 
+        ///
         /// This method performs two main checks before the withdraw of the tokens happen:
-        /// 
+        ///
         /// * **Check 1:** Checks that the provided proofs satisfy at least one access rule.
         /// * **Check 2:** Checks that the satisfied rule's limit has not been reached (if exists).
-        /// 
+        ///
         /// # Arguments:
-        /// 
+        ///
         /// * `withdraw_amount` (Decimal) - A decimal which defines the amount of tokens to withdraw.
-        /// * `proof` (Vec<Proof>) - A vector of proofs of the badges used for the authorization checks of the fund 
+        /// * `proof` (Vec<Proof>) - A vector of proofs of the badges used for the authorization checks of the fund
         /// withdrawal
-        /// 
+        ///
         /// # Returns:
-        /// 
+        ///
         /// * `Bucket` - A bucket of the withdrawn tokens.
         pub fn withdraw(&mut self, withdraw_amount: Decimal, proofs: Vec<Proof>) -> Bucket {
             // Getting the limits which are valid for the proofs that we currently have
@@ -248,23 +251,34 @@ blueprint! {
                 .filter(|(access_rule, _)| access_rule.check(&proofs[..]))
                 .map(|(x, y)| (x.clone(), y.clone()))
                 .collect::<HashMap<AccessRule, WithdrawLimit>>();
+            info!(
+                "[Withdraw]: Passed proofs satisfied the auth rules: {:?}",
+                valid_limits
+            );
 
             // Getting the maximum pair of access rule and withdraw limit according to the withdraw limit
             let limit: Option<(AccessRule, WithdrawLimit)> = valid_limits
                 .iter()
                 .max_by(|a, b| a.1.cmp(&b.1))
                 .map(|(x, y)| (x.clone(), y.clone()));
+            info!(
+                "[Withdraw]: Maximum withdraw limit for the rule is: {:?}",
+                limit
+            );
 
             match limit {
                 Some((access_rule, withdraw_limit)) => {
-                    // Ensuring that the amount that they wish to withdraw would still be within their limits
+                    // Ensuring that the amount that they wish to withdraw would still be within their limits. The limit
+                    // is not a per-call limit. It is a limit on how much, in general, can a caller(s) which satisfy
+                    // this access rule withdraw from the component.
                     match withdraw_limit {
                         WithdrawLimit::Finite(finite_withdraw_limit) => {
+                            let total_withdrawn: Decimal = withdraw_amount
+                                + self.withdraw_history.get(&access_rule).unwrap().clone();
                             assert!(
-                                withdraw_amount
-                                    + self.withdraw_history.get(&access_rule).unwrap().clone()
-                                    <= finite_withdraw_limit,
-                                "[Withdraw]: Can not withdraw more you are allowed to"
+                                total_withdrawn <= finite_withdraw_limit,
+                                "[Withdraw]: Your total withdraw would be {} but you're only allowed to withdraw {}.",
+                                total_withdrawn, finite_withdraw_limit
                             );
                         }
                         _ => {}
@@ -288,19 +302,23 @@ blueprint! {
                         false,
                         "[Withdraw]: Provided proofs do not satisfy any of the tier AccessRules."
                     );
-                    panic!(""); // Empty panic kept there to allow for uneven match statement arms.
+                    panic!(""); // Empty panic kept here to allow for uneven match statement arms.
                 }
             }
         }
-    
+
         /// Deposits tokens into the fund
-        /// 
+        ///
         /// # Arguments:
-        /// 
+        ///
         /// * `tokens` (Bucket) - A bucket of tokens to deposit into the fund.
         pub fn deposit(&mut self, tokens: Bucket) {
             // Checking if the deposit can be made
-            assert_eq!(tokens.resource_address(), self.vault.resource_address(), "[Deposit]: Incorrect type of token");
+            assert_eq!(
+                tokens.resource_address(),
+                self.vault.resource_address(),
+                "[Deposit]: Incorrect type of token"
+            );
 
             // Depositing the tokens
             self.vault.put(tokens);
