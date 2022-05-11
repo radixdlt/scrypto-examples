@@ -69,4 +69,5 @@ Therefore, this blueprint defines three different functions from which limited w
 
 
 | Note | The "expert" functions are not named as such to be a competition to developers, this is a name given to them because they require a good understanding of how access rules work in Scrypto and a very good understanding of how the blueprint works in order to use. Misconfiguring the component authorization when using the "expert" functions will most certainly result in great loss.
-| -----| ------- |
+| -----| :------ |
+
