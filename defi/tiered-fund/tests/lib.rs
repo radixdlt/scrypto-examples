@@ -249,6 +249,129 @@ pub fn correct_badges_and_within_limit_succeeds() {
 }
 
 #[test]
+pub fn infinite_withdrawal_limit_succeeds() {
+    // Setting up the ledger. Creating 2 badges which will be used for the admin auth
+    let mut ledger: InMemorySubstateStore = InMemorySubstateStore::with_bootstrap();
+    let mut env: Environment = Environment::new(&mut ledger, 10);
+
+    // ==========================================================================================
+    // In this portion we setup the test parameters. To add more tests, only modify this portion
+    // ==========================================================================================
+    let user_badge1: ResourceAddress = env.new_token_fixed(20.into(), HashMap::new());
+    let user_badge2: ResourceAddress = env.new_token_fixed(20.into(), HashMap::new());
+    let user_badge3: ResourceAddress = env.new_token_fixed(1.into(), HashMap::new());
+
+    let mut withdraw_limits: HashMap<AccessRule, WithdrawLimit> = HashMap::new();
+    withdraw_limits.insert(
+        rule!(
+            require_amount(dec!("20"), user_badge1)
+                && require_amount(dec!("10"), user_badge2)
+                && require_amount(dec!("1"), user_badge3)
+        ),
+        WithdrawLimit::Finite(dec!("100")),
+    );
+    withdraw_limits.insert(
+        rule!(
+            require_amount(dec!("20"), user_badge1)
+                && require_amount(dec!("12"), user_badge2)
+                && require_amount(dec!("1"), user_badge3)
+        ),
+        WithdrawLimit::Finite(dec!("500")),
+    );
+    withdraw_limits.insert(
+        rule!(
+            require_amount(dec!("20"), user_badge1)
+                && require_amount(dec!("15"), user_badge2)
+                && require_amount(dec!("1"), user_badge3)
+        ),
+        WithdrawLimit::Finite(dec!("1000")),
+    );
+    withdraw_limits.insert(
+        rule!(
+            require_amount(dec!("20"), user_badge1)
+                && require_amount(dec!("20"), user_badge2)
+                && require_amount(dec!("1"), user_badge3)
+        ),
+        WithdrawLimit::Infinite,
+    );
+
+    // Defines the proofs which we will be using for the withdraw transaction
+    let mut proofs_to_create: HashMap<ResourceAddress, Decimal> = HashMap::new();
+    proofs_to_create.insert(user_badge1, dec!("20"));
+    proofs_to_create.insert(user_badge2, dec!("20"));
+    proofs_to_create.insert(user_badge3, dec!("1"));
+
+    let withdraw_amount: Decimal = dec!("1000000");
+    // ==========================================================================================
+
+    let creator_badge1: ResourceAddress = env.new_token_fixed(1.into(), HashMap::new());
+    let creator_badge2: ResourceAddress = env.new_token_fixed(1.into(), HashMap::new());
+    let admin_access_rule: AccessRule = rule!(require(creator_badge1) && require(creator_badge2));
+
+    let custom_auth_component: ComponentAddress =
+        env.new_custom_limited_withdraw_vault(RADIX_TOKEN, admin_access_rule.clone());
+    env.deposit_tokens_to_fund(
+        custom_auth_component,
+        env.accounts[0].clone(),
+        RADIX_TOKEN,
+        1_000_000.into(),
+    );
+
+    for (access_rule, withdraw_limit) in withdraw_limits.iter() {
+        let add_withdraw_authority_tx: SignedTransaction = TransactionBuilder::new()
+            .create_proof_from_account(creator_badge1, env.admin_account.component_address)
+            .create_proof_from_account(creator_badge2, env.admin_account.component_address)
+            .call_method(
+                custom_auth_component,
+                "add_withdraw_authority",
+                args![access_rule.clone(), withdraw_limit.clone()],
+            )
+            .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
+            .build(env.executor.get_nonce([env.admin_account.public_key]))
+            .sign([&env.admin_account.private_key]);
+        let add_withdraw_authority_receipt: Receipt = env.executor.validate_and_execute(&add_withdraw_authority_tx).unwrap();
+
+        assert!(add_withdraw_authority_receipt.result.is_ok(), "Unable to add authority");
+    }
+
+    // Builds the transaction with the above proofs.
+    let mut proof_ids: Vec<u32> = Vec::new();
+    let mut transaction_builder: &mut TransactionBuilder = &mut TransactionBuilder::new();
+    for (resource_address, amount) in proofs_to_create.iter() {
+        transaction_builder = transaction_builder
+            .create_proof_from_account_by_amount(
+                amount.clone(),
+                resource_address.clone(),
+                env.admin_account.component_address,
+            )
+            .create_proof_from_auth_zone(resource_address.clone(), |builder, proof_id| {
+                proof_ids.push(proof_id);
+                builder
+            })
+    }
+
+    let proofs: Vec<scrypto::resource::Proof> = proof_ids
+        .iter()
+        .map(|id| scrypto::resource::Proof(*id))
+        .collect();
+
+    let withdraw_funds_tx: SignedTransaction = transaction_builder
+        .call_method(
+            custom_auth_component,
+            "withdraw",
+            args![withdraw_amount, proofs],
+        )
+        .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
+        .build(env.executor.get_nonce([env.admin_account.public_key]))
+        .sign([&env.admin_account.private_key]);
+    let withdraw_funds_receipt: Receipt = env
+        .executor
+        .validate_and_execute(&withdraw_funds_tx)
+        .unwrap();
+    assert!(withdraw_funds_receipt.result.is_ok());
+}
+
+#[test]
 pub fn satisfy_two_or_more_rules_withdraws_maximum() {
     // Setting up the ledger. Creating 2 badges which will be used for the admin auth
     let mut ledger: InMemorySubstateStore = InMemorySubstateStore::with_bootstrap();
