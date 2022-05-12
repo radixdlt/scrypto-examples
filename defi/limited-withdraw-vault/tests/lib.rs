@@ -5,6 +5,7 @@ use scrypto::prelude::*;
 use radix_engine::ledger::*;
 use radix_engine::model::{Receipt, SignedTransaction};
 use radix_engine::transaction::*;
+
 use limited_withdraw_vault::WithdrawLimit;
 
 #[test]
@@ -28,6 +29,21 @@ pub fn withdraw_limit_arithmetic_is_correct() {
 
     assert!(WithdrawLimit::Finite(dec!("20")) > WithdrawLimit::Finite(dec!("10")));
     assert!(WithdrawLimit::Finite(dec!("10")) < WithdrawLimit::Finite(dec!("20")));
+
+    let mut test_vector: Vec<WithdrawLimit> = vec![
+        WithdrawLimit::Finite(dec!("500")),
+        WithdrawLimit::Infinite,
+        WithdrawLimit::Finite(dec!("0.1")),
+        WithdrawLimit::Finite(dec!("20")),
+    ];
+    test_vector.sort();
+    let expected_vector: Vec<WithdrawLimit> = vec![
+        WithdrawLimit::Finite(dec!("0.1")),
+        WithdrawLimit::Finite(dec!("20")),
+        WithdrawLimit::Finite(dec!("500")),
+        WithdrawLimit::Infinite,
+    ];
+    assert_eq!(test_vector, expected_vector);
 }
 
 #[test]
@@ -368,6 +384,7 @@ pub fn infinite_withdrawal_limit_succeeds() {
         .executor
         .validate_and_execute(&withdraw_funds_tx)
         .unwrap();
+    println!("{:?}", withdraw_funds_receipt);
     assert!(withdraw_funds_receipt.result.is_ok());
 }
 
@@ -955,7 +972,6 @@ pub fn removed_tier_can_nolonger_withdraw() {
         .executor
         .validate_and_execute(&withdraw_funds_tx)
         .unwrap();
-    println!("{:?}", withdraw_funds_receipt);
     assert!(withdraw_funds_receipt.result.is_err());
 }
 
@@ -1079,7 +1095,6 @@ pub fn more_funds_available_after_limit_increase() {
         .executor
         .validate_and_execute(&withdraw_funds_tx)
         .unwrap();
-    println!("{:?}", withdraw_funds_receipt);
     assert!(withdraw_funds_receipt.result.is_ok());
     
     // Attempting to withdraw again to ensure failture
@@ -1116,7 +1131,6 @@ pub fn more_funds_available_after_limit_increase() {
         .executor
         .validate_and_execute(&withdraw_funds_tx)
         .unwrap();
-    println!("{:?}", withdraw_funds_receipt);
     assert!(withdraw_funds_receipt.result.is_err());
 
     // Increasing the limit then attempting to withdraw again
@@ -1176,7 +1190,6 @@ pub fn more_funds_available_after_limit_increase() {
         .executor
         .validate_and_execute(&withdraw_funds_tx)
         .unwrap();
-    println!("{:?}", withdraw_funds_receipt);
     assert!(withdraw_funds_receipt.result.is_ok());
 }
 

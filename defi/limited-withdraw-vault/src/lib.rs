@@ -1,5 +1,4 @@
 use scrypto::prelude::*;
-use std::cmp::Ordering;
 
 // =======================
 // Blueprint + Core Logic
@@ -37,16 +36,21 @@ blueprint! {
     /// blueprint has constructors which allow for the setting of custom administration rule to to fit the needs of all
     /// kinds of people who might require to use this blueprint.
     struct LimitedWithdrawVault {
-        /// A hashmap which maps a given access rule to the withdraw limit associated with the access rule. Only when 
-        /// the access rule is satisfied, does this withdraw limit kick into place and begin to matter.
-        withdraw_limits: HashMap<AccessRule, WithdrawLimit>,
-
-        /// A hashmap which is used to keep track of the amount of tokens that have been withdrawn through each access
-        /// rule. Keep in mind that the amount here could be reset to allow for more withdrawals to take place. So, this
+        /// This is the main HashMap that stores all of the important information of components. The key in this 
+        /// `HashMap` is the access rule of authorized withdraw entities and the value is a tuple. This tuple contains 
+        /// the withdraw limit as well as a `Decimal` of the amount of funds withdrawn through this access rule since
+        /// it was last reset.
+        /// 
+        /// The amount of funds withdrawn so far could be reset to allow for more withdrawals to take place. So, this
         /// should **not** be looked at as the total amount withdrawn. Instead, this is introduced as a way to stop an
         /// access rule from making multiple withdrawals. Meaning, this is used to ensure that the withdraw limit is a 
         /// global limit and not a per-call limit.
-        withdraw_history: HashMap<AccessRule, Decimal>,
+        /// 
+        /// HashMap<AccessRule, (WithdrawLimit, Decimal)>
+        ///                            |           |
+        ///                            |           └─ The amount withdrawn by this access rule since the last reset.
+        ///                            └─ The limit that is imposed on withdraws by this access rule.
+        withdraw_information: HashMap<AccessRule, (WithdrawLimit, Decimal)>,
 
         /// The underlying vault which will be storing the funds of the component. Keep in mind that this is a single
         /// vault and not a vector of vaults. This means that a single component can only provide functionality for a 
@@ -184,8 +188,7 @@ blueprint! {
            
             // Instantiating the component and returning its address
             return Self {
-                withdraw_limits: HashMap::new(),
-                withdraw_history: HashMap::new(),
+                withdraw_information: HashMap::new(),
                 vault: Vault::new(tokens_resource_address),
             }
             .instantiate()
@@ -207,14 +210,12 @@ blueprint! {
         pub fn add_withdraw_authority(&mut self, access_rule: AccessRule, withdraw_limit: WithdrawLimit) {
             // Checking the authority can be added
             assert!(
-                !self.withdraw_history.contains_key(&access_rule),
+                !self.withdraw_information.contains_key(&access_rule),
                 "[Add Authority]: A authority with the same access rule already exists."
             );
 
             // At this point we know that the authority can be added to our records.
-            self.withdraw_limits
-                .insert(access_rule.clone(), withdraw_limit);
-            self.withdraw_history.insert(access_rule, dec!("0"));
+            self.withdraw_information.insert(access_rule, (withdraw_limit, dec!("0")));
         }
 
         /// Removes a specific withdraw authority from the limited withdraw vault.
@@ -229,13 +230,12 @@ blueprint! {
         pub fn remove_withdraw_authority(&mut self, access_rule: AccessRule) {
             // Checking the authority can be removed
             assert!(
-                self.withdraw_history.contains_key(&access_rule),
+                self.withdraw_information.contains_key(&access_rule),
                 "[Remove Authority]: Can't remove a authority which does not already exist."
             );
 
             // At this point we know that the authority can be removed
-            self.withdraw_limits.remove(&access_rule);
-            self.withdraw_history.remove(&access_rule);
+            self.withdraw_information.remove(&access_rule);
         }
 
         /// Rests the history for a specific withdraw authority.
@@ -250,16 +250,16 @@ blueprint! {
         pub fn reset_withdraw_history_of_authority(&mut self, access_rule: AccessRule) {
             // Checking the authority's history can be reset
             assert!(
-                self.withdraw_history.contains_key(&access_rule),
+                self.withdraw_information.contains_key(&access_rule),
                 "[Reset Authority History]: Can't reset history for a authority which does not already exist."
             );
 
             // At this point we know that the authority's history can be reset
-            *self.withdraw_history.get_mut(&access_rule).unwrap() = Decimal::zero();
+            (*self.withdraw_information.get_mut(&access_rule).unwrap()).1 = Decimal::zero();
             info!(
                 "[Reset authority History]: Access Rule {:?} now has a withdraw history of: {}",
                 access_rule,
-                self.withdraw_history.get(&access_rule).unwrap()
+                self.withdraw_information.get(&access_rule).unwrap().1
             );
         }
 
@@ -279,12 +279,12 @@ blueprint! {
         ) {
             // Checking the authority's limit can be updated
             assert!(
-                self.withdraw_history.contains_key(&access_rule),
+                self.withdraw_information.contains_key(&access_rule),
                 "[Update Authority Limit]: Can't update authority limit for a authority which does not already exist."
             );
 
             // At this point we know that the authority's limit can be updated.
-            *self.withdraw_limits.get_mut(&access_rule).unwrap() = withdraw_limit;
+            (*self.withdraw_information.get_mut(&access_rule).unwrap()).0 = withdraw_limit;
         }
 
         /// Withdraws funds from the component.
@@ -310,36 +310,35 @@ blueprint! {
         /// * `Bucket` - A bucket of the withdrawn tokens.
         pub fn withdraw(&mut self, withdraw_amount: Decimal, proofs: Vec<Proof>) -> Bucket {
             // Getting the limits which are valid for the proofs that we currently have
-            let valid_limits: HashMap<AccessRule, WithdrawLimit> = self
-                .withdraw_limits
-                .iter()
+            let valid_limits: HashMap<AccessRule, (WithdrawLimit, Decimal)> = self
+                .withdraw_information
+                .clone()
+                .into_iter()
                 .filter(|(access_rule, _)| access_rule.check(&proofs[..]))
-                .map(|(x, y)| (x.clone(), y.clone()))
-                .collect::<HashMap<AccessRule, WithdrawLimit>>();
+                .collect::<HashMap<AccessRule, (WithdrawLimit, Decimal)>>();
             info!(
                 "[Withdraw]: Passed proofs satisfy the auth rules: {:?}",
                 valid_limits
             );
 
             // Getting the maximum pair of access rule and withdraw limit according to the withdraw limit
-            let limit: Option<(AccessRule, WithdrawLimit)> = valid_limits
-                .iter()
-                .max_by(|a, b| a.1.cmp(&b.1))
-                .map(|(x, y)| (x.clone(), y.clone()));
+            let limit: Option<(AccessRule, (WithdrawLimit, Decimal))> = valid_limits
+                .clone()
+                .into_iter()
+                .max_by(|a, b| a.1.0.cmp(&b.1.0));
             info!(
                 "[Withdraw]: Maximum withdraw limit for the rule is: {:?}",
                 limit
             );
 
             match limit {
-                Some((access_rule, withdraw_limit)) => {
+                Some((_, (withdraw_limit, withdrawn_so_far))) => {
                     // Ensuring that the amount that they wish to withdraw would still be within their limits. The limit
                     // is not a per-call limit. It is a limit on how much, in general, can a caller(s) which satisfy
                     // this access rule withdraw from the component.
                     match withdraw_limit {
                         WithdrawLimit::Finite(finite_withdraw_limit) => {
-                            let total_withdrawn: Decimal = withdraw_amount
-                                + self.withdraw_history.get(&access_rule).unwrap().clone();
+                            let total_withdrawn: Decimal = withdraw_amount + withdrawn_so_far;
                             assert!(
                                 total_withdrawn <= finite_withdraw_limit,
                                 "[Withdraw]: Your total withdraw would be {} but you're only allowed to withdraw {}.",
@@ -356,7 +355,7 @@ blueprint! {
                     // updated to reflect on the amount that they've withdrawn so far.
                     let keys: Vec<AccessRule> = valid_limits.keys().cloned().collect();
                     for key in keys.iter() {
-                        *self.withdraw_history.get_mut(key).unwrap() += withdraw_amount;
+                        (*self.withdraw_information.get_mut(key).unwrap()).1 += withdraw_amount;
                     }
 
                     // Withdrawing the funds and returning them
@@ -397,40 +396,11 @@ blueprint! {
 
 /// An enum which defines the amount of funds that can be withdrawn, typically in relation to some access rule. The
 /// limit can be finite or infinite.
-#[derive(Describe, Encode, Decode, TypeId, Debug, Clone)]
+#[derive(Describe, Encode, Decode, TypeId, Debug, Clone, Copy, PartialEq, PartialOrd, Ord, Eq)]
 pub enum WithdrawLimit {
     /// A variant which defines a finite withdrawal limit with a given amount of tokens that can be withdrawn.
     Finite(Decimal),
 
     /// A variant which defines that an infinite amount may be withdrawn.
     Infinite,
-}
-
-impl Eq for WithdrawLimit {}
-
-impl PartialEq for WithdrawLimit {
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (WithdrawLimit::Finite(a), WithdrawLimit::Finite(b)) => a == b,
-            (WithdrawLimit::Infinite, WithdrawLimit::Infinite) => true,
-            _ => false,
-        }
-    }
-}
-
-impl Ord for WithdrawLimit {
-    fn cmp(&self, other: &Self) -> Ordering {
-        match (self, other) {
-            (WithdrawLimit::Finite(a), WithdrawLimit::Finite(b)) => a.cmp(b),
-            (WithdrawLimit::Infinite, WithdrawLimit::Infinite) => Ordering::Equal,
-            (WithdrawLimit::Infinite, _) => Ordering::Greater,
-            (_, WithdrawLimit::Infinite) => Ordering::Less,
-        }
-    }
-}
-
-impl PartialOrd for WithdrawLimit {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
 }
