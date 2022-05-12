@@ -1,0 +1,12 @@
+CALL_METHOD ComponentAddress("020d3869346218a5e8deaaf2001216dc00fcacb79fb43e30ded79a") "create_proof_by_amount" Decimal("20") ResourceAddress("038cbe1837e461df097bbaba84de0999920dfa7e16a1a8382e5968");
+CALL_METHOD ComponentAddress("020d3869346218a5e8deaaf2001216dc00fcacb79fb43e30ded79a") "create_proof_by_amount" Decimal("20") ResourceAddress("037babf0d86afa9ecd297e6369cbb1e4db82eb53d0ce20f0240688"); 
+CALL_METHOD ComponentAddress("020d3869346218a5e8deaaf2001216dc00fcacb79fb43e30ded79a") "create_proof_by_amount" Decimal("1") ResourceAddress("03af9981723d3ebe5fcbac7cd4479e38db47a114aebc658e26616e"); 
+
+CREATE_PROOF_FROM_AUTH_ZONE ResourceAddress("038cbe1837e461df097bbaba84de0999920dfa7e16a1a8382e5968") Proof("Proof1");
+CREATE_PROOF_FROM_AUTH_ZONE ResourceAddress("037babf0d86afa9ecd297e6369cbb1e4db82eb53d0ce20f0240688") Proof("Proof2");
+CREATE_PROOF_FROM_AUTH_ZONE ResourceAddress("03af9981723d3ebe5fcbac7cd4479e38db47a114aebc658e26616e") Proof("Proof3");
+
+CALL_METHOD ComponentAddress("023c3097dd0a2f4fe03a7d99b4dd720415ce25f309728ef9b657ab") "withdraw" Decimal("8000") Vec<Proof>(Proof("Proof1"), Proof("Proof2"), Proof("Proof3"));
+
+CALL_METHOD_WITH_ALL_RESOURCES ComponentAddress("020d3869346218a5e8deaaf2001216dc00fcacb79fb43e30ded79a") "deposit_batch";
+
