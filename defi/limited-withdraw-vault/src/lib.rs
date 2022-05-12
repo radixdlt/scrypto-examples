@@ -317,7 +317,7 @@ blueprint! {
                 .map(|(x, y)| (x.clone(), y.clone()))
                 .collect::<HashMap<AccessRule, WithdrawLimit>>();
             info!(
-                "[Withdraw]: Passed proofs satisfied the auth rules: {:?}",
+                "[Withdraw]: Passed proofs satisfy the auth rules: {:?}",
                 valid_limits
             );
 

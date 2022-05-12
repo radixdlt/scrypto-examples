@@ -1,0 +1,7 @@
+CALL_METHOD ComponentAddress("020d3869346218a5e8deaaf2001216dc00fcacb79fb43e30ded79a") "create_proof" ResourceAddress("03882d3795bc53d59ca25a44381ad6c1e84cb5e54f53e569326d77");
+CALL_METHOD ComponentAddress("020d3869346218a5e8deaaf2001216dc00fcacb79fb43e30ded79a") "create_proof" ResourceAddress("03e6393e676fc1658a436e4747228f329de5d4bc00003e95e7bf99");
+
+CALL_METHOD ComponentAddress("023c3097dd0a2f4fe03a7d99b4dd720415ce25f309728ef9b657ab") "remove_withdraw_authority" Enum("Protected", Enum("AllOf", Vec<Enum>(Enum("ProofRule", Enum("AmountOf", Enum("Static", Decimal("20")), Enum("Static", ResourceAddress("038cbe1837e461df097bbaba84de0999920dfa7e16a1a8382e5968")))), Enum("ProofRule", Enum("AmountOf", Enum("Static", Decimal("20")), Enum("Static", ResourceAddress("037babf0d86afa9ecd297e6369cbb1e4db82eb53d0ce20f0240688")))), Enum("ProofRule", Enum("AmountOf", Enum("Static", Decimal("1")), Enum("Static", ResourceAddress("03af9981723d3ebe5fcbac7cd4479e38db47a114aebc658e26616e"))))))) Enum("Infinite");
+
+CALL_METHOD_WITH_ALL_RESOURCES ComponentAddress("020d3869346218a5e8deaaf2001216dc00fcacb79fb43e30ded79a") "deposit_batch";
+

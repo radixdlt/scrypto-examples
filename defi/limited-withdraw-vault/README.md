@@ -69,6 +69,8 @@ Therefore, this blueprint defines three different functions from which limited w
 | Note | The "expert" functions are not named as such to be a competition to developers, this is a name given to them because they require a good understanding of how access rules work in Scrypto and a very good understanding of how the blueprint works in order to use. Misconfiguring the component authorization when using the "expert" functions will most certainly result in great loss.
 | -----| :------ |
 
+An interesting advantage which comes as a result of the general structure agnostic design of this blueprint, is that developers can use components of this blueprint as a multi-signature (multi-sig for short) store or vault. Meaning, you can skip the whole badge creation and distribution process, and you can use your account's virtual badges if you want! 
+
 ## Example of Usage
 
 First of all, please run the `build_rtm.sh` file to build the transaction manifest files which will be used for this example. This script will ensure that the manfiest files contain a valid set of addresses for your machine. To run this bash script, run the following command:
@@ -121,30 +123,39 @@ export package=$(resim publish . | sed -nr "s/Success! New Package: ([[:alnum:]_
 
 ### Working with Component
 
-With the package published to resim, we may now create a new limited withdraw vault component. In this example, we do not wish to create a simple component which uses a single admin badge for the adminstrative rights. Instead, we wish to create a more complex component which uses more complex authorization rules for adminstrative methods. Therefore, the component we're creating will have an adminstrative rule of: `admin_badge1 && admin_badge2`.
+With the package published to resim, we may now create a new limited withdraw vault component. In this example, we do not wish to create a simple component which uses a single admin badge for the administrative rights. Instead, we wish to create a more complex component which uses more complex authorization rules for administrative methods. Therefore, the component we're creating will have an administrative rule of: `admin_badge1 && admin_badge2`.
 
-To create the component, you can run the `component_creation.rtm` transaction manifest file by running:
+Since we wish to create a limited vault component whose administrative rights are complex rules defined by us, we will use the `instantiate_custom_limited_withdraw_vault` instantiation function to allow us to set those rules. The administrative rule of the component that we're creating is rather simple; for a call to an administrative method to go through, both `admin1` and `admin2` badges need to be present. In code, this is quite easy to represent. You can also represent it as an `AccessRule` enum in transaction manifests but its a little bit more difficult. To create the component, you can run the `component_creation.rtm` transaction manifest file by running:
 
 ```sh
 resim run ./transactions/component_creation.rtm
 ```
 
-To test the component, we will need to fund it with XRD which we can withdraw later as the user of the system. To fund the component:
+We now have a limited withdraw component which is ready for us to use. We now need to fund this component to be able to use it for testing. We can do that by calling the `deposit` method on the component. The call to this method is quite simple so we can perform it through resim's transaction builder instead of using the transaction manifest:
 
 ```sh
 resim call-method $component deposit 1000000,030000000000000000000000000000000000000000000000000004
 ```
 
-With the component created, and funded, the authorized withdraw entities can now be added to the component. You can add them by running the `adding_withdraw_authorities.rtm` transaction manifest
+We now have a component created and funded and we are finally ready to make use of it! We would now like to add the withdraw authorities which we mentioned in the above table. In general, the addition of new withdraw authorities is done through the `add_withdraw_authority` method which takes in an `AccessRule` and `WithdrawLimit` and creates an internal mapping for them. Then, when a caller presents a vector of proofs which satisfies one of the `AccessRule`s in the mapping, the withdraw limit of the caller is set to the corresponding `WithdrawLimit` from the mapping. 
+
+The transaction manifest file `adding_withdraw_authorities.rtm` contains the instructions needed to call the `add_withdraw_authority` method on the component four times to add the four authorized withdraw entities that we wish to add. You can run it by: 
 
 ```sh
 resim run ./transactions/adding_withdraw_authorities.rtm
 ```
 
-Finally, to test the withdrawal of tokens from the component, you can run the `withdraw_withtin_limit.rtm` transaction manifest.
+We now have the withdraw authorities added to our component. We can now try to withdraw funds from the component to test how well it works. We will act as the first case: `20 Employees && 10 Managers && 1 Executive` and attempt to withdraw 100 XRD. 
 
 ```sh
-resim run ./transactions/withdraw_withtin_limit.rtm
+resim run ./transactions/withdraw_within_limit.rtm
+```
+
+To ensure that the component works as expected, we can try removing one of the authorized withdraw entities from the component to see if the component would still allow for withdrawals of its kind to go through or not. We would like to remove the withdraw entity which has an infinite withdraw power. Then, we want to try to withdraw funds as this entity to see if the component will reject our withdraw or not. The expected and correct behavior is that the component would reject the withdraw
+
+```sh
+resim run transactions/remove_withdraw_auth.rtm
+resim run transactions/withdraw_after_authorization_removal.rtm 
 ```
 
 ## Notes:
