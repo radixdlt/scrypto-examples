@@ -2,10 +2,10 @@ use scrypto::crypto::{EcdsaPrivateKey, EcdsaPublicKey};
 use scrypto::prelude::*;
 use scrypto::values::*;
 
-use radix_engine::model::{Receipt, SignedTransaction};
 use radix_engine::errors::RuntimeError;
-use radix_engine::transaction::*;
 use radix_engine::ledger::*;
+use radix_engine::model::{Receipt, SignedTransaction};
+use radix_engine::transaction::*;
 
 mod environment;
 mod utils;
@@ -40,7 +40,7 @@ pub fn state_setup_succeeds() {
     > = vec![
         &setup_open_state,
         &setup_settled_state,
-        &setup_willingly_canceled_state
+        &setup_willingly_canceled_state,
     ];
 
     for func in funcs.iter() {
@@ -110,12 +110,19 @@ pub fn test_auction_cancellation() {
 }
 
 #[test]
-pub fn test_payment_withdrawal(){
+pub fn test_payment_withdrawal() {
     // Defining the tests to perform along with the states that hey each correspond to.
     let tests: Vec<(
         &str, // This is the name of the state being tested.
-        &dyn Fn(&mut Environment) -> (ComponentAddress, ResourceAddress, ResourceAddress, ResourceAddress), // This is the state function
-        bool // This is a boolean of whether this test should succeed or fail
+        &dyn Fn(
+            &mut Environment,
+        ) -> (
+            ComponentAddress,
+            ResourceAddress,
+            ResourceAddress,
+            ResourceAddress,
+        ), // This is the state function
+        bool, // This is a boolean of whether this test should succeed or fail
     )> = vec![
         ("open", &setup_open_state, false),
         ("canceled", &setup_willingly_canceled_state, false),
@@ -126,12 +133,12 @@ pub fn test_payment_withdrawal(){
         // Setting up the state for this test
         let mut ledger: InMemorySubstateStore = InMemorySubstateStore::with_bootstrap();
         let mut env: Environment = Environment::new(&mut ledger, 10);
-        let (
-            component_address,
-            ownership_badge, 
-            _internal_admin, 
-            _bidders_badge
-        ): (ComponentAddress, ResourceAddress, ResourceAddress, ResourceAddress) = state_func(&mut env);
+        let (component_address, ownership_badge, _internal_admin, _bidders_badge): (
+            ComponentAddress,
+            ResourceAddress,
+            ResourceAddress,
+            ResourceAddress,
+        ) = state_func(&mut env);
 
         // Performing the actual transaction for the test.
         let transaction: SignedTransaction = TransactionBuilder::new()
@@ -143,8 +150,15 @@ pub fn test_payment_withdrawal(){
         let receipt: Receipt = env.executor.validate_and_execute(&transaction).unwrap();
 
         // Checking that the behavior is as expected.
-        let expected_result_string: &str = if expected_result.clone() {"succeed"} else {"fail"};
-        let assertion_error: String = format!("Expected \"{}\" state test to {} but it did not", state_name, expected_result_string);
+        let expected_result_string: &str = if expected_result.clone() {
+            "succeed"
+        } else {
+            "fail"
+        };
+        let assertion_error: String = format!(
+            "Expected \"{}\" state test to {} but it did not",
+            state_name, expected_result_string
+        );
 
         if expected_result.clone() {
             receipt.result.expect(assertion_error.as_str());
@@ -155,12 +169,19 @@ pub fn test_payment_withdrawal(){
 }
 
 #[test]
-pub fn test_bidding(){
+pub fn test_bidding() {
     // Defining the tests to perform along with the states that hey each correspond to.
     let tests: Vec<(
         &str, // This is the name of the state being tested.
-        &dyn Fn(&mut Environment) -> (ComponentAddress, ResourceAddress, ResourceAddress, ResourceAddress), // This is the state function
-        bool // This is a boolean of whether this test should succeed or fail
+        &dyn Fn(
+            &mut Environment,
+        ) -> (
+            ComponentAddress,
+            ResourceAddress,
+            ResourceAddress,
+            ResourceAddress,
+        ), // This is the state function
+        bool, // This is a boolean of whether this test should succeed or fail
     )> = vec![
         ("open", &setup_open_state, true),
         ("canceled", &setup_willingly_canceled_state, false),
@@ -171,22 +192,26 @@ pub fn test_bidding(){
         // Setting up the state for this test
         let mut ledger: InMemorySubstateStore = InMemorySubstateStore::with_bootstrap();
         let mut env: Environment = Environment::new(&mut ledger, 10);
-        let (
-            component_address,
-            ownership_badge, 
-            _internal_admin, 
-            _bidders_badge
-        ): (ComponentAddress, ResourceAddress, ResourceAddress, ResourceAddress) = state_func(&mut env);
+        let (component_address, ownership_badge, _internal_admin, _bidders_badge): (
+            ComponentAddress,
+            ResourceAddress,
+            ResourceAddress,
+            ResourceAddress,
+        ) = state_func(&mut env);
 
         // Performing the actual transaction for the test.
         let transaction: SignedTransaction = TransactionBuilder::new()
             .withdraw_from_account_by_amount(
-                dec!("1000"), 
-                RADIX_TOKEN, 
-                env.accounts[3].component_address
+                dec!("1000"),
+                RADIX_TOKEN,
+                env.accounts[3].component_address,
             )
             .take_from_worktop(RADIX_TOKEN, |builder, bucket_id| {
-                builder.call_method(component_address, "bid", args![scrypto::resource::Bucket(bucket_id)])
+                builder.call_method(
+                    component_address,
+                    "bid",
+                    args![scrypto::resource::Bucket(bucket_id)],
+                )
             })
             .call_method_with_all_resources(env.accounts[3].component_address, "deposit_batch")
             .build(env.executor.get_nonce([env.accounts[3].public_key]))
@@ -194,8 +219,15 @@ pub fn test_bidding(){
         let receipt: Receipt = env.executor.validate_and_execute(&transaction).unwrap();
 
         // Checking that the behavior is as expected.
-        let expected_result_string: &str = if expected_result.clone() {"succeed"} else {"fail"};
-        let assertion_error: String = format!("Expected \"{}\" state test to {} but it did not", state_name, expected_result_string);
+        let expected_result_string: &str = if expected_result.clone() {
+            "succeed"
+        } else {
+            "fail"
+        };
+        let assertion_error: String = format!(
+            "Expected \"{}\" state test to {} but it did not",
+            state_name, expected_result_string
+        );
 
         if expected_result.clone() {
             receipt.result.expect(assertion_error.as_str());
@@ -206,12 +238,19 @@ pub fn test_bidding(){
 }
 
 #[test]
-pub fn test_increase_bid(){
+pub fn test_increase_bid() {
     // Defining the tests to perform along with the states that hey each correspond to.
     let tests: Vec<(
         &str, // This is the name of the state being tested.
-        &dyn Fn(&mut Environment) -> (ComponentAddress, ResourceAddress, ResourceAddress, ResourceAddress), // This is the state function
-        bool // This is a boolean of whether this test should succeed or fail
+        &dyn Fn(
+            &mut Environment,
+        ) -> (
+            ComponentAddress,
+            ResourceAddress,
+            ResourceAddress,
+            ResourceAddress,
+        ), // This is the state function
+        bool, // This is a boolean of whether this test should succeed or fail
     )> = vec![
         ("open", &setup_open_state, true),
         ("canceled", &setup_willingly_canceled_state, false),
@@ -222,48 +261,66 @@ pub fn test_increase_bid(){
         // Setting up the state for this test
         let mut ledger: InMemorySubstateStore = InMemorySubstateStore::with_bootstrap();
         let mut env: Environment = Environment::new(&mut ledger, 10);
-        let (
-            component_address,
-            ownership_badge, 
-            _internal_admin, 
-            bidders_badge
-        ): (ComponentAddress, ResourceAddress, ResourceAddress, ResourceAddress) = state_func(&mut env);
+        let (component_address, ownership_badge, _internal_admin, bidders_badge): (
+            ComponentAddress,
+            ResourceAddress,
+            ResourceAddress,
+            ResourceAddress,
+        ) = state_func(&mut env);
 
         // Performing the actual transaction for the test.
         let transaction: SignedTransaction = TransactionBuilder::new()
             .withdraw_from_account_by_amount(
-                dec!("1000"), 
-                RADIX_TOKEN, 
-                env.accounts[5].component_address
+                dec!("1000"),
+                RADIX_TOKEN,
+                env.accounts[5].component_address,
             )
             .take_from_worktop(RADIX_TOKEN, |builder, bucket_id| {
-                builder.call_method(component_address, "bid", args![scrypto::resource::Bucket(bucket_id)])
+                builder.call_method(
+                    component_address,
+                    "bid",
+                    args![scrypto::resource::Bucket(bucket_id)],
+                )
             })
             .call_method_with_all_resources(env.accounts[5].component_address, "deposit_batch")
             .build(env.executor.get_nonce([env.accounts[5].public_key]))
             .sign([&env.accounts[5].private_key]);
         let receipt: Receipt = env.executor.validate_and_execute(&transaction).unwrap();
-        
+
         let transaction: SignedTransaction = TransactionBuilder::new()
             .create_proof_from_account(bidders_badge, env.accounts[5].component_address)
-            .withdraw_from_account_by_amount(dec!("1000"), RADIX_TOKEN, env.accounts[5].component_address)
+            .withdraw_from_account_by_amount(
+                dec!("1000"),
+                RADIX_TOKEN,
+                env.accounts[5].component_address,
+            )
             .take_from_worktop(RADIX_TOKEN, |builder, bucket_id| {
                 builder.create_proof_from_auth_zone(bidders_badge, |builder, proof_id| {
-                    builder.call_method(component_address, "increase_bid", args![
-                        scrypto::resource::Bucket(bucket_id), 
-                        scrypto::resource::Proof(proof_id)
-                    ])
+                    builder.call_method(
+                        component_address,
+                        "increase_bid",
+                        args![
+                            scrypto::resource::Bucket(bucket_id),
+                            scrypto::resource::Proof(proof_id)
+                        ],
+                    )
                 })
             })
-            
             .call_method_with_all_resources(env.accounts[5].component_address, "deposit_batch")
             .build(env.executor.get_nonce([env.accounts[5].public_key]))
             .sign([&env.accounts[5].private_key]);
         let receipt: Receipt = env.executor.validate_and_execute(&transaction).unwrap();
 
         // Checking that the behavior is as expected.
-        let expected_result_string: &str = if expected_result.clone() {"succeed"} else {"fail"};
-        let assertion_error: String = format!("Expected \"{}\" state test to {} but it did not", state_name, expected_result_string);
+        let expected_result_string: &str = if expected_result.clone() {
+            "succeed"
+        } else {
+            "fail"
+        };
+        let assertion_error: String = format!(
+            "Expected \"{}\" state test to {} but it did not",
+            state_name, expected_result_string
+        );
 
         if expected_result.clone() {
             receipt.result.expect(assertion_error.as_str());
@@ -274,12 +331,19 @@ pub fn test_increase_bid(){
 }
 
 #[test]
-pub fn test_non_winner_cancel_bid(){
+pub fn test_non_winner_cancel_bid() {
     // Defining the tests to perform along with the states that hey each correspond to.
     let tests: Vec<(
         &str, // This is the name of the state being tested.
-        &dyn Fn(&mut Environment) -> (ComponentAddress, ResourceAddress, ResourceAddress, ResourceAddress), // This is the state function
-        bool // This is a boolean of whether this test should succeed or fail
+        &dyn Fn(
+            &mut Environment,
+        ) -> (
+            ComponentAddress,
+            ResourceAddress,
+            ResourceAddress,
+            ResourceAddress,
+        ), // This is the state function
+        bool, // This is a boolean of whether this test should succeed or fail
     )> = vec![
         ("open", &setup_open_state, true),
         ("canceled", &setup_willingly_canceled_state, true),
@@ -290,35 +354,26 @@ pub fn test_non_winner_cancel_bid(){
         // Setting up the state for this test
         let mut ledger: InMemorySubstateStore = InMemorySubstateStore::with_bootstrap();
         let mut env: Environment = Environment::new(&mut ledger, 10);
-        let (
-            component_address,
-            ownership_badge, 
-            _internal_admin, 
-            bidders_badge
-        ): (ComponentAddress, ResourceAddress, ResourceAddress, ResourceAddress) = state_func(&mut env);
+        let (component_address, _ownership_badge, _internal_admin, bidders_badge): (
+            ComponentAddress,
+            ResourceAddress,
+            ResourceAddress,
+            ResourceAddress,
+        ) = state_func(&mut env);
 
         // Performing the actual transaction for the test.
-        if state_name.to_string() == "open".to_string() {
-            let bidding_tx: SignedTransaction = TransactionBuilder::new()
-                .withdraw_from_account_by_amount(
-                    dec!("1000000"), 
-                    RADIX_TOKEN, 
-                    env.accounts[0].component_address
-                )
-                .take_from_worktop_by_amount(dec!("100"), RADIX_TOKEN, |builder, bucket_id| {
-                    builder.call_method(component_address, "bid", args![scrypto::resource::Bucket(bucket_id)])
-                })
-                .call_method_with_all_resources(env.accounts[0].component_address, "deposit_batch")
-                .build(env.executor.get_nonce([env.accounts[0].public_key]))
-                .sign([&env.accounts[0].private_key]);
-            let bidding_receipt: Receipt = env.executor.validate_and_execute(&bidding_tx).unwrap();
-
         let transaction: SignedTransaction = TransactionBuilder::new()
-            .withdraw_from_account_by_amount(dec!("1"), bidders_badge, env.accounts[0].component_address)
+            .withdraw_from_account_by_amount(
+                dec!("1"),
+                bidders_badge,
+                env.accounts[0].component_address,
+            )
             .take_from_worktop(bidders_badge, |builder, bucket_id| {
-                builder.call_method(component_address, "cancel_bid", args![
-                    scrypto::resource::Bucket(bucket_id)
-                ])
+                builder.call_method(
+                    component_address,
+                    "cancel_bid",
+                    args![scrypto::resource::Bucket(bucket_id)],
+                )
             })
             .call_method_with_all_resources(env.accounts[0].component_address, "deposit_batch")
             .build(env.executor.get_nonce([env.accounts[0].public_key]))
@@ -327,8 +382,155 @@ pub fn test_non_winner_cancel_bid(){
         println!("At state {}, rec: {:?}", state_name, receipt);
 
         // Checking that the behavior is as expected.
-        let expected_result_string: &str = if expected_result.clone() {"succeed"} else {"fail"};
-        let assertion_error: String = format!("Expected \"{}\" state test to {} but it did not", state_name, expected_result_string);
+        let expected_result_string: &str = if expected_result.clone() {
+            "succeed"
+        } else {
+            "fail"
+        };
+        let assertion_error: String = format!(
+            "Expected \"{}\" state test to {} but it did not",
+            state_name, expected_result_string
+        );
+
+        if expected_result.clone() {
+            receipt.result.expect(assertion_error.as_str());
+        } else {
+            receipt.result.expect_err(assertion_error.as_str());
+        };
+    }
+}
+
+#[test]
+pub fn test_winner_cancel_bid() {
+    // Defining the tests to perform along with the states that hey each correspond to.
+    let tests: Vec<(
+        &str, // This is the name of the state being tested.
+        &dyn Fn(
+            &mut Environment,
+        ) -> (
+            ComponentAddress,
+            ResourceAddress,
+            ResourceAddress,
+            ResourceAddress,
+        ), // This is the state function
+        bool, // This is a boolean of whether this test should succeed or fail
+    )> = vec![
+        ("open", &setup_open_state, true),
+        ("canceled", &setup_willingly_canceled_state, true),
+        ("settled", &setup_settled_state, false),
+    ];
+
+    for (state_name, state_func, expected_result) in tests.iter() {
+        // Setting up the state for this test
+        let mut ledger: InMemorySubstateStore = InMemorySubstateStore::with_bootstrap();
+        let mut env: Environment = Environment::new(&mut ledger, 10);
+        let (component_address, _ownership_badge, _internal_admin, bidders_badge): (
+            ComponentAddress,
+            ResourceAddress,
+            ResourceAddress,
+            ResourceAddress,
+        ) = state_func(&mut env);
+
+        // Performing the actual transaction for the test.
+        let transaction: SignedTransaction = TransactionBuilder::new()
+            .withdraw_from_account_by_amount(
+                dec!("1"),
+                bidders_badge,
+                env.accounts[1].component_address,
+            )
+            .take_from_worktop(bidders_badge, |builder, bucket_id| {
+                builder.call_method(
+                    component_address,
+                    "cancel_bid",
+                    args![scrypto::resource::Bucket(bucket_id)],
+                )
+            })
+            .call_method_with_all_resources(env.accounts[1].component_address, "deposit_batch")
+            .build(env.executor.get_nonce([env.accounts[1].public_key]))
+            .sign([&env.accounts[1].private_key]);
+        let receipt: Receipt = env.executor.validate_and_execute(&transaction).unwrap();
+        println!("At state {}, rec: {:?}", state_name, receipt);
+
+        // Checking that the behavior is as expected.
+        let expected_result_string: &str = if expected_result.clone() {
+            "succeed"
+        } else {
+            "fail"
+        };
+        let assertion_error: String = format!(
+            "Expected \"{}\" state test to {} but it did not",
+            state_name, expected_result_string
+        );
+
+        if expected_result.clone() {
+            receipt.result.expect(assertion_error.as_str());
+        } else {
+            receipt.result.expect_err(assertion_error.as_str());
+        };
+    }
+}
+
+#[test]
+pub fn test_bidder_claim_nft() {
+    // Defining the tests to perform along with the states that hey each correspond to.
+    let tests: Vec<(
+        &str, // This is the name of the state being tested.
+        &dyn Fn(
+            &mut Environment,
+        ) -> (
+            ComponentAddress,
+            ResourceAddress,
+            ResourceAddress,
+            ResourceAddress,
+        ), // This is the state function
+        bool, // This is a boolean of whether this test should succeed or fail
+    )> = vec![
+        ("open", &setup_open_state, false),
+        ("canceled", &setup_willingly_canceled_state, false),
+        ("settled", &setup_settled_state, true),
+    ];
+
+    for (state_name, state_func, expected_result) in tests.iter() {
+        // Setting up the state for this test
+        let mut ledger: InMemorySubstateStore = InMemorySubstateStore::with_bootstrap();
+        let mut env: Environment = Environment::new(&mut ledger, 10);
+        let (component_address, _ownership_badge, _internal_admin, bidders_badge): (
+            ComponentAddress,
+            ResourceAddress,
+            ResourceAddress,
+            ResourceAddress,
+        ) = state_func(&mut env);
+
+        // Performing the actual transaction for the test.
+        let transaction: SignedTransaction = TransactionBuilder::new()
+            .withdraw_from_account_by_amount(
+                dec!("1"),
+                bidders_badge,
+                env.accounts[1].component_address,
+            )
+            .take_from_worktop(bidders_badge, |builder, bucket_id| {
+                builder.call_method(
+                    component_address,
+                    "claim_nfts",
+                    args![scrypto::resource::Bucket(bucket_id)],
+                )
+            })
+            .call_method_with_all_resources(env.accounts[1].component_address, "deposit_batch")
+            .build(env.executor.get_nonce([env.accounts[1].public_key]))
+            .sign([&env.accounts[1].private_key]);
+        let receipt: Receipt = env.executor.validate_and_execute(&transaction).unwrap();
+        println!("At state {}, rec: {:?}", state_name, receipt);
+
+        // Checking that the behavior is as expected.
+        let expected_result_string: &str = if expected_result.clone() {
+            "succeed"
+        } else {
+            "fail"
+        };
+        let assertion_error: String = format!(
+            "Expected \"{}\" state test to {} but it did not",
+            state_name, expected_result_string
+        );
 
         if expected_result.clone() {
             receipt.result.expect(assertion_error.as_str());
@@ -397,6 +599,49 @@ fn setup_open_state(
         component_instantiation_receipt.new_resource_addresses[2],
     );
 
+    // Making multiple bids
+    let bidding_tx: SignedTransaction = TransactionBuilder::new()
+        .withdraw_from_account_by_amount(
+            dec!("1000000"),
+            RADIX_TOKEN,
+            environment.admin_account.component_address,
+        )
+        .take_from_worktop_by_amount(dec!("100"), RADIX_TOKEN, |builder, bucket_id| {
+            builder.call_method(
+                component_address,
+                "bid",
+                args![scrypto::resource::Bucket(bucket_id)],
+            )
+        })
+        // Account 0 has the losing bids.
+        .take_from_worktop(bidders_badge_resource_address, |builder, bucket_id| {
+            builder.call_method(
+                environment.accounts[0].component_address,
+                "deposit",
+                args![scrypto::resource::Bucket(bucket_id)],
+            )
+        })
+        // Account 1 has the winning bids
+        .take_from_worktop(RADIX_TOKEN, |builder, bucket_id| {
+            builder.call_method(
+                component_address,
+                "bid",
+                args![scrypto::resource::Bucket(bucket_id)],
+            )
+        })
+        .call_method_with_all_resources(environment.accounts[1].component_address, "deposit_batch")
+        .build(
+            environment
+                .executor
+                .get_nonce([environment.admin_account.public_key]),
+        )
+        .sign([&environment.admin_account.private_key]);
+    let bidding_receipt: Receipt = environment
+        .executor
+        .validate_and_execute(&bidding_tx)
+        .unwrap();
+    assert!(bidding_receipt.result.is_ok());
+
     // Returning everything which is required after creating the state
     return (
         component_address,
@@ -422,42 +667,19 @@ fn setup_settled_state(
         ResourceAddress,
     ) = setup_open_state(environment);
 
-    // Making multiple bids
-    let bidding_tx: SignedTransaction = TransactionBuilder::new()
-        .withdraw_from_account_by_amount(dec!("1000000"), RADIX_TOKEN, environment.admin_account.component_address,)
-        .take_from_worktop_by_amount(dec!("100"), RADIX_TOKEN, |builder, bucket_id| {
-            builder.call_method(component_address, "bid", args![scrypto::resource::Bucket(bucket_id)],)
-        })
-        // Account 0 has the losing bids.
-        .take_from_worktop(bidders_badge, |builder, bucket_id| {
-            builder.call_method(environment.accounts[0].component_address, "deposit", args![scrypto::resource::Bucket(bucket_id)],)
-        })
-        // Account 1 has the winning bids
-        .take_from_worktop(RADIX_TOKEN, |builder, bucket_id| {
-            builder.call_method(component_address, "bid", args![scrypto::resource::Bucket(bucket_id)],)
-        })
-        .call_method_with_all_resources(environment.accounts[1].component_address, "deposit_batch")
-        .build(
-            environment
-                .executor
-                .get_nonce([environment.admin_account.public_key]),
-        )
-        .sign([&environment.admin_account.private_key]);
-    let bidding_receipt: Receipt = environment
-        .executor
-        .validate_and_execute(&bidding_tx)
-        .unwrap();
-    assert!(bidding_receipt.result.is_ok());
-
     // Advancing the epochs by the `BIDDING_PERIOD`
     environment
         .executor
         .substate_store_mut()
         .set_epoch(BIDDING_PERIOD + 1);
-    
+
     let settlement_tx: SignedTransaction = TransactionBuilder::new()
         .call_method(component_address, "ensure_auction_settlement", args![])
-        .build(environment.executor.get_nonce([environment.admin_account.public_key]),)
+        .build(
+            environment
+                .executor
+                .get_nonce([environment.admin_account.public_key]),
+        )
         .sign([&environment.admin_account.private_key]);
     let settlement_receipt: Receipt = environment
         .executor
@@ -496,7 +718,11 @@ fn setup_willingly_canceled_state(
         .create_proof_from_account(ownership_badge, environment.admin_account.component_address)
         .call_method(component_address, "cancel_auction", args![])
         .call_method_with_all_resources(environment.accounts[1].component_address, "deposit_batch")
-        .build(environment.executor.get_nonce([environment.admin_account.public_key]))
+        .build(
+            environment
+                .executor
+                .get_nonce([environment.admin_account.public_key]),
+        )
         .sign([&environment.admin_account.private_key]);
     let cancel_auction_receipt: Receipt = environment
         .executor
@@ -512,4 +738,3 @@ fn setup_willingly_canceled_state(
         bidders_badge,
     );
 }
-

@@ -42,10 +42,10 @@ blueprint! {
 
         /// The English Auction is stateful and at different states of the auction different actions may or may not be
         /// possible.
-        state: AuctionState
+        state: AuctionState,
     }
 
-    impl EnglishAuction{
+    impl EnglishAuction {
         // =============================================================================================================
         // The following are methods which only the seller (auctioneer) needs and can call.
         // =============================================================================================================
@@ -192,7 +192,7 @@ blueprint! {
         ///
         /// This method performs a single check before canceling the auction.
         ///
-        /// * **Check 1:** Checks that the auction is either `Open` or `Canceled`. 
+        /// * **Check 1:** Checks that the auction is either `Open` or `Canceled`.
         ///
         /// # Returns:
         ///
@@ -208,14 +208,15 @@ blueprint! {
 
             // Checking if the auction can be canceled.
             assert!(
-                matches!(self.state, AuctionState::Open) || matches!(self.state, AuctionState::Canceled),
+                matches!(self.state, AuctionState::Open)
+                    || matches!(self.state, AuctionState::Canceled),
                 "[Cancel Auction]: Can not cancel the auction unless we're still "
             );
 
             // At this point we know that the auction can be canceled. So, we withdraw the NFTs and return them to the
             // caller
             self.state = AuctionState::Canceled;
-            
+
             let resource_addresses: Vec<ResourceAddress> =
                 self.nft_vaults.keys().cloned().collect();
             let mut tokens: Vec<Bucket> = Vec::new();
@@ -265,7 +266,7 @@ blueprint! {
         // =============================================================================================================
         // The following are methods which only bidders need and can call.
         // =============================================================================================================
-        
+
         /// Allows the caller to Bid in this auction.
         ///
         /// This method allows the caller to bid in this auction with their funds. This method will lock up the bidding
@@ -275,7 +276,7 @@ blueprint! {
         ///
         /// This method performs a number of checks before the bid can be made:
         ///
-        /// * **Check 1:** Checks that the auction is in the `Open` state. 
+        /// * **Check 1:** Checks that the auction is in the `Open` state.
         ///
         /// # Arguments:
         ///
@@ -340,7 +341,7 @@ blueprint! {
             // Mandatory call to ensure that the `ensure_auction_settlement` method to ensure that if the conditions are
             // met, that the auction will proceed to the next stage/state.
             self.ensure_auction_settlement();
-            
+
             // Checking if the bid can be increased or not.
             assert!(
                 matches!(self.state, AuctionState::Open),
@@ -391,10 +392,9 @@ blueprint! {
         ///
         /// This method performs a number of checks before the bid is cancelled
         ///
-        /// * **Check 1:** Checks that the auction is in the `Open` state.
-        /// * **Check 2:** Checks that the badge provided is a valid bidder's badge.
-        /// * **Check 3:** Checks that the `Proof` contains a single bidder's badge.
-        /// * **Check 4:** Checks that the badge provided is not the winner's badge.
+        /// * **Check 1:** Checks that the badge provided is a valid bidder's badge.
+        /// * **Check 2:** Checks that the `Proof` contains a single bidder's badge.
+        /// * **Check 3:** Checks that the badge provided is not the winner's badge.
         ///
         /// # Arguments:
         ///
@@ -409,10 +409,6 @@ blueprint! {
             self.ensure_auction_settlement();
 
             // Checking if the bid can be canceled or not.
-            assert!(
-                matches!(self.state, AuctionState::Open),
-                "[Cancel Bid]: Bids may only be canceled while the auction is open."
-            );
             assert_eq!(
                 bidders_badge.resource_address(),
                 self.bidders_badge,
@@ -544,7 +540,8 @@ blueprint! {
                             bidders_badge_data.is_winner = true;
 
                             // Setting the new data as the data of that badge
-                            resource_manager.update_non_fungible_data(&non_fungible_id, bidders_badge_data);
+                            resource_manager
+                                .update_non_fungible_data(&non_fungible_id, bidders_badge_data);
                         });
 
                         // Take the funds from the winner's vault and put them in the payment vault so that the seller
@@ -560,7 +557,7 @@ blueprint! {
                     } else {
                         self.state = AuctionState::Canceled
                     }
-                },
+                }
                 _ => {}
             }
         }
@@ -572,7 +569,7 @@ blueprint! {
         /// `bool` - A boolean of whether this NFT bundle has any bids or not. If this method returns `true` then there
         /// are bids on the NFT bundle, otherwise if `false` is returned then it means that there are no bids.
         pub fn has_bids(&self) -> bool {
-            return self.bid_vaults.len() > 0
+            return self.bid_vaults.len() > 0;
         }
     }
 }
@@ -595,21 +592,21 @@ struct BidderBadge {
 /// actions may be allowed or disallowed. This enum describes the state of the English auction component.
 #[derive(Encode, Decode, TypeId, Describe, Debug)]
 enum AuctionState {
-    /// An auction is said to be open if the end epoch of the auction has not yet passed and if the seller has not 
-    /// decided to cancel their auction. During the `Open` state, bidders can submit bids, increase their bids, or 
+    /// An auction is said to be open if the end epoch of the auction has not yet passed and if the seller has not
+    /// decided to cancel their auction. During the `Open` state, bidders can submit bids, increase their bids, or
     /// cancel their bids if they wish to do so. Also, during this period, the seller is free to cancel the auction at
-    /// any point during this period. 
+    /// any point during this period.
     Open,
 
-    /// An auction is said to be settled if the period of the auction has ended and we have successfully been able to 
-    /// determine a winner of the auction. If the auction had not bids then it is not possible for it to be settled. 
+    /// An auction is said to be settled if the period of the auction has ended and we have successfully been able to
+    /// determine a winner of the auction. If the auction had not bids then it is not possible for it to be settled.
     /// When an auction is in this state, the seller can withdraw the payment that they've received from auctioning off
     /// their tokens. The bidders who did not win the bid can withdraw and cancel their bids, and the bidder who won the
     /// bid can no longer withdraw their funds, only their NFTs.
     Settled,
 
-    /// An auction is said to be canceled if the seller decided that they no longer with to sell their NFTs during the 
-    /// period in which the auction is open. Or, if there are no bids on the auction and therefore it had to be 
+    /// An auction is said to be canceled if the seller decided that they no longer with to sell their NFTs during the
+    /// period in which the auction is open. Or, if there are no bids on the auction and therefore it had to be
     /// canceled.
     Canceled,
 }
