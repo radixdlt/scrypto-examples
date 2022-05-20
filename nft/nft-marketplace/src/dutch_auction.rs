@@ -72,7 +72,7 @@ blueprint! {
         /// * `ComponentAddress` - A component address of the instantiated `DutchAuction` component.
         /// * `Bucket` - A bucket containing an ownership badge which entitles the holder to the assets in this
         /// component.
-        pub fn instantiate_dutch_auction_sale(
+        pub fn instantiate_dutch_auction(
             non_fungible_tokens: Vec<Bucket>,
             accepted_payment_token: ResourceAddress,
             starting_price: Decimal,

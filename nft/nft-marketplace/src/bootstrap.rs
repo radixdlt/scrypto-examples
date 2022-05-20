@@ -32,7 +32,7 @@ blueprint! {
                     ),
                     (
                         NonFungibleId::random(),
-                        Car {
+                        Car { // Any raptor lovers? 
                             name: "Raptor".to_string(),
                             manufacturer: "Ford".to_string(),
                         },
@@ -85,7 +85,7 @@ blueprint! {
                 ]);
 
             let laptops: Bucket = ResourceBuilder::new_non_fungible()
-                .metadata("name", "Phones NFT")
+                .metadata("name", "Laptops NFT")
                 .metadata("description", "Do you really want me to describe to you what a laptop is? I'm a bit concerned...")
                 .metadata("symbol", "LTOP")
                 .initial_supply([

@@ -1,0 +1,17 @@
+
+CALL_METHOD ComponentAddress("020d3869346218a5e8deaaf2001216dc00fcacb79fb43e30ded79a") "withdraw_by_amount" Decimal("3") ResourceAddress("0302092b21072c871db5ddb9525db9ea751854b8c6db65d256ffb2");
+CALL_METHOD ComponentAddress("020d3869346218a5e8deaaf2001216dc00fcacb79fb43e30ded79a") "withdraw_by_amount" Decimal("1") ResourceAddress("03fa50dc9ec449ea407c54d1fb8be337369bd4b8be08c663677bb6");
+
+TAKE_FROM_WORKTOP ResourceAddress("0302092b21072c871db5ddb9525db9ea751854b8c6db65d256ffb2") Bucket("bucket1");
+TAKE_FROM_WORKTOP ResourceAddress("03fa50dc9ec449ea407c54d1fb8be337369bd4b8be08c663677bb6") Bucket("bucket2");
+
+CALL_FUNCTION 
+    PackageAddress("0164dd31b0974bcd67adbaaafbca68b7addfdc411f5a930b912996") 
+    "EnglishAuction" 
+    "instantiate_english_auction" 
+    Vec<Bucket>(Bucket("bucket1"), Bucket("bucket2"))
+    ResourceAddress("030000000000000000000000000000000000000000000000000004")
+    50u64;
+
+CALL_METHOD_WITH_ALL_RESOURCES ComponentAddress("020d3869346218a5e8deaaf2001216dc00fcacb79fb43e30ded79a") "deposit_batch";
+

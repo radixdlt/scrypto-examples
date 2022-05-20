@@ -13,7 +13,7 @@ use crate::environment::*;
 use crate::utils::*;
 
 pub static BLUEPRINT_NAME: &str = "EnglishAuction";
-pub static INSTANTIATION_FUNCTION_NAME: &str = "instantiate_english_auction_sale";
+pub static INSTANTIATION_FUNCTION_NAME: &str = "instantiate_english_auction";
 pub static BIDDING_PERIOD: u64 = 50u64;
 
 // There are three main actors used throughout the tests you see here:

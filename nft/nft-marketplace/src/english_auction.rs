@@ -80,7 +80,7 @@ blueprint! {
         /// * `ComponentAddress` - A component address of the instantiated `EnglishAuction` component.
         /// * `Bucket` - A bucket containing an ownership badge which entitles the holder to the assets in this
         /// component.
-        pub fn instantiate_english_auction_sale(
+        pub fn instantiate_english_auction(
             non_fungible_tokens: Vec<Bucket>,
             accepted_payment_token: ResourceAddress,
             relative_ending_epoch: u64,
@@ -513,7 +513,7 @@ blueprint! {
         /// This method performs no assertions (i.e. rust type assertions which panic) nor should it ever perform that.
         pub fn ensure_auction_settlement(&mut self) {
             match self.state {
-                AuctionState::Open if Runtime::current_epoch() > self.ending_epoch => {
+                AuctionState::Open if Runtime::current_epoch() >= self.ending_epoch => {
                     // We would like to either transition to the Settled state if there are people who have placed bids
                     // and we can select a winner, or transition to the canceled state if there are no bids and the NFTs
                     // should be sent back.

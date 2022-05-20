@@ -13,7 +13,7 @@ use crate::environment::*;
 use crate::utils::*;
 
 pub static BLUEPRINT_NAME: &str = "DutchAuction";
-pub static INSTANTIATION_FUNCTION_NAME: &str = "instantiate_dutch_auction_sale";
+pub static INSTANTIATION_FUNCTION_NAME: &str = "instantiate_dutch_auction";
 
 #[test]
 pub fn authenticated_methods_require_badges() {
