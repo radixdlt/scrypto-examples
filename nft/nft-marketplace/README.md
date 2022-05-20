@@ -10,7 +10,7 @@ This package includes a number of blueprints that implement functionality typica
 
 ## Design Considerations
 
-![](./images/comparison.svg)
+![](./images/comparison.png)
 
 This package is designed in a way that showcases the power of Radix's concept of components and their importance for the scalability of the network and how monolithic application from other blockchains can be made into multiple smaller components and blueprints in Radix. 
 
