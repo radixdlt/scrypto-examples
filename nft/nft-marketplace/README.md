@@ -1,12 +1,13 @@
 # NFT Marketplace
 
-This package includes a number of blueprints that implement functionality typically seen in NFT marketplaces such as [OpenSea](https://opensea.io/), [Rarible](https://rarible.com/), and so on. The blueprints implement multiple types of sales such as: a fixed price sale, Dutch auction, and English auction. The aim of this package is to showcase to developers how functionality similar to that seen in popular NFT marketplaces, can be implemented with Scrypto on Radix.
+This package includes a number of blueprints that implement functionality typically seen in NFT marketplaces such as [OpenSea](https://opensea.io/), [Rarible](https://rarible.com/), and so on. The blueprints implement multiple types of sales such as: a fixed price sale, Dutch auction, and English auction. The aim of this package is to showcase to developers how functionality similar to that seen in popular NFT marketplaces can be implemented with Scrypto on Radix.
 
 ## Package Features:
 
 * Supports multiple types of sales.
 * Allows NFT sales to take place through any token the seller specifies (does not have to be XRD).
 * NFTs can be sold individually or as a bundle if the seller wants to sell them all together.
+* No central contract/component which makes this more efficient and scalable.
 
 ## Design Considerations
 
