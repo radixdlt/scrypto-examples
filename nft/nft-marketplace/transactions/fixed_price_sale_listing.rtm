@@ -1,0 +1,17 @@
+
+CALL_METHOD ComponentAddress("020d3869346218a5e8deaaf2001216dc00fcacb79fb43e30ded79a") "withdraw_by_amount" Decimal("3") ResourceAddress("03fef7f50bb44ee87f94534e2f8d493e9275b3aa8141cae9151b19");
+CALL_METHOD ComponentAddress("020d3869346218a5e8deaaf2001216dc00fcacb79fb43e30ded79a") "withdraw_by_amount" Decimal("1") ResourceAddress("03dc4bf94e5d9106f122712ac4b7b8a689d32d90205860f071b8e7");
+
+TAKE_FROM_WORKTOP ResourceAddress("03fef7f50bb44ee87f94534e2f8d493e9275b3aa8141cae9151b19") Bucket("bucket1");
+TAKE_FROM_WORKTOP ResourceAddress("03dc4bf94e5d9106f122712ac4b7b8a689d32d90205860f071b8e7") Bucket("bucket2");
+
+CALL_FUNCTION 
+    PackageAddress("0120147b92b7dae2fcd94a3c3d0ecc03e198113866e62be988263e") 
+    "FixedPriceSale" 
+    "instantiate_fixed_price_sale" 
+    Vec<Bucket>(Bucket("bucket1"), Bucket("bucket2"))
+    ResourceAddress("030000000000000000000000000000000000000000000000000004")
+    Decimal("1000");
+
+CALL_METHOD_WITH_ALL_RESOURCES ComponentAddress("020d3869346218a5e8deaaf2001216dc00fcacb79fb43e30ded79a") "deposit_batch";
+
