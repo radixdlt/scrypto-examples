@@ -49,15 +49,15 @@ let rules: AccessRules = AccessRules::new()
     .method("create_additional_admin", rule!(require(admin_badge)))
     .default(rule!(allow_all));
 
-let component = Self {
+let mut component = Self {
     admin_mint_badge: Vault::with_bucket(admin_mint_badge),
     admin_badge: admin_badge,
 }
-.instantiate()
-.add_access_check(rules)
-.globalize();
+.instantiate();
+component.add_access_check(rules);
+let component_address = component.globalize();
 
-(component, first_admin_badge)
+(component_address, first_admin_badge)
 ```
 
 ## Allowing Users to Mint and Burn Admin Badges
