@@ -19,14 +19,14 @@ export executive_badge=$(resim new-token-fixed 1 | sed -nr "s/.*Resource: ([[:al
 export package=$(resim publish . | sed -nr "s/Success! New Package: ([[:alnum:]_]+)/\1/p")
 
 # The instantiation transaction
-echo "CALL_FUNCTION PackageAddress(\"$package\") \"LimitedWithdrawVault\" \"instantiate_custom_limited_withdraw_vault\" Enum(\"Protected\", Enum(\"AllOf\", Vec<Enum>(Enum(\"ProofRule\", Enum(\"Require\", Enum(\"StaticResource\", ResourceAddress(\"$admin_badge1\")))), Enum(\"ProofRule\", Enum(\"Require\", Enum(\"StaticResource\", ResourceAddress(\"$admin_badge2\"))))))) ResourceAddress(\"030000000000000000000000000000000000000000000000000004\");
+echo "CALL_FUNCTION PackageAddress(\"$package\") \"LimitedWithdrawVault\" \"instantiate_custom_limited_withdraw_vault\" Enum(\"Protected\", Enum(\"AllOf\", Vec<Enum>(Enum(\"ProofRule\", Enum(\"Require\", Enum(\"StaticResource\", ResourceAddress(\"$admin_badge1\")))), Enum(\"ProofRule\", Enum(\"Require\", Enum(\"StaticResource\", ResourceAddress(\"$admin_badge2\"))))))) ResourceAddress(\"resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag\");
 CALL_METHOD_WITH_ALL_RESOURCES ComponentAddress(\"$account1\") \"deposit_batch\";
 " > transactions/component_creation.rtm
 CP_OP=$(resim run transactions/component_creation.rtm)
 export component=$(echo "$CP_OP" | sed -nr "s/└─ Component: ([[:alnum:]_]+)/\1/p")
 
 # Depositing funds into the component
-resim call-method $component deposit 1000000,030000000000000000000000000000000000000000000000000004
+resim call-method $component deposit 1000000,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag
 
 # Building tx manifest for the adding of entities
 export entity1_rule="Enum(\"Protected\", Enum(\"AllOf\", Vec<Enum>(Enum(\"ProofRule\", Enum(\"AmountOf\", Enum(\"Static\", Decimal(\"20\")), Enum(\"Static\", ResourceAddress(\"$employee_badge\")))), Enum(\"ProofRule\", Enum(\"AmountOf\", Enum(\"Static\", Decimal(\"15\")), Enum(\"Static\", ResourceAddress(\"$manager_badge\")))), Enum(\"ProofRule\", Enum(\"AmountOf\", Enum(\"Static\", Decimal(\"1\")), Enum(\"Static\", ResourceAddress(\"$executive_badge\"))))))) Enum(\"Finite\", Decimal(\"1000\"))"

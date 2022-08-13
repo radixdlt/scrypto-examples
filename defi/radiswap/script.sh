@@ -1,6 +1,6 @@
 set -x
 
-export xrd=030000000000000000000000000000000000000000000000000004
+export xrd=resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag
 resim reset
 
 OP1=$(resim new-account)

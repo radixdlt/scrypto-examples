@@ -39,7 +39,7 @@ CALL_FUNCTION
     \"EnglishAuction\" 
     \"instantiate_english_auction\" 
     Vec<Bucket>(Bucket(\"bucket1\"), Bucket(\"bucket2\"))
-    ResourceAddress(\"030000000000000000000000000000000000000000000000000004\")
+    ResourceAddress(\"resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag\")
     50u64;
 
 CALL_METHOD_WITH_ALL_RESOURCES ComponentAddress(\"$seller_account\") \"deposit_batch\";
@@ -51,13 +51,13 @@ export bidders_badge=$(echo "$CP_OP" | sed -nr "s/.*Resource: ([[:alnum:]_]+)/\1
 
 # Switching to the bidders accounts and making bids
 resim set-default-account $bidder1_account $bidder1_private_key
-resim call-method $component "bid" 1000,030000000000000000000000000000000000000000000000000004
+resim call-method $component "bid" 1000,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag
 
 resim set-default-account $bidder2_account $bidder2_private_key
-resim call-method $component "bid" 2000,030000000000000000000000000000000000000000000000000004
+resim call-method $component "bid" 2000,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag
 
 resim set-default-account $bidder3_account $bidder3_private_key
-resim call-method $component "bid" 3000,030000000000000000000000000000000000000000000000000004
+resim call-method $component "bid" 3000,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag
 
 # Passing the epochs and then withdrawing the NFTs using the winner's account
 resim set-current-epoch 50

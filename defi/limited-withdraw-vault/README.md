@@ -134,7 +134,7 @@ resim run ./transactions/component_creation.rtm
 We now have a limited withdraw component which is ready for us to use. We now need to fund this component to be able to use it for testing. We can do that by calling the `deposit` method on the component. The call to this method is quite simple so we can perform it through resim's transaction builder instead of using the transaction manifest:
 
 ```sh
-resim call-method $component deposit 1000000,030000000000000000000000000000000000000000000000000004
+resim call-method $component deposit 1000000,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag
 ```
 
 We now have a component created and funded and we are finally ready to make use of it! We would now like to add the withdraw authorities which we mentioned in the above table. In general, the addition of new withdraw authorities is done through the `add_withdraw_authority` method which takes in an `AccessRule` and `WithdrawLimit` and creates an internal mapping for them. Then, when a caller presents a vector of proofs which satisfies one of the `AccessRule`s in the mapping, the withdraw limit of the caller is set to the corresponding `WithdrawLimit` from the mapping. 

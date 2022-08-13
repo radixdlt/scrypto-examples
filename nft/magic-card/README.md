@@ -124,11 +124,11 @@ resim call-function <PACKAGE_ADDRESS> HelloNft instantiate_component
 ```
 4. Call the `buy_random_card` method of the component we just instantiated
 ```
-resim call-method <COMPONENT_ADDRESS> buy_random_card "1000,030000000000000000000000000000000000000000000000000004"
+resim call-method <COMPONENT_ADDRESS> buy_random_card "1000,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag"
 ```
 4. Call the `buy_random_card` method again
 ```
-resim call-method <COMPONENT_ADDRESS> buy_random_card "1000,030000000000000000000000000000000000000000000000000004"
+resim call-method <COMPONENT_ADDRESS> buy_random_card "1000,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag"
 ```
 5. Check out our balance
 ```

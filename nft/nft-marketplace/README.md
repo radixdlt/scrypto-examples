@@ -79,7 +79,7 @@ CALL_FUNCTION
     \"FixedPriceSale\" 
     \"instantiate_fixed_price_sale\" 
     Vec<Bucket>(Bucket(\"bucket1\"), Bucket(\"bucket2\"))
-    ResourceAddress(\"030000000000000000000000000000000000000000000000000004\")
+    ResourceAddress(\"resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag\")
     Decimal(\"1000\");
 
 CALL_METHOD_WITH_ALL_RESOURCES ComponentAddress(\"$seller_account\") \"deposit_batch\";
@@ -96,7 +96,7 @@ Now that the sale component has been created, we may act as the buyer and attemp
 
 ```sh
 $ resim set-default-account $buyer_account $buyer_private_key
-$ resim call-method $component "buy" 1000,030000000000000000000000000000000000000000000000000004
+$ resim call-method $component "buy" 1000,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag
 ```
 
 Viola, and we're done! Lets now check the balances of the buyer's account to make sure that they've received the NFTs that they bought
@@ -104,7 +104,7 @@ Viola, and we're done! Lets now check the balances of the buyer's account to mak
 ```sh
 $ resim show $buyer_account
 Resources:
-├─ { amount: 999000, resource address: 030000000000000000000000000000000000000000000000000004, name: "Radix", symbol: "XRD" }
+├─ { amount: 999000, resource address: resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag, name: "Radix", symbol: "XRD" }
 ├─ { amount: 1, resource address: 03dc4bf94e5d9106f122712ac4b7b8a689d32d90205860f071b8e7, name: "Phones NFT", symbol: "PHONE" }
 │  └─ NonFungible { id: a5d44d1a68623fdf499c1231f93fc501, immutable_data: Struct("Pixel", "Google"), mutable_data: Struct() }
 └─ { amount: 3, resource address: 03fef7f50bb44ee87f94534e2f8d493e9275b3aa8141cae9151b19, name: "Cars NFT", symbol: "FAST" }
@@ -125,7 +125,7 @@ CALL_METHOD_WITH_ALL_RESOURCES ComponentAddress(\"$seller_account\") \"deposit_b
 $ resim run transactions/fixed_price_sale_withdraw_payment.rtm
 $ resim show $seller_account
 Resources:
-├─ { amount: 1001000, resource address: 030000000000000000000000000000000000000000000000000004, name: "Radix", symbol: "XRD" }
+├─ { amount: 1001000, resource address: resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag, name: "Radix", symbol: "XRD" }
 ```
 
 ### Dutch Auction
@@ -184,7 +184,7 @@ CALL_FUNCTION
     \"DutchAuction\" 
     \"instantiate_dutch_auction\" 
     Vec<Bucket>(Bucket(\"bucket1\"), Bucket(\"bucket2\"))
-    ResourceAddress(\"030000000000000000000000000000000000000000000000000004\")
+    ResourceAddress(\"resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag\")
     Decimal(\"1000\")
     Decimal(\"500\")
     50u64;
@@ -201,7 +201,7 @@ Now that the sale component has been created, we may act as the buyer and attemp
 
 ```sh
 $ resim set-default-account $buyer_account $buyer_private_key
-$ resim call-method $component "buy" 750,030000000000000000000000000000000000000000000000000004
+$ resim call-method $component "buy" 750,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag
 ```
 
 Viola, and we're done! Lets now check the balances of the buyer's account to make sure that they've received the NFTs that they bought
@@ -209,7 +209,7 @@ Viola, and we're done! Lets now check the balances of the buyer's account to mak
 ```sh
 $ resim show $buyer_account
 Resources:
-├─ { amount: 999000, resource address: 030000000000000000000000000000000000000000000000000004, name: "Radix", symbol: "XRD" }
+├─ { amount: 999000, resource address: resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag, name: "Radix", symbol: "XRD" }
 ├─ { amount: 1, resource address: 03dc4bf94e5d9106f122712ac4b7b8a689d32d90205860f071b8e7, name: "Phones NFT", symbol: "PHONE" }
 │  └─ NonFungible { id: a5d44d1a68623fdf499c1231f93fc501, immutable_data: Struct("Pixel", "Google"), mutable_data: Struct() }
 └─ { amount: 3, resource address: 03fef7f50bb44ee87f94534e2f8d493e9275b3aa8141cae9151b19, name: "Cars NFT", symbol: "FAST" }
@@ -230,7 +230,7 @@ CALL_METHOD_WITH_ALL_RESOURCES ComponentAddress(\"$seller_account\") \"deposit_b
 $ resim run transactions/dutch_auction_withdraw_payment.rtm
 $ resim show $seller_account
 Resources:
-├─ { amount: 1000750, resource address: 030000000000000000000000000000000000000000000000000004, name: "Radix", symbol: "XRD" }
+├─ { amount: 1000750, resource address: resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag, name: "Radix", symbol: "XRD" }
 ```
 
 ### English Auction
@@ -283,7 +283,7 @@ CALL_FUNCTION
     \"EnglishAuction\" 
     \"instantiate_english_auction\" 
     Vec<Bucket>(Bucket(\"bucket1\"), Bucket(\"bucket2\"))
-    ResourceAddress(\"030000000000000000000000000000000000000000000000000004\")
+    ResourceAddress(\"resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag\")
     50u64;
 
 CALL_METHOD_WITH_ALL_RESOURCES ComponentAddress(\"$seller_account\") \"deposit_batch\";
@@ -297,13 +297,13 @@ We have now begun the auction for the four NFTs. Lets now switch to different ac
 
 ```sh
 $ resim set-default-account $bidder1_account $bidder1_private_key
-$ resim call-method $component "bid" 1000,030000000000000000000000000000000000000000000000000004
+$ resim call-method $component "bid" 1000,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag
 
 $ resim set-default-account $bidder2_account $bidder2_private_key
-$ resim call-method $component "bid" 2000,030000000000000000000000000000000000000000000000000004
+$ resim call-method $component "bid" 2000,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag
 
 $ resim set-default-account $bidder3_account $bidder3_private_key
-$ resim call-method $component "bid" 3000,030000000000000000000000000000000000000000000000000004
+$ resim call-method $component "bid" 3000,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag
 ```
 
 With three bids now in the auction, we can now attempt to claim the NFTs being auctioned off by the account which submitted the largest bid
@@ -342,7 +342,7 @@ CALL_METHOD_WITH_ALL_RESOURCES ComponentAddress(\"$seller_account\") \"deposit_b
 $ resim run transactions/english_auction_withdraw_payment.rtm
 $ resim show $seller_account
 Resources:
-└─ { amount: 1003000, resource address: 030000000000000000000000000000000000000000000000000004, name: "Radix", symbol: "XRD" }
+└─ { amount: 1003000, resource address: resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag, name: "Radix", symbol: "XRD" }
 ```
 
 ## Shortcomings
