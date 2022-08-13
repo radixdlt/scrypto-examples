@@ -811,13 +811,13 @@ pub fn badges_may_withdraw_again_after_reset() {
             .call_method(
                 custom_auth_component,
                 "reset_withdraw_history_of_authority",
-                args![
+                to_struct!(
                     rule!(
                         require_amount(dec!("20"), user_badge1)
                             && require_amount(dec!("10"), user_badge2)
                             && require_amount(dec!("1"), user_badge3)
                     )
-                ],
+                ),
             )
             .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
             .build(env.executor.get_nonce([env.admin_account.public_key]))
@@ -923,13 +923,13 @@ pub fn removed_tier_can_nolonger_withdraw() {
         .call_method(
             custom_auth_component,
             "remove_withdraw_authority",
-            args![
+            to_struct!(
                 rule!(
                     require_amount(dec!("20"), user_badge1)
                         && require_amount(dec!("10"), user_badge2)
                         && require_amount(dec!("1"), user_badge3)
                 )
-            ],
+            ),
         )
         .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
         .build(env.executor.get_nonce([env.admin_account.public_key]))
@@ -1140,14 +1140,14 @@ pub fn more_funds_available_after_limit_increase() {
         .call_method(
             custom_auth_component,
             "update_withdraw_authority_limit",
-            args![
+            to_struct!(
                 rule!(
                     require_amount(dec!("20"), user_badge1)
                         && require_amount(dec!("10"), user_badge2)
                         && require_amount(dec!("1"), user_badge3)
                 ),
                 WithdrawLimit::Finite(dec!("200"))
-            ],
+            ),
         )
         .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
         .build(env.executor.get_nonce([env.admin_account.public_key]))
@@ -1321,12 +1321,12 @@ impl<'a> Environment<'a> {
                     .unwrap(),
                 "System",
                 "new_resource",
-                args![
+                to_struct!(
                     ResourceType::Fungible { divisibility: 18 },
                     metadata,
                     resource_auth,
                     Some(MintParams::Fungible { amount: supply })
-                ],
+                ),
             )
             .call_method_with_all_resources(self.admin_account.component_address, "deposit_batch")
             .build(self.executor.get_nonce([self.admin_account.public_key]))

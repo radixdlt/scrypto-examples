@@ -38,11 +38,11 @@ fn set_up_test_env<'a, L: SubstateStore>(ledger: &'a mut L) -> TestEnv<'a, L> {
                     package,
                     "ClearingHouse",
                     "instantiate_clearing_house",
-                    args![
+                    to_struct!(
                         usd,
                         dec!("1"),
                         dec!("99999")
-                    ]
+                    )
                 )
                 .call_method_with_all_resources(account, "deposit_batch")
                 .build(executor.get_nonce([pk]))
@@ -84,10 +84,10 @@ fn get_position<'a, L: SubstateStore>(env: &mut TestEnv<'a, L>, user_id: Resourc
                 .call_method(
                     env.clearing_house,
                     "get_position",
-                    args![
+                    to_struct!(
                         user_id,
                         nth
-                    ]
+                    )
                 )
                 .call_method_with_all_resources(env.account, "deposit_batch")
                 .build(env.executor.get_nonce([env.pk]))
@@ -119,12 +119,12 @@ fn test_long() {
                         builder.call_method(
                             env.clearing_house,
                             "new_position",
-                            args![
+                            to_struct!(
                                 scrypto::resource::Proof(proof_id),
                                 scrypto::resource::Bucket(bucket_id),
                                 dec!("4"),
                                 String::from("Long")
-                            ],
+                            ),
                         )
                     })
                 })
@@ -157,12 +157,12 @@ fn test_long() {
                         builder.call_method(
                             env.clearing_house,
                             "new_position",
-                            args![
+                            to_struct!(
                                 scrypto::resource::Proof(proof_id),
                                 scrypto::resource::Bucket(bucket_id),
                                 dec!("4"),
                                 String::from("Long")
-                            ],
+                            ),
                         )
                     })
                 })
@@ -193,10 +193,10 @@ fn test_long() {
                     builder.call_method(
                         env.clearing_house,
                         "settle_position",
-                        args![
+                        to_struct!(
                             scrypto::resource::Proof(proof_id),
                             0usize
-                        ]
+                        )
                     )
                 })
                 .call_method_with_all_resources(env.account, "deposit_batch")
@@ -227,12 +227,12 @@ fn test_short() {
                         builder.call_method(
                             env.clearing_house,
                             "new_position",
-                            args![
+                            to_struct!(
                                 scrypto::resource::Proof(proof_id),
                                 scrypto::resource::Bucket(bucket_id),
                                 dec!("4"),
                                 String::from("Short")
-                            ],
+                            ),
                         )
                     })
                 })
@@ -265,12 +265,12 @@ fn test_short() {
                         builder.call_method(
                             env.clearing_house,
                             "new_position",
-                            args![
+                            to_struct!(
                                 scrypto::resource::Proof(proof_id),
                                 scrypto::resource::Bucket(bucket_id),
                                 dec!("4"),
                                 String::from("Short")
-                            ],
+                            ),
                         )
                     })
                 })
@@ -301,10 +301,10 @@ fn test_short() {
                     builder.call_method(
                         env.clearing_house,
                         "settle_position",
-                        args![
+                        to_struct!(
                             scrypto::resource::Proof(proof_id),
                             0usize
-                        ]
+                        )
                     )
                 })
                 .call_method_with_all_resources(env.account, "deposit_batch")

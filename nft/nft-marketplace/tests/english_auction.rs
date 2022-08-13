@@ -299,10 +299,10 @@ pub fn test_increase_bid() {
                     builder.call_method(
                         component_address,
                         "increase_bid",
-                        args![
+                        to_struct!(
                             scrypto::resource::Bucket(bucket_id),
                             scrypto::resource::Proof(proof_id)
-                        ],
+                        ),
                     )
                 })
             })
@@ -563,8 +563,8 @@ fn setup_open_state(
                 environment.package_address,
                 BLUEPRINT_NAME,
                 INSTANTIATION_FUNCTION_NAME,
-                args![
-                    vec![scrypto::resource::Bucket(bucket_id)],
+                to_struct!(
+                    vec![scrypto::resource::Bucket(bucket_id)),
                     RADIX_TOKEN,
                     BIDDING_PERIOD
                 ],

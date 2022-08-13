@@ -77,12 +77,12 @@ fn add_beneficiary_fails_without_admin_badge() {
             builder.call_method(
                 vesting_component,
                 "add_beneficiary",
-                args![
+                to_struct!(
                     scrypto::resource::Bucket(bucket_id),
                     relative_cliff_epoch,
                     relative_ending_epoch,
                     percentage_available_on_cliff
-                ],
+                ),
             )
         })
         .take_from_worktop(beneficiary_badge, |builder, bucket_id| {
@@ -158,12 +158,12 @@ fn add_beneficiary_succeeds_with_admin_badge() {
             builder.call_method(
                 vesting_component,
                 "add_beneficiary",
-                args![
+                to_struct!(
                     scrypto::resource::Bucket(bucket_id),
                     relative_cliff_epoch,
                     relative_ending_epoch,
                     percentage_available_on_cliff
-                ],
+                ),
             )
         })
         .take_from_worktop(beneficiary_badge, |builder, bucket_id| {
@@ -238,12 +238,12 @@ fn terminate_beneficiary_fails_without_admin_badge() {
             builder.call_method(
                 vesting_component,
                 "add_beneficiary",
-                args![
+                to_struct!(
                     scrypto::resource::Bucket(bucket_id),
                     relative_cliff_epoch,
                     relative_ending_epoch,
                     percentage_available_on_cliff
-                ],
+                ),
             )
         })
         .take_from_worktop(beneficiary_badge, |builder, bucket_id| {
@@ -331,12 +331,12 @@ fn terminate_beneficiary_succeeds_with_admin_badge() {
             builder.call_method(
                 vesting_component,
                 "add_beneficiary",
-                args![
+                to_struct!(
                     scrypto::resource::Bucket(bucket_id),
                     relative_cliff_epoch,
                     relative_ending_epoch,
                     percentage_available_on_cliff
-                ],
+                ),
             )
         })
         .take_from_worktop(beneficiary_badge, |builder, bucket_id| {
@@ -424,12 +424,12 @@ fn withdraw_without_beneficiary_badge_fails() {
             builder.call_method(
                 vesting_component,
                 "add_beneficiary",
-                args![
+                to_struct!(
                     scrypto::resource::Bucket(bucket_id),
                     relative_cliff_epoch,
                     relative_ending_epoch,
                     percentage_available_on_cliff
-                ],
+                ),
             )
         })
         .take_from_worktop(beneficiary_badge, |builder, bucket_id| {
@@ -521,12 +521,12 @@ fn withdraw_with_valid_beneficiary_badge_succeeds() {
             builder.call_method(
                 vesting_component,
                 "add_beneficiary",
-                args![
+                to_struct!(
                     scrypto::resource::Bucket(bucket_id),
                     relative_cliff_epoch,
                     relative_ending_epoch,
                     percentage_available_on_cliff
-                ],
+                ),
             )
         })
         .take_from_worktop(beneficiary_badge, |builder, bucket_id| {
@@ -618,12 +618,12 @@ fn withdraw_with_terminated_beneficiary_badge_fails() {
             builder.call_method(
                 vesting_component,
                 "add_beneficiary",
-                args![
+                to_struct!(
                     scrypto::resource::Bucket(bucket_id),
                     relative_cliff_epoch,
                     relative_ending_epoch,
                     percentage_available_on_cliff
-                ],
+                ),
             )
         })
         .take_from_worktop(beneficiary_badge, |builder, bucket_id| {
@@ -728,12 +728,12 @@ fn should_be_empty_withdraw_before_cliff() {
             builder.call_method(
                 vesting_component,
                 "add_beneficiary",
-                args![
+                to_struct!(
                     scrypto::resource::Bucket(bucket_id),
                     relative_cliff_epoch,
                     relative_ending_epoch,
                     percentage_available_on_cliff
-                ],
+                ),
             )
         })
         .take_from_worktop(beneficiary_badge, |builder, bucket_id| {
@@ -835,12 +835,12 @@ fn should_withdraw_initial_on_cliff() {
             builder.call_method(
                 vesting_component,
                 "add_beneficiary",
-                args![
+                to_struct!(
                     scrypto::resource::Bucket(bucket_id),
                     relative_cliff_epoch,
                     relative_ending_epoch,
                     percentage_available_on_cliff
-                ],
+                ),
             )
         })
         .take_from_worktop(beneficiary_badge, |builder, bucket_id| {
@@ -942,12 +942,12 @@ fn should_withdraw_total_long_after_due() {
             builder.call_method(
                 vesting_component,
                 "add_beneficiary",
-                args![
+                to_struct!(
                     scrypto::resource::Bucket(bucket_id),
                     relative_cliff_epoch,
                     relative_ending_epoch,
                     percentage_available_on_cliff
-                ],
+                ),
             )
         })
         .take_from_worktop(beneficiary_badge, |builder, bucket_id| {
@@ -1049,12 +1049,12 @@ fn terminating_beneficiary_after_giving_up_rights_fails() {
             builder.call_method(
                 vesting_component,
                 "add_beneficiary",
-                args![
+                to_struct!(
                     scrypto::resource::Bucket(bucket_id),
                     relative_cliff_epoch,
                     relative_ending_epoch,
                     percentage_available_on_cliff
-                ],
+                ),
             )
         })
         .take_from_worktop(beneficiary_badge, |builder, bucket_id| {
@@ -1151,12 +1151,12 @@ fn non_admin_cant_disable_termination() {
             builder.call_method(
                 vesting_component,
                 "add_beneficiary",
-                args![
+                to_struct!(
                     scrypto::resource::Bucket(bucket_id),
                     relative_cliff_epoch,
                     relative_ending_epoch,
                     percentage_available_on_cliff
-                ],
+                ),
             )
         })
         .take_from_worktop(beneficiary_badge, |builder, bucket_id| {

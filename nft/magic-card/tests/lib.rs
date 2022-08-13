@@ -27,10 +27,10 @@ fn test_magic_card() {
             builder.call_method(
                 component,
                 "buy_special_card",
-                args![
+                to_struct!(
                     NonFungibleId::from_u64(2u64),
                     scrypto::resource::Bucket(bucket_id)
-                ]
+                )
             )
         })
         .call_method_with_all_resources(account, "deposit_batch")
@@ -48,9 +48,9 @@ fn test_magic_card() {
             builder.call_method(
                 component,
                 "buy_random_card",
-                args![
+                to_struct!(
                     scrypto::resource::Bucket(bucket_id)
-                ]
+                )
             )
         })
         .call_method_with_all_resources(account, "deposit_batch")

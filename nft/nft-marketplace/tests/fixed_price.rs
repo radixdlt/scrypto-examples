@@ -32,8 +32,8 @@ pub fn authenticated_methods_require_badges() {
                 env.package_address,
                 BLUEPRINT_NAME,
                 INSTANTIATION_FUNCTION_NAME,
-                args![
-                    vec![scrypto::resource::Bucket(bucket_id)],
+                to_struct!(
+                    vec![scrypto::resource::Bucket(bucket_id)),
                     RADIX_TOKEN,
                     dec!("100")
                 ],
@@ -116,8 +116,8 @@ pub fn full_run_succeeds() {
                 env.package_address,
                 BLUEPRINT_NAME,
                 INSTANTIATION_FUNCTION_NAME,
-                args![
-                    vec![scrypto::resource::Bucket(bucket_id)],
+                to_struct!(
+                    vec![scrypto::resource::Bucket(bucket_id)),
                     RADIX_TOKEN,
                     dec!("100")
                 ],
@@ -189,8 +189,8 @@ pub fn full_run_with_price_change_succeeds() {
                 env.package_address,
                 BLUEPRINT_NAME,
                 INSTANTIATION_FUNCTION_NAME,
-                args![
-                    vec![scrypto::resource::Bucket(bucket_id)],
+                to_struct!(
+                    vec![scrypto::resource::Bucket(bucket_id)),
                     RADIX_TOKEN,
                     dec!("100")
                 ],
