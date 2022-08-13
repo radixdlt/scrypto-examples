@@ -2,7 +2,7 @@ use scrypto::prelude::*;
 
 blueprint! {
     struct ResourceCreation {        
-        vaults: LazyMap<ResourceAddress, Vault>,
+        vaults: KeyValueStore<ResourceAddress, Vault>,
         all_auth_resources: Vec<ResourceAddress>,
         auth_vault_alpha: Vault,
         auth_vault_bravo: Vault,
@@ -18,7 +18,7 @@ blueprint! {
             let authorities: Vec<ResourceAddress> = vec![alpha.resource_address(), bravo.resource_address(), charlie.resource_address()];
 
             Self {
-                vaults: LazyMap::new(),
+                vaults: KeyValueStore::new(),
                 all_auth_resources: authorities,
                 auth_vault_alpha: alpha,
                 auth_vault_bravo: bravo,
@@ -89,7 +89,7 @@ blueprint! {
                 .mintable(rule!(require_any_of("all_auth_resources")), LOCKED)
                 .no_initial_supply();
             
-            let resource_manager: &ResourceManager = borrow_resource_manager!(resource_address);
+            let resource_manager: &mut ResourceManager = borrow_resource_manager!(resource_address);
 
             // Mint method 1 - put one of our auth tokens into the local authorization zone and mint
             ComponentAuthZone::push(self.auth_vault_charlie.create_proof());
@@ -130,7 +130,7 @@ blueprint! {
             let mut new_metadata = HashMap::new();
             new_metadata.insert("name".to_owned(), "An even better name".to_owned());
             new_metadata.insert("some new key".to_owned(), "Interesting value".to_owned());
-            let resource_manager: &ResourceManager = borrow_resource_manager!(resource_address);
+            let resource_manager: &mut ResourceManager = borrow_resource_manager!(resource_address);
             self.auth_vault_alpha.authorize(|| {
                 resource_manager.update_metadata(new_metadata);
             });
@@ -152,7 +152,7 @@ blueprint! {
             ComponentAuthZone::push(self.auth_vault_alpha.create_proof());
 
             // Freeze the token, so no one may withdraw or deposit it
-            let resource_manager: &ResourceManager = borrow_resource_manager!(resource_address);
+            let resource_manager: &mut ResourceManager = borrow_resource_manager!(resource_address);
             resource_manager.set_depositable(rule!(deny_all));
             resource_manager.set_withdrawable(rule!(deny_all));
 
@@ -167,7 +167,7 @@ blueprint! {
 
         /// Withdraws all of specified resource
         pub fn withdraw_resource(&mut self, resource_address: ResourceAddress) -> Bucket {
-            let vault = self.vaults.get(&resource_address);
+            let vault = self.vaults.get_mut(&resource_address);
             match vault {
                 Some(mut vault) => vault.take_all(),
                 None => {
