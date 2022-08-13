@@ -63,7 +63,7 @@ blueprint! {
                 .method("advance_stage", rule!(require(general_admin.resource_address())))
                 .default(rule!(allow_all));
 
-            let component = Self {
+            let mut component = Self {
                 token_supply: Vault::with_bucket(my_bucket),
                 internal_authority: Vault::with_bucket(internal_admin),
                 collected_xrd: Vault::new(RADIX_TOKEN),
@@ -71,27 +71,26 @@ blueprint! {
                 admin_badge_resource_address: general_admin.resource_address(),
                 freeze_badge_resource_address: freeze_admin.resource_address(),
             }
-            .instantiate()
-            .add_access_check(access_rules)
-            .globalize();
+            .instantiate();
+            component.add_access_check(access_rules);
 
-            (component, general_admin, freeze_admin)
+            (component.globalize(), general_admin, freeze_admin)
         }
 
         /// Either the general admin or freeze admin badge may be used to freeze or unfreeze consumer transfers of the supply
         pub fn toggle_transfer_freeze(&self, set_frozen: bool) {
             // Note that this operation will fail if the token has reached stage 3 and the token behavior has been locked
-            let token_resource_manager: &ResourceManager = borrow_resource_manager!(self.token_supply.resource_address());
+            let token_resource_manager: &mut ResourceManager = borrow_resource_manager!(self.token_supply.resource_address());
             
             self.internal_authority.authorize(|| {
                 if set_frozen {
                     token_resource_manager.set_withdrawable(rule!(
-                        require(general_admin.resource_address()) || require(internal_admin.resource_address())
+                        require(self.admin_badge_resource_address) || require(self.internal_authority.resource_address())
                     ));
                     info!("Token transfer is now RESTRICTED");
                 }
                 else {
-                    token_resource_manager.set_withdrawable( auth!(allow_all) );
+                    token_resource_manager.set_withdrawable( rule!(allow_all) );
                     info!("Token is now freely transferrable");
                 }  
             })   
@@ -112,7 +111,7 @@ blueprint! {
             ComponentAuthZone::push(self.internal_authority.create_proof());
         
             assert!(self.current_stage <= 2, "Already at final stage");
-            let token_resource_manager: &ResourceManager = borrow_resource_manager!(self.token_supply.resource_address());
+            let token_resource_manager: &mut ResourceManager = borrow_resource_manager!(self.token_supply.resource_address());
         
             if self.current_stage == 1 {
                 // Advance to stage 2                
