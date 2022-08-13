@@ -68,7 +68,7 @@ pub fn authed_methods_require_correct_badge() {
     ];
     for method_name in authed_methods.iter() {
         let method_test_tx: SignedTransaction = TransactionBuilder::new()
-            .call_method(custom_auth_component, method_name, args![])
+            .call_method(custom_auth_component, method_name, to_struct!())
             .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
             .build(env.executor.get_nonce([env.admin_account.public_key]))
             .sign([&env.admin_account.private_key]);
@@ -86,7 +86,7 @@ pub fn authed_methods_require_correct_badge() {
         let method_test_tx: SignedTransaction = TransactionBuilder::new()
             .create_proof_from_account(badge1, env.admin_account.component_address)
             .create_proof_from_account(badge2, env.admin_account.component_address)
-            .call_method(custom_auth_component, method_name, args![])
+            .call_method(custom_auth_component, method_name, to_struct!())
             .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
             .build(env.executor.get_nonce([env.admin_account.public_key]))
             .sign([&env.admin_account.private_key]);
@@ -124,7 +124,7 @@ pub fn non_authed_methods_dont_require_a_badge() {
     // Iterating over the authed methods and ensuring that all of their transactions end with an AuthorizationError
     for method_name in non_authed_methods.iter() {
         let method_test_tx: SignedTransaction = TransactionBuilder::new()
-            .call_method(custom_auth_component, method_name, args![])
+            .call_method(custom_auth_component, method_name, to_struct!())
             .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
             .build(env.executor.get_nonce([env.admin_account.public_key]))
             .sign([&env.admin_account.private_key]);
@@ -217,7 +217,7 @@ pub fn correct_badges_and_within_limit_succeeds() {
             .call_method(
                 custom_auth_component,
                 "add_withdraw_authority",
-                args![access_rule.clone(), withdraw_limit.clone()],
+                to_struct!(access_rule.clone(), withdraw_limit.clone()),
             )
             .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
             .build(env.executor.get_nonce([env.admin_account.public_key]))
@@ -252,7 +252,7 @@ pub fn correct_badges_and_within_limit_succeeds() {
         .call_method(
             custom_auth_component,
             "withdraw",
-            args![withdraw_amount, proofs],
+            to_struct!(withdraw_amount, proofs),
         )
         .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
         .build(env.executor.get_nonce([env.admin_account.public_key]))
@@ -340,7 +340,7 @@ pub fn infinite_withdrawal_limit_succeeds() {
             .call_method(
                 custom_auth_component,
                 "add_withdraw_authority",
-                args![access_rule.clone(), withdraw_limit.clone()],
+                to_struct!(access_rule.clone(), withdraw_limit.clone()),
             )
             .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
             .build(env.executor.get_nonce([env.admin_account.public_key]))
@@ -375,7 +375,7 @@ pub fn infinite_withdrawal_limit_succeeds() {
         .call_method(
             custom_auth_component,
             "withdraw",
-            args![withdraw_amount, proofs],
+            to_struct!(withdraw_amount, proofs),
         )
         .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
         .build(env.executor.get_nonce([env.admin_account.public_key]))
@@ -464,7 +464,7 @@ pub fn satisfy_two_or_more_rules_withdraws_maximum() {
             .call_method(
                 custom_auth_component,
                 "add_withdraw_authority",
-                args![access_rule.clone(), withdraw_limit.clone()],
+                to_struct!(access_rule.clone(), withdraw_limit.clone()),
             )
             .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
             .build(env.executor.get_nonce([env.admin_account.public_key]))
@@ -499,7 +499,7 @@ pub fn satisfy_two_or_more_rules_withdraws_maximum() {
         .call_method(
             custom_auth_component,
             "withdraw",
-            args![withdraw_amount, proofs],
+            to_struct!(withdraw_amount, proofs),
         )
         .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
         .build(env.executor.get_nonce([env.admin_account.public_key]))
@@ -588,7 +588,7 @@ pub fn satisfy_two_or_more_rules_withdraws_maximum_and_drains_others() {
             .call_method(
                 custom_auth_component,
                 "add_withdraw_authority",
-                args![access_rule.clone(), withdraw_limit.clone()],
+                to_struct!(access_rule.clone(), withdraw_limit.clone()),
             )
             .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
             .build(env.executor.get_nonce([env.admin_account.public_key]))
@@ -623,7 +623,7 @@ pub fn satisfy_two_or_more_rules_withdraws_maximum_and_drains_others() {
         .call_method(
             custom_auth_component,
             "withdraw",
-            args![withdraw_amount, proofs],
+            to_struct!(withdraw_amount, proofs),
         )
         .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
         .build(env.executor.get_nonce([env.admin_account.public_key]))
@@ -667,7 +667,7 @@ pub fn satisfy_two_or_more_rules_withdraws_maximum_and_drains_others() {
         .call_method(
             custom_auth_component,
             "withdraw",
-            args![withdraw_amount, proofs],
+            to_struct!(withdraw_amount, proofs),
         )
         .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
         .build(env.executor.get_nonce([env.admin_account.public_key]))
@@ -756,7 +756,7 @@ pub fn badges_may_withdraw_again_after_reset() {
             .call_method(
                 custom_auth_component,
                 "add_withdraw_authority",
-                args![access_rule.clone(), withdraw_limit.clone()],
+                to_struct!(access_rule.clone(), withdraw_limit.clone()),
             )
             .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
             .build(env.executor.get_nonce([env.admin_account.public_key]))
@@ -794,7 +794,7 @@ pub fn badges_may_withdraw_again_after_reset() {
             .call_method(
                 custom_auth_component,
                 "withdraw",
-                args![withdraw_amount, proofs],
+                to_struct!(withdraw_amount, proofs),
             )
             .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
             .build(env.executor.get_nonce([env.admin_account.public_key]))
@@ -906,7 +906,7 @@ pub fn removed_tier_can_nolonger_withdraw() {
             .call_method(
                 custom_auth_component,
                 "add_withdraw_authority",
-                args![access_rule.clone(), withdraw_limit.clone()],
+                to_struct!(access_rule.clone(), withdraw_limit.clone()),
             )
             .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
             .build(env.executor.get_nonce([env.admin_account.public_key]))
@@ -963,7 +963,7 @@ pub fn removed_tier_can_nolonger_withdraw() {
         .call_method(
             custom_auth_component,
             "withdraw",
-            args![withdraw_amount, proofs],
+            to_struct!(withdraw_amount, proofs),
         )
         .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
         .build(env.executor.get_nonce([env.admin_account.public_key]))
@@ -1051,7 +1051,7 @@ pub fn more_funds_available_after_limit_increase() {
             .call_method(
                 custom_auth_component,
                 "add_withdraw_authority",
-                args![access_rule.clone(), withdraw_limit.clone()],
+                to_struct!(access_rule.clone(), withdraw_limit.clone()),
             )
             .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
             .build(env.executor.get_nonce([env.admin_account.public_key]))
@@ -1086,7 +1086,7 @@ pub fn more_funds_available_after_limit_increase() {
         .call_method(
             custom_auth_component,
             "withdraw",
-            args![withdraw_amount, proofs],
+            to_struct!(withdraw_amount, proofs),
         )
         .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
         .build(env.executor.get_nonce([env.admin_account.public_key]))
@@ -1122,7 +1122,7 @@ pub fn more_funds_available_after_limit_increase() {
         .call_method(
             custom_auth_component,
             "withdraw",
-            args![withdraw_amount + withdraw_amount, proofs],
+            to_struct!(withdraw_amount + withdraw_amount, proofs),
         )
         .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
         .build(env.executor.get_nonce([env.admin_account.public_key]))
@@ -1181,7 +1181,7 @@ pub fn more_funds_available_after_limit_increase() {
         .call_method(
             custom_auth_component,
             "withdraw",
-            args![withdraw_amount, proofs],
+            to_struct!(withdraw_amount, proofs),
         )
         .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
         .build(env.executor.get_nonce([env.admin_account.public_key]))
@@ -1262,7 +1262,7 @@ impl<'a> Environment<'a> {
                 self.package_address,
                 "LimitedWithdrawVault",
                 "instantiate_simple_limited_withdraw_vault",
-                args![tokens_resource_address],
+                to_struct!(tokens_resource_address),
             )
             .call_method_with_all_resources(self.admin_account.component_address, "deposit_batch")
             .build(self.executor.get_nonce([self.admin_account.public_key]))
@@ -1292,7 +1292,7 @@ impl<'a> Environment<'a> {
                 self.package_address,
                 "LimitedWithdrawVault",
                 "instantiate_custom_limited_withdraw_vault",
-                args![administration_rule, tokens_resource_address],
+                to_struct!(administration_rule, tokens_resource_address),
             )
             .call_method_with_all_resources(self.admin_account.component_address, "deposit_batch")
             .build(self.executor.get_nonce([self.admin_account.public_key]))
@@ -1353,7 +1353,7 @@ impl<'a> Environment<'a> {
                 builder.call_method(
                     component_address,
                     "deposit",
-                    args![scrypto::resource::Bucket(bucket_id)],
+                    to_struct!(scrypto::resource::Bucket(bucket_id)),
                 )
             })
             .call_method_with_all_resources(account.component_address, "deposit_batch")

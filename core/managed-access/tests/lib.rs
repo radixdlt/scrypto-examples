@@ -35,7 +35,7 @@ fn test_withdraw_all() {
         .call_method(
             managed_access,
             "withdraw_all",
-            args![],
+            to_struct!(),
         )
         .call_method_with_all_resources(account, "deposit_batch")
         .build(executor.get_nonce([pk]))

@@ -84,7 +84,7 @@ pub fn test_auction_cancellation() {
         // Performing the actual transaction for the test.
         let transaction: SignedTransaction = TransactionBuilder::new()
             .create_proof_from_account(ownership_badge, env.admin_account.component_address)
-            .call_method(component_address, "cancel_auction", args![])
+            .call_method(component_address, "cancel_auction", to_struct!())
             .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
             .build(env.executor.get_nonce([env.admin_account.public_key]))
             .sign([&env.admin_account.private_key]);
@@ -143,7 +143,7 @@ pub fn test_payment_withdrawal() {
         // Performing the actual transaction for the test.
         let transaction: SignedTransaction = TransactionBuilder::new()
             .create_proof_from_account(ownership_badge, env.admin_account.component_address)
-            .call_method(component_address, "withdraw_payment", args![])
+            .call_method(component_address, "withdraw_payment", to_struct!())
             .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
             .build(env.executor.get_nonce([env.admin_account.public_key]))
             .sign([&env.admin_account.private_key]);
@@ -210,7 +210,7 @@ pub fn test_bidding() {
                 builder.call_method(
                     component_address,
                     "bid",
-                    args![scrypto::resource::Bucket(bucket_id)],
+                    to_struct!(scrypto::resource::Bucket(bucket_id)),
                 )
             })
             .call_method_with_all_resources(env.accounts[3].component_address, "deposit_batch")
@@ -279,7 +279,7 @@ pub fn test_increase_bid() {
                 builder.call_method(
                     component_address,
                     "bid",
-                    args![scrypto::resource::Bucket(bucket_id)],
+                    to_struct!(scrypto::resource::Bucket(bucket_id)),
                 )
             })
             .call_method_with_all_resources(env.accounts[5].component_address, "deposit_batch")
@@ -372,7 +372,7 @@ pub fn test_non_winner_cancel_bid() {
                 builder.call_method(
                     component_address,
                     "cancel_bid",
-                    args![scrypto::resource::Bucket(bucket_id)],
+                    to_struct!(scrypto::resource::Bucket(bucket_id)),
                 )
             })
             .call_method_with_all_resources(env.accounts[0].component_address, "deposit_batch")
@@ -442,7 +442,7 @@ pub fn test_winner_cancel_bid() {
                 builder.call_method(
                     component_address,
                     "cancel_bid",
-                    args![scrypto::resource::Bucket(bucket_id)],
+                    to_struct!(scrypto::resource::Bucket(bucket_id)),
                 )
             })
             .call_method_with_all_resources(env.accounts[1].component_address, "deposit_batch")
@@ -512,7 +512,7 @@ pub fn test_bidder_claim_nft() {
                 builder.call_method(
                     component_address,
                     "claim_nfts",
-                    args![scrypto::resource::Bucket(bucket_id)],
+                    to_struct!(scrypto::resource::Bucket(bucket_id)),
                 )
             })
             .call_method_with_all_resources(env.accounts[1].component_address, "deposit_batch")
@@ -610,7 +610,7 @@ fn setup_open_state(
             builder.call_method(
                 component_address,
                 "bid",
-                args![scrypto::resource::Bucket(bucket_id)],
+                to_struct!(scrypto::resource::Bucket(bucket_id)),
             )
         })
         // Account 0 has the losing bids.
@@ -618,7 +618,7 @@ fn setup_open_state(
             builder.call_method(
                 environment.accounts[0].component_address,
                 "deposit",
-                args![scrypto::resource::Bucket(bucket_id)],
+                to_struct!(scrypto::resource::Bucket(bucket_id)),
             )
         })
         // Account 1 has the winning bids
@@ -626,7 +626,7 @@ fn setup_open_state(
             builder.call_method(
                 component_address,
                 "bid",
-                args![scrypto::resource::Bucket(bucket_id)],
+                to_struct!(scrypto::resource::Bucket(bucket_id)),
             )
         })
         .call_method_with_all_resources(environment.accounts[1].component_address, "deposit_batch")
@@ -674,7 +674,7 @@ fn setup_settled_state(
         .set_epoch(BIDDING_PERIOD + 1);
 
     let settlement_tx: SignedTransaction = TransactionBuilder::new()
-        .call_method(component_address, "ensure_auction_settlement", args![])
+        .call_method(component_address, "ensure_auction_settlement", to_struct!())
         .build(
             environment
                 .executor
@@ -716,7 +716,7 @@ fn setup_willingly_canceled_state(
     // Canceling the auction.
     let cancel_auction_tx: SignedTransaction = TransactionBuilder::new()
         .create_proof_from_account(ownership_badge, environment.admin_account.component_address)
-        .call_method(component_address, "cancel_auction", args![])
+        .call_method(component_address, "cancel_auction", to_struct!())
         .call_method_with_all_resources(environment.accounts[1].component_address, "deposit_batch")
         .build(
             environment

@@ -61,7 +61,7 @@ pub fn authenticated_methods_require_badges() {
     // Calls to methods should fail with an authorization error when the correct badge is not provided.
     for method_name in authenticated_methods.iter() {
         let method_tx: SignedTransaction = TransactionBuilder::new()
-            .call_method(component_address, method_name, args![])
+            .call_method(component_address, method_name, to_struct!())
             .build(env.executor.get_nonce([env.admin_account.public_key]))
             .sign([&env.admin_account.private_key]);
         let method_receipt: Receipt = env.executor.validate_and_execute(&method_tx).unwrap();
@@ -79,7 +79,7 @@ pub fn authenticated_methods_require_badges() {
                 ownership_badge,
                 env.admin_account.component_address,
             )
-            .call_method(component_address, method_name, args![])
+            .call_method(component_address, method_name, to_struct!())
             .build(env.executor.get_nonce([env.admin_account.public_key]))
             .sign([&env.admin_account.private_key]);
         let method_receipt: Receipt = env.executor.validate_and_execute(&method_tx).unwrap();
@@ -146,7 +146,7 @@ pub fn full_run_succeeds() {
             builder.call_method(
                 component_address,
                 "buy",
-                args![scrypto::resource::Bucket(bucket_id)],
+                to_struct!(scrypto::resource::Bucket(bucket_id)),
             )
         })
         .call_method_with_all_resources(env.accounts[0].component_address, "deposit_batch")
@@ -158,7 +158,7 @@ pub fn full_run_succeeds() {
     // Withdrawing the owed funds from the admin account
     let payment_withdrawal_tx: SignedTransaction = TransactionBuilder::new()
         .create_proof_from_account(ownership_badge, env.admin_account.component_address)
-        .call_method(component_address, "withdraw_payment", args![])
+        .call_method(component_address, "withdraw_payment", to_struct!())
         .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
         .build(env.executor.get_nonce([env.admin_account.public_key]))
         .sign([&env.admin_account.private_key]);
@@ -211,7 +211,7 @@ pub fn full_run_with_price_change_succeeds() {
     // Changing the price of the tokens
     let price_change_tx: SignedTransaction = TransactionBuilder::new()
         .create_proof_from_account(ownership_badge, env.admin_account.component_address)
-        .call_method(component_address, "change_price", args![dec!("200")])
+        .call_method(component_address, "change_price", to_struct!(dec!("200")))
         .call_method_with_all_resources(env.admin_account.component_address, "deposit_batch")
         .build(env.executor.get_nonce([env.admin_account.public_key]))
         .sign([&env.admin_account.private_key]);
@@ -233,7 +233,7 @@ pub fn full_run_with_price_change_succeeds() {
             builder.call_method(
                 component_address,
                 "buy",
-                args![scrypto::resource::Bucket(bucket_id)],
+                to_struct!(scrypto::resource::Bucket(bucket_id)),
             )
         })
         .call_method_with_all_resources(env.accounts[0].component_address, "deposit_batch")

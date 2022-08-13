@@ -59,7 +59,7 @@ impl<'a> Environment<'a> {
 
         // Making the bootstrap transaction to setup the NFTs
         let bootstrap_tx: SignedTransaction = TransactionBuilder::new()
-            .call_function(package, "Bootstrap", "bootstrap", args![])
+            .call_function(package, "Bootstrap", "bootstrap", to_struct!())
             .call_method_with_all_resources(admin_account.component_address, "deposit_batch")
             .build(executor.get_nonce([admin_account.public_key]))
             .sign([&admin_account.private_key]);

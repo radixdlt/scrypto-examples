@@ -61,7 +61,7 @@ fn create_user<'a, L: SubstateStore>(env: &mut TestEnv<'a, L>) -> ResourceAddres
         .executor
         .validate_and_execute(
             &TransactionBuilder::new()
-                .call_method(env.lending_pool, "new_user", args![])
+                .call_method(env.lending_pool, "new_user", to_struct!())
                 .call_method_with_all_resources(env.account, "deposit_batch")
                 .build(env.executor.get_nonce([env.key]))
                 .sign([&env.priv_key]),
