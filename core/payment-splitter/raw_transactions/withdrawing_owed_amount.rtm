@@ -1,3 +1,9 @@
+# Locking a fee from the account
+CALL_METHOD 
+    ComponentAddress("<<<account2_address>>>") 
+    "lock_fee" 
+    Decimal("10");
+
 # To withdraw the funds from the payment splitter, we need to show our shareholder badge to the withdraw method. So,
 # we will begin by withdrawing our badge from our account and putting it in a proof
 CALL_METHOD 

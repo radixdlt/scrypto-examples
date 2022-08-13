@@ -1,20 +1,26 @@
+# Locking a fee from the account
+CALL_METHOD 
+    ComponentAddress("account_sim1qveucu2cwdz4mak203z35av352tc9g608q6geu2ea54qwkmjch") 
+    "lock_fee" 
+    Decimal("10");
+
 # To withdraw the funds from the payment splitter, we need to show our shareholder badge to the withdraw method. So,
 # we will begin by withdrawing our badge from our account and putting it in a proof
 CALL_METHOD 
-    ComponentAddress("02e0905317d684478c275540e2ed7170f217e0c557805f7fd2a0d3") 
+    ComponentAddress("account_sim1qveucu2cwdz4mak203z35av352tc9g608q6geu2ea54qwkmjch") 
     "create_proof" 
-    ResourceAddress("03fb20c636cbf8235a81012fcfe424363f33c1b0cdf3c2f72622e2");
+    ResourceAddress("resource_sim1qza094t4vl4adfshdqr23xavp00t5agl5rkk0a5359eswjnw6s");
 CREATE_PROOF_FROM_AUTH_ZONE
-    ResourceAddress("03fb20c636cbf8235a81012fcfe424363f33c1b0cdf3c2f72622e2")
+    ResourceAddress("resource_sim1qza094t4vl4adfshdqr23xavp00t5agl5rkk0a5359eswjnw6s")
     Proof("shareholder_badge");
 
 # Withdrawing the funds from the splitter
 CALL_METHOD 
-    ComponentAddress("0289fdd1b7e1b31e7e43380c2062f8e5d989809b5d189326dac966") 
+    ComponentAddress("component_sim1qfxvnpnvl5x6zee79477g6kptfd97h0sxsc3t4k25hlqh86uzf") 
     "withdraw" 
     Proof("shareholder_badge");
 
 # Depositing everything back into our account
 CALL_METHOD_WITH_ALL_RESOURCES 
-    ComponentAddress("02e0905317d684478c275540e2ed7170f217e0c557805f7fd2a0d3") 
+    ComponentAddress("account_sim1qveucu2cwdz4mak203z35av352tc9g608q6geu2ea54qwkmjch") 
     "deposit_batch";

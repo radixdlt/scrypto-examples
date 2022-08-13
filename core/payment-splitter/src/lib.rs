@@ -165,7 +165,7 @@ blueprint! {
                 // can take the shareholder badge in a `Proof`, get its ID, and use the data associated with it.
                 .default(rule!(allow_all));
 
-            let payment_splitter: ComponentAddress = Self {
+            let mut payment_splitter: PaymentSplitter_Component = Self {
                 accepted_token_resource_address: accepted_token_resource_address,
                 shareholder_badge_resource_address: shareholder_badge,
                 internal_admin_badge: Vault::with_bucket(internal_admin_badge),
@@ -174,11 +174,10 @@ blueprint! {
                 is_locked: false,
                 total_amount_of_shares: dec!("0"),
             }
-            .instantiate()
-            .add_access_check(access_rules)            
-            .globalize();
+            .instantiate();
+            payment_splitter.add_access_check(access_rules);
 
-            return payment_splitter;
+            return payment_splitter.globalize();
         }
 
         /// Adds a shareholder to the PaymentSplitter
@@ -264,12 +263,9 @@ blueprint! {
             shareholder_badge: Proof,
         ) -> Bucket {
             // Checking the type and quantity of the resource in the proof
-            assert_eq!(
-                shareholder_badge.resource_address(),
-                self.shareholder_badge_resource_address,
-                "[Withdraw]: Invalid badge type presented"
-            );
-            assert!(shareholder_badge.amount() == dec!("1"), "[Withdraw]: Invalid badge amount presented");
+            let shareholder_badge: ValidatedProof = shareholder_badge
+                .validate_proof(ProofValidationMode::ValidateContainsAmount(self.shareholder_badge_resource_address, dec!("1")))
+                .expect("[Withdraw by Amount]: Invalid badge resource address or amount");
 
             // At this point we have verified that the caller has presented a valid shareholder badge. We may now begin
             // checking the NonFungibleId of the badge and then withdraw the amount owed to them
@@ -305,12 +301,9 @@ blueprint! {
             shareholder_badge: Proof,
         ) -> Bucket {
             // Checking the type and quantity of the resource in the proof
-            assert_eq!(
-                shareholder_badge.resource_address(),
-                self.shareholder_badge_resource_address,
-                "[Withdraw Give-up Shares]: Invalid badge type presented"
-            );
-            assert!(shareholder_badge.amount() == dec!("1"), "[Withdraw by Amount]: Invalid badge amount presented");
+            let shareholder_badge: ValidatedProof = shareholder_badge
+                .validate_proof(ProofValidationMode::ValidateContainsAmount(self.shareholder_badge_resource_address, dec!("1")))
+                .expect("[Withdraw by Amount]: Invalid badge resource address or amount");
 
             // At this point we have verified that the caller has presented a valid shareholder badge. We may now begin
             // checking the NonFungibleId of the badge and then withdraw the amount owed to them
