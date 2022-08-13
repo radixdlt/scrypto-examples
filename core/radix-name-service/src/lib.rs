@@ -57,7 +57,7 @@ blueprint! {
                 .method("withdraw_fees", rule!(require(admin_badge.resource_address())))
                 .default(rule!(allow_all));
 
-            let component = RadixNameService {
+            let mut component = RadixNameService {
                 admin_badge: admin_badge.resource_address(),
                 minter: Vault::with_bucket(minter),
                 name_resource,
@@ -67,11 +67,11 @@ blueprint! {
                 fee_address_update,
                 fee_renewal_per_year,
             }
-            .instantiate()
-            .add_access_check(rules)
-            .globalize();
+            .instantiate();
+            component.add_access_check(rules);
+            let component_address = component.globalize();
 
-            (component, admin_badge)
+            (component_address, admin_badge)
         }
 
         /// Lookup the address for a given `name`.
@@ -173,17 +173,12 @@ blueprint! {
             mut fee: Bucket,
         ) -> Bucket {
             assert!(
-                name_nft.resource_address() == self.name_resource,
-                "The name_nft bucket does not contain a domain name NFT"
-            );
-            assert!(
-                name_nft.amount() == Decimal::one(),
-                "The name_nft bucket must contain exactly one DomainName NFT"
-            );
-            assert!(
                 fee.resource_address() == RADIX_TOKEN,
                 "The fee must be payed in XRD"
             );
+            let name_nft: ValidatedProof = name_nft
+                .validate_proof(ProofValidationMode::ValidateContainsAmount(self.name_resource, dec!("1")))
+                .expect("The provided badge is either of an invalid resource address or amount.");
 
             let fee_amount = self.fee_address_update;
             assert!(
@@ -192,7 +187,7 @@ blueprint! {
                 fee_amount
             );
 
-            let resource_manager: &ResourceManager = borrow_resource_manager!(self.name_resource);
+            let resource_manager: &mut ResourceManager = borrow_resource_manager!(self.name_resource);
 
             let id = name_nft.non_fungible::<DomainName>().id();
             let old_name_data = resource_manager.get_non_fungible_data::<DomainName>(&id);
@@ -217,14 +212,6 @@ blueprint! {
         /// Returns any overpaid fees.
         pub fn renew_name(&mut self, name_nft: Proof, renew_years: u8, mut fee: Bucket) -> Bucket {
             assert!(
-                name_nft.resource_address() == self.name_resource,
-                "The supplied bucket does not contain a domain name NFT"
-            );
-            assert!(
-                name_nft.amount() == Decimal::one(),
-                "The supplied bucket must contain exactly one DomainName NFT"
-            );
-            assert!(
                 fee.resource_address() == RADIX_TOKEN,
                 "The fee must be payed in XRD"
             );
@@ -232,6 +219,9 @@ blueprint! {
                 renew_years > 0,
                 "The name must be renewed for at least one year"
             );
+            let name_nft: ValidatedProof = name_nft
+                .validate_proof(ProofValidationMode::ValidateContainsAmount(self.name_resource, dec!("1")))
+                .expect("The provided badge is either of an invalid resource address or amount.");
 
             let fee_amount = self.fee_renewal_per_year * renew_years;
             assert!(
@@ -240,7 +230,7 @@ blueprint! {
                 fee_amount
             );
 
-            let resource_manager: &ResourceManager = borrow_resource_manager!(self.name_resource);
+            let resource_manager: &mut ResourceManager = borrow_resource_manager!(self.name_resource);
 
             let id = name_nft.non_fungible::<DomainName>().id();
             let mut name_data = resource_manager.get_non_fungible_data::<DomainName>(&id);
