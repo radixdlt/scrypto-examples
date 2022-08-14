@@ -1,28 +1,35 @@
 use radix_engine::ledger::*;
-use radix_engine::transaction::*;
+use radix_engine::model::extract_package;
+use scrypto::core::Network;
 use scrypto::prelude::*;
+use scrypto::to_struct;
+use scrypto_unit::*;
+use transaction::builder::ManifestBuilder;
 
 #[test]
 fn test_magic_card() {
     // Set up environment.
-    let mut ledger = InMemorySubstateStore::with_bootstrap();
-    let mut executor = TransactionExecutor::new(&mut ledger, false);
-    let (pk, sk, account) = executor.new_account();
-    let package = executor.publish_package(compile_package!()).unwrap();
+    let mut store = TypedInMemorySubstateStore::with_bootstrap();
+    let mut test_runner = TestRunner::new(true, &mut store);
+
+    // Create an account
+    let (public_key, _private_key, account_component) = test_runner.new_account();
+
+    // Publish package
+    let package_address = test_runner.publish_package(extract_package(compile_package!()).unwrap());
 
     // Test the `instantiate_component` function.
-    let transaction1 = TransactionBuilder::new()
-        .call_function(package, "HelloNft", "instantiate_component", vec![])
-        .build(executor.get_nonce([pk]))
-        .sign([&sk]);
-    let receipt1 = executor.validate_and_execute(&transaction1).unwrap();
+    let transaction1 = ManifestBuilder::new(Network::LocalSimulator)
+        .call_function(package_address, "HelloNft", "instantiate_component", to_struct!())
+        .build();
+    let receipt1 = test_runner.execute_manifest_ignoring_fee(transaction1, vec![public_key]);
     println!("{:?}\n", receipt1);
-    assert!(receipt1.result.is_ok());
+    receipt1.expect_success();
 
     // Test the `buy_special_card` method.
     let component = receipt1.new_component_addresses[0];
-    let transaction2 = TransactionBuilder::new()
-        .withdraw_from_account_by_amount(dec!("666"), RADIX_TOKEN, account)
+    let transaction2 = ManifestBuilder::new(Network::LocalSimulator)
+        .withdraw_from_account_by_amount(dec!("666"), RADIX_TOKEN, account_component)
         .take_from_worktop(RADIX_TOKEN, |builder, bucket_id| {
             builder.call_method(
                 component,
@@ -33,17 +40,16 @@ fn test_magic_card() {
                 )
             )
         })
-        .call_method_with_all_resources(account, "deposit_batch")
-        .build(executor.get_nonce([pk]))
-        .sign([&sk]);
-    let receipt2 = executor.validate_and_execute(&transaction2).unwrap();
+        .call_method_with_all_resources(account_component, "deposit_batch")
+        .build();
+    let receipt2 = test_runner.execute_manifest_ignoring_fee(transaction2, vec![public_key]);
     println!("{:?}\n", receipt2);
-    assert!(receipt2.result.is_ok());
+    receipt2.expect_success();
 
     // Test the `buy_special_card` method.
     let component = receipt1.new_component_addresses[0];
-    let transaction3 = TransactionBuilder::new()
-        .withdraw_from_account_by_amount(dec!("1000"), RADIX_TOKEN, account)
+    let transaction3 = ManifestBuilder::new(Network::LocalSimulator)
+        .withdraw_from_account_by_amount(dec!("1000"), RADIX_TOKEN, account_component)
         .take_from_worktop(RADIX_TOKEN, |builder, bucket_id| {
             builder.call_method(
                 component,
@@ -53,10 +59,9 @@ fn test_magic_card() {
                 )
             )
         })
-        .call_method_with_all_resources(account, "deposit_batch")
-        .build(executor.get_nonce([pk]))
-        .sign([&sk]);
-    let receipt3 = executor.validate_and_execute(&transaction3).unwrap();
+        .call_method_with_all_resources(account_component, "deposit_batch")
+        .build();
+    let receipt3 = test_runner.execute_manifest_ignoring_fee(transaction3, vec![public_key]);
     println!("{:?}\n", receipt3);
-    assert!(receipt3.result.is_ok());
+    receipt3.expect_success();
 }
