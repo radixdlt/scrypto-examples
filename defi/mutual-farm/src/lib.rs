@@ -12,456 +12,960 @@ use scrypto::prelude::*;
 // 5. Based on your contribution (in dollar amount), we issue MutualFund share tokens which allow you to redeem underlying assets and claim dividends.
 
 import! {
-r#"
-{
-    "package_address": "015d39c9a28c2ab646facfa9a7d303b1c9c7cf300611094a3ccc68",
-    "blueprint_name": "PriceOracle",
-    "functions": [
-      {
-        "name": "instantiate_oracle",
-        "inputs": [
-          {
-            "type": "U32"
+  r#"
+  {
+      "package_address": "package_sim1q8pe9fczej7zhq4ty35q8uvf58h7wj45y3gufz539ysqm7l0ur",
+      "blueprint_name": "PriceOracle",
+      "abi": {
+        "structure": {
+          "type": "Struct",
+          "name": "PriceOracle",
+          "fields": {
+            "type": "Named",
+            "named": [
+              [
+                "prices",
+                {
+                  "type": "Custom",
+                  "type_id": 131,
+                  "generics": [
+                    {
+                      "type": "Tuple",
+                      "elements": [
+                        {
+                          "type": "Custom",
+                          "type_id": 182,
+                          "generics": []
+                        },
+                        {
+                          "type": "Custom",
+                          "type_id": 182,
+                          "generics": []
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Custom",
+                      "type_id": 161,
+                      "generics": []
+                    }
+                  ]
+                }
+              ],
+              [
+                "admin_badge",
+                {
+                  "type": "Custom",
+                  "type_id": 182,
+                  "generics": []
+                }
+              ]
+            ]
           }
-        ],
-        "output": {
-          "type": "Tuple",
-          "elements": [
-            {
+        },
+        "fns": [
+          {
+            "ident": "instantiate_oracle",
+            "mutability": null,
+            "input": {
+              "type": "Struct",
+              "name": "PriceOracle_instantiate_oracle_Input",
+              "fields": {
+                "type": "Named",
+                "named": [
+                  [
+                    "arg0",
+                    {
+                      "type": "U32"
+                    }
+                  ]
+                ]
+              }
+            },
+            "output": {
+              "type": "Tuple",
+              "elements": [
+                {
+                  "type": "Custom",
+                  "type_id": 177,
+                  "generics": []
+                },
+                {
+                  "type": "Custom",
+                  "type_id": 129,
+                  "generics": []
+                }
+              ]
+            },
+            "export_name": "PriceOracle_instantiate_oracle"
+          },
+          {
+            "ident": "get_price",
+            "mutability": "Immutable",
+            "input": {
+              "type": "Struct",
+              "name": "PriceOracle_get_price_Input",
+              "fields": {
+                "type": "Named",
+                "named": [
+                  [
+                    "arg0",
+                    {
+                      "type": "Custom",
+                      "type_id": 182,
+                      "generics": []
+                    }
+                  ],
+                  [
+                    "arg1",
+                    {
+                      "type": "Custom",
+                      "type_id": 182,
+                      "generics": []
+                    }
+                  ]
+                ]
+              }
+            },
+            "output": {
+              "type": "Option",
+              "value": {
+                "type": "Custom",
+                "type_id": 161,
+                "generics": []
+              }
+            },
+            "export_name": "PriceOracle_get_price"
+          },
+          {
+            "ident": "update_price",
+            "mutability": "Immutable",
+            "input": {
+              "type": "Struct",
+              "name": "PriceOracle_update_price_Input",
+              "fields": {
+                "type": "Named",
+                "named": [
+                  [
+                    "arg0",
+                    {
+                      "type": "Custom",
+                      "type_id": 182,
+                      "generics": []
+                    }
+                  ],
+                  [
+                    "arg1",
+                    {
+                      "type": "Custom",
+                      "type_id": 182,
+                      "generics": []
+                    }
+                  ],
+                  [
+                    "arg2",
+                    {
+                      "type": "Custom",
+                      "type_id": 161,
+                      "generics": []
+                    }
+                  ]
+                ]
+              }
+            },
+            "output": {
+              "type": "Unit"
+            },
+            "export_name": "PriceOracle_update_price"
+          },
+          {
+            "ident": "admin_badge_address",
+            "mutability": "Immutable",
+            "input": {
+              "type": "Struct",
+              "name": "PriceOracle_admin_badge_address_Input",
+              "fields": {
+                "type": "Named",
+                "named": []
+              }
+            },
+            "output": {
               "type": "Custom",
-              "name": "Bucket",
+              "type_id": 182,
               "generics": []
             },
-            {
-              "type": "Custom",
-              "name": "ComponentAddress",
-              "generics": []
-            }
-          ]
-        }
+            "export_name": "PriceOracle_admin_badge_address"
+          }
+        ]
       }
-    ],
-    "methods": [
-      {
-        "name": "get_price",
-        "mutability": "Immutable",
-        "inputs": [
-          {
-            "type": "Custom",
-            "name": "ResourceAddress",
-            "generics": []
-          },
-          {
-            "type": "Custom",
-            "name": "ResourceAddress",
-            "generics": []
-          }
-        ],
-        "output": {
-          "type": "Option",
-          "value": {
-            "type": "Custom",
-            "name": "Decimal",
-            "generics": []
-          }
-        }
-      },
-      {
-        "name": "update_price",
-        "mutability": "Immutable",
-        "inputs": [
-          {
-            "type": "Custom",
-            "name": "ResourceAddress",
-            "generics": []
-          },
-          {
-            "type": "Custom",
-            "name": "ResourceAddress",
-            "generics": []
-          },
-          {
-            "type": "Custom",
-            "name": "Decimal",
-            "generics": []
-          }
-        ],
-        "output": {
-          "type": "Unit"
-        }
-      },
-      {
-        "name": "admin_badge_address",
-        "mutability": "Immutable",
-        "inputs": [],
-        "output": {
-          "type": "Custom",
-          "name": "ResourceAddress",
-          "generics": []
-        }
-      }
-    ]
+    }
+  "#
   }
-"#
-}
-
+  
 import! {
 r#"
 {
-    "package_address": "01d897468d09529e7b6b72bafa726670e95cd1f19e08ad6deaa1f2",
-    "blueprint_name": "SyntheticPool",
-    "functions": [
-      {
-        "name": "instantiate_pool",
-        "inputs": [
-          {
-            "type": "Custom",
-            "name": "ComponentAddress",
-            "generics": []
-          },
-          {
-            "type": "Custom",
-            "name": "ResourceAddress",
-            "generics": []
-          },
-          {
-            "type": "Custom",
-            "name": "ResourceAddress",
-            "generics": []
-          },
-          {
-            "type": "Custom",
-            "name": "Decimal",
-            "generics": []
-          }
-        ],
-        "output": {
-          "type": "Custom",
-          "name": "ComponentAddress",
-          "generics": []
-        }
+  "package_address": "package_sim1qyna563fqj6pqvpss763w9hw4vrdxgapfucx8esqyq0s5auvae",
+  "blueprint_name": "SyntheticPool",
+  "abi": {
+    "structure": {
+      "type": "Struct",
+      "name": "SyntheticPool",
+      "fields": {
+        "type": "Named",
+        "named": [
+          [
+            "oracle_address",
+            {
+              "type": "Custom",
+              "type_id": 129,
+              "generics": []
+            }
+          ],
+          [
+            "collateralization_threshold",
+            {
+              "type": "Custom",
+              "type_id": 161,
+              "generics": []
+            }
+          ],
+          [
+            "snx_resource_address",
+            {
+              "type": "Custom",
+              "type_id": 182,
+              "generics": []
+            }
+          ],
+          [
+            "usd_resource_address",
+            {
+              "type": "Custom",
+              "type_id": 182,
+              "generics": []
+            }
+          ],
+          [
+            "users",
+            {
+              "type": "Custom",
+              "type_id": 131,
+              "generics": [
+                {
+                  "type": "Custom",
+                  "type_id": 182,
+                  "generics": []
+                },
+                {
+                  "type": "Struct",
+                  "name": "User",
+                  "fields": {
+                    "type": "Named",
+                    "named": [
+                      [
+                        "snx",
+                        {
+                          "type": "Custom",
+                          "type_id": 179,
+                          "generics": []
+                        }
+                      ],
+                      [
+                        "global_debt_share",
+                        {
+                          "type": "Custom",
+                          "type_id": 179,
+                          "generics": []
+                        }
+                      ]
+                    ]
+                  }
+                }
+              ]
+            }
+          ],
+          [
+            "synthetics",
+            {
+              "type": "HashMap",
+              "key": {
+                "type": "String"
+              },
+              "value": {
+                "type": "Struct",
+                "name": "SyntheticToken",
+                "fields": {
+                  "type": "Named",
+                  "named": [
+                    [
+                      "asset_symbol",
+                      {
+                        "type": "String"
+                      }
+                    ],
+                    [
+                      "asset_address",
+                      {
+                        "type": "Custom",
+                        "type_id": 182,
+                        "generics": []
+                      }
+                    ],
+                    [
+                      "token_resource_address",
+                      {
+                        "type": "Custom",
+                        "type_id": 182,
+                        "generics": []
+                      }
+                    ]
+                  ]
+                }
+              }
+            }
+          ],
+          [
+            "synthetics_mint_badge",
+            {
+              "type": "Custom",
+              "type_id": 179,
+              "generics": []
+            }
+          ],
+          [
+            "synthetics_global_debt_share_resource_address",
+            {
+              "type": "Custom",
+              "type_id": 182,
+              "generics": []
+            }
+          ]
+        ]
       }
-    ],
-    "methods": [
+    },
+    "fns": [
       {
-        "name": "add_synthetic_token",
-        "mutability": "Mutable",
-        "inputs": [
-          {
-            "type": "String"
-          },
-          {
-            "type": "Custom",
-            "name": "ResourceAddress",
-            "generics": []
+        "ident": "instantiate_pool",
+        "mutability": null,
+        "input": {
+          "type": "Struct",
+          "name": "SyntheticPool_instantiate_pool_Input",
+          "fields": {
+            "type": "Named",
+            "named": [
+              [
+                "arg0",
+                {
+                  "type": "Custom",
+                  "type_id": 129,
+                  "generics": []
+                }
+              ],
+              [
+                "arg1",
+                {
+                  "type": "Custom",
+                  "type_id": 182,
+                  "generics": []
+                }
+              ],
+              [
+                "arg2",
+                {
+                  "type": "Custom",
+                  "type_id": 182,
+                  "generics": []
+                }
+              ],
+              [
+                "arg3",
+                {
+                  "type": "Custom",
+                  "type_id": 161,
+                  "generics": []
+                }
+              ]
+            ]
           }
-        ],
+        },
         "output": {
           "type": "Custom",
-          "name": "ResourceAddress",
+          "type_id": 129,
           "generics": []
-        }
+        },
+        "export_name": "SyntheticPool_instantiate_pool"
       },
       {
-        "name": "stake",
+        "ident": "add_synthetic_token",
         "mutability": "Mutable",
-        "inputs": [
-          {
-            "type": "Custom",
-            "name": "Proof",
-            "generics": []
-          },
-          {
-            "type": "Custom",
-            "name": "Bucket",
-            "generics": []
+        "input": {
+          "type": "Struct",
+          "name": "SyntheticPool_add_synthetic_token_Input",
+          "fields": {
+            "type": "Named",
+            "named": [
+              [
+                "arg0",
+                {
+                  "type": "String"
+                }
+              ],
+              [
+                "arg1",
+                {
+                  "type": "Custom",
+                  "type_id": 182,
+                  "generics": []
+                }
+              ]
+            ]
           }
-        ],
+        },
+        "output": {
+          "type": "Custom",
+          "type_id": 182,
+          "generics": []
+        },
+        "export_name": "SyntheticPool_add_synthetic_token"
+      },
+      {
+        "ident": "stake",
+        "mutability": "Mutable",
+        "input": {
+          "type": "Struct",
+          "name": "SyntheticPool_stake_Input",
+          "fields": {
+            "type": "Named",
+            "named": [
+              [
+                "arg0",
+                {
+                  "type": "Custom",
+                  "type_id": 178,
+                  "generics": []
+                }
+              ],
+              [
+                "arg1",
+                {
+                  "type": "Custom",
+                  "type_id": 177,
+                  "generics": []
+                }
+              ]
+            ]
+          }
+        },
         "output": {
           "type": "Unit"
-        }
+        },
+        "export_name": "SyntheticPool_stake"
       },
       {
-        "name": "unstake",
+        "ident": "unstake",
         "mutability": "Mutable",
-        "inputs": [
-          {
-            "type": "Custom",
-            "name": "Proof",
-            "generics": []
-          },
-          {
-            "type": "Custom",
-            "name": "Decimal",
-            "generics": []
+        "input": {
+          "type": "Struct",
+          "name": "SyntheticPool_unstake_Input",
+          "fields": {
+            "type": "Named",
+            "named": [
+              [
+                "arg0",
+                {
+                  "type": "Custom",
+                  "type_id": 178,
+                  "generics": []
+                }
+              ],
+              [
+                "arg1",
+                {
+                  "type": "Custom",
+                  "type_id": 161,
+                  "generics": []
+                }
+              ]
+            ]
           }
-        ],
+        },
         "output": {
           "type": "Custom",
-          "name": "Bucket",
+          "type_id": 177,
           "generics": []
-        }
+        },
+        "export_name": "SyntheticPool_unstake"
       },
       {
-        "name": "mint",
+        "ident": "mint",
         "mutability": "Mutable",
-        "inputs": [
-          {
-            "type": "Custom",
-            "name": "Proof",
-            "generics": []
-          },
-          {
-            "type": "Custom",
-            "name": "Decimal",
-            "generics": []
-          },
-          {
-            "type": "String"
+        "input": {
+          "type": "Struct",
+          "name": "SyntheticPool_mint_Input",
+          "fields": {
+            "type": "Named",
+            "named": [
+              [
+                "arg0",
+                {
+                  "type": "Custom",
+                  "type_id": 178,
+                  "generics": []
+                }
+              ],
+              [
+                "arg1",
+                {
+                  "type": "Custom",
+                  "type_id": 161,
+                  "generics": []
+                }
+              ],
+              [
+                "arg2",
+                {
+                  "type": "String"
+                }
+              ]
+            ]
           }
-        ],
+        },
         "output": {
           "type": "Custom",
-          "name": "Bucket",
+          "type_id": 177,
           "generics": []
-        }
+        },
+        "export_name": "SyntheticPool_mint"
       },
       {
-        "name": "burn",
+        "ident": "burn",
         "mutability": "Mutable",
-        "inputs": [
-          {
-            "type": "Custom",
-            "name": "Proof",
-            "generics": []
-          },
-          {
-            "type": "Custom",
-            "name": "Bucket",
-            "generics": []
+        "input": {
+          "type": "Struct",
+          "name": "SyntheticPool_burn_Input",
+          "fields": {
+            "type": "Named",
+            "named": [
+              [
+                "arg0",
+                {
+                  "type": "Custom",
+                  "type_id": 178,
+                  "generics": []
+                }
+              ],
+              [
+                "arg1",
+                {
+                  "type": "Custom",
+                  "type_id": 177,
+                  "generics": []
+                }
+              ]
+            ]
           }
-        ],
+        },
         "output": {
           "type": "Unit"
-        }
+        },
+        "export_name": "SyntheticPool_burn"
       },
       {
-        "name": "get_total_global_debt",
+        "ident": "get_total_global_debt",
         "mutability": "Immutable",
-        "inputs": [],
-        "output": {
-          "type": "Custom",
-          "name": "Decimal",
-          "generics": []
-        }
-      },
-      {
-        "name": "get_snx_price",
-        "mutability": "Immutable",
-        "inputs": [],
-        "output": {
-          "type": "Custom",
-          "name": "Decimal",
-          "generics": []
-        }
-      },
-      {
-        "name": "get_asset_price",
-        "mutability": "Immutable",
-        "inputs": [
-          {
-            "type": "Custom",
-            "name": "ResourceAddress",
-            "generics": []
+        "input": {
+          "type": "Struct",
+          "name": "SyntheticPool_get_total_global_debt_Input",
+          "fields": {
+            "type": "Named",
+            "named": []
           }
-        ],
+        },
         "output": {
           "type": "Custom",
-          "name": "Decimal",
+          "type_id": 161,
           "generics": []
-        }
+        },
+        "export_name": "SyntheticPool_get_total_global_debt"
       },
       {
-        "name": "get_user_summary",
+        "ident": "get_snx_price",
+        "mutability": "Immutable",
+        "input": {
+          "type": "Struct",
+          "name": "SyntheticPool_get_snx_price_Input",
+          "fields": {
+            "type": "Named",
+            "named": []
+          }
+        },
+        "output": {
+          "type": "Custom",
+          "type_id": 161,
+          "generics": []
+        },
+        "export_name": "SyntheticPool_get_snx_price"
+      },
+      {
+        "ident": "get_asset_price",
+        "mutability": "Immutable",
+        "input": {
+          "type": "Struct",
+          "name": "SyntheticPool_get_asset_price_Input",
+          "fields": {
+            "type": "Named",
+            "named": [
+              [
+                "arg0",
+                {
+                  "type": "Custom",
+                  "type_id": 182,
+                  "generics": []
+                }
+              ]
+            ]
+          }
+        },
+        "output": {
+          "type": "Custom",
+          "type_id": 161,
+          "generics": []
+        },
+        "export_name": "SyntheticPool_get_asset_price"
+      },
+      {
+        "ident": "get_user_summary",
         "mutability": "Mutable",
-        "inputs": [
-          {
-            "type": "Custom",
-            "name": "ResourceAddress",
-            "generics": []
+        "input": {
+          "type": "Struct",
+          "name": "SyntheticPool_get_user_summary_Input",
+          "fields": {
+            "type": "Named",
+            "named": [
+              [
+                "arg0",
+                {
+                  "type": "Custom",
+                  "type_id": 182,
+                  "generics": []
+                }
+              ]
+            ]
           }
-        ],
+        },
         "output": {
           "type": "String"
-        }
+        },
+        "export_name": "SyntheticPool_get_user_summary"
       },
       {
-        "name": "new_user",
+        "ident": "new_user",
         "mutability": "Immutable",
-        "inputs": [],
+        "input": {
+          "type": "Struct",
+          "name": "SyntheticPool_new_user_Input",
+          "fields": {
+            "type": "Named",
+            "named": []
+          }
+        },
         "output": {
           "type": "Custom",
-          "name": "Bucket",
+          "type_id": 177,
           "generics": []
-        }
+        },
+        "export_name": "SyntheticPool_new_user"
       }
     ]
   }
+}
 "#
 }
 
 import! {
 r#"
 {
-    "package_address": "0107467fe140289bec61d5ec6be68d6c7adc88ea5528d90c28b9f5",
-    "blueprint_name": "Radiswap",
-    "functions": [
-      {
-        "name": "instantiate_pool",
-        "inputs": [
-          {
-            "type": "Custom",
-            "name": "Bucket",
-            "generics": []
-          },
-          {
-            "type": "Custom",
-            "name": "Bucket",
-            "generics": []
-          },
-          {
-            "type": "Custom",
-            "name": "Decimal",
-            "generics": []
-          },
-          {
-            "type": "String"
-          },
-          {
-            "type": "String"
-          },
-          {
-            "type": "String"
-          },
-          {
-            "type": "Custom",
-            "name": "Decimal",
-            "generics": []
-          }
-        ],
-        "output": {
-          "type": "Tuple",
-          "elements": [
+  "package_address": "package_sim1q8e4p0ut06dxeczmmhjlcs9mlkkhhml9ce58dlwxtugsfxedpm",
+  "blueprint_name": "Radiswap",
+  "abi": {
+    "structure": {
+      "type": "Struct",
+      "name": "Radiswap",
+      "fields": {
+        "type": "Named",
+        "named": [
+          [
+            "lp_resource_address",
             {
               "type": "Custom",
-              "name": "ComponentAddress",
+              "type_id": 182,
               "generics": []
-            },
+            }
+          ],
+          [
+            "lp_mint_badge",
             {
               "type": "Custom",
-              "name": "Bucket",
+              "type_id": 179,
+              "generics": []
+            }
+          ],
+          [
+            "a_pool",
+            {
+              "type": "Custom",
+              "type_id": 179,
+              "generics": []
+            }
+          ],
+          [
+            "b_pool",
+            {
+              "type": "Custom",
+              "type_id": 179,
+              "generics": []
+            }
+          ],
+          [
+            "fee",
+            {
+              "type": "Custom",
+              "type_id": 161,
+              "generics": []
+            }
+          ],
+          [
+            "lp_per_asset_ratio",
+            {
+              "type": "Custom",
+              "type_id": 161,
               "generics": []
             }
           ]
-        }
+        ]
       }
-    ],
-    "methods": [
+    },
+    "fns": [
       {
-        "name": "add_liquidity",
-        "mutability": "Mutable",
-        "inputs": [
-          {
-            "type": "Custom",
-            "name": "Bucket",
-            "generics": []
-          },
-          {
-            "type": "Custom",
-            "name": "Bucket",
-            "generics": []
+        "ident": "instantiate_pool",
+        "mutability": null,
+        "input": {
+          "type": "Struct",
+          "name": "Radiswap_instantiate_pool_Input",
+          "fields": {
+            "type": "Named",
+            "named": [
+              [
+                "arg0",
+                {
+                  "type": "Custom",
+                  "type_id": 177,
+                  "generics": []
+                }
+              ],
+              [
+                "arg1",
+                {
+                  "type": "Custom",
+                  "type_id": 177,
+                  "generics": []
+                }
+              ],
+              [
+                "arg2",
+                {
+                  "type": "Custom",
+                  "type_id": 161,
+                  "generics": []
+                }
+              ],
+              [
+                "arg3",
+                {
+                  "type": "String"
+                }
+              ],
+              [
+                "arg4",
+                {
+                  "type": "String"
+                }
+              ],
+              [
+                "arg5",
+                {
+                  "type": "String"
+                }
+              ],
+              [
+                "arg6",
+                {
+                  "type": "Custom",
+                  "type_id": 161,
+                  "generics": []
+                }
+              ]
+            ]
           }
-        ],
+        },
         "output": {
           "type": "Tuple",
           "elements": [
             {
               "type": "Custom",
-              "name": "Bucket",
+              "type_id": 129,
               "generics": []
             },
             {
               "type": "Custom",
-              "name": "Bucket",
+              "type_id": 177,
               "generics": []
             }
           ]
-        }
+        },
+        "export_name": "Radiswap_instantiate_pool"
       },
       {
-        "name": "remove_liquidity",
+        "ident": "add_liquidity",
         "mutability": "Mutable",
-        "inputs": [
-          {
-            "type": "Custom",
-            "name": "Bucket",
-            "generics": []
+        "input": {
+          "type": "Struct",
+          "name": "Radiswap_add_liquidity_Input",
+          "fields": {
+            "type": "Named",
+            "named": [
+              [
+                "arg0",
+                {
+                  "type": "Custom",
+                  "type_id": 177,
+                  "generics": []
+                }
+              ],
+              [
+                "arg1",
+                {
+                  "type": "Custom",
+                  "type_id": 177,
+                  "generics": []
+                }
+              ]
+            ]
           }
-        ],
+        },
         "output": {
           "type": "Tuple",
           "elements": [
             {
               "type": "Custom",
-              "name": "Bucket",
+              "type_id": 177,
               "generics": []
             },
             {
               "type": "Custom",
-              "name": "Bucket",
+              "type_id": 177,
               "generics": []
             }
           ]
-        }
+        },
+        "export_name": "Radiswap_add_liquidity"
       },
       {
-        "name": "swap",
+        "ident": "remove_liquidity",
         "mutability": "Mutable",
-        "inputs": [
-          {
-            "type": "Custom",
-            "name": "Bucket",
-            "generics": []
+        "input": {
+          "type": "Struct",
+          "name": "Radiswap_remove_liquidity_Input",
+          "fields": {
+            "type": "Named",
+            "named": [
+              [
+                "arg0",
+                {
+                  "type": "Custom",
+                  "type_id": 177,
+                  "generics": []
+                }
+              ]
+            ]
           }
-        ],
+        },
+        "output": {
+          "type": "Tuple",
+          "elements": [
+            {
+              "type": "Custom",
+              "type_id": 177,
+              "generics": []
+            },
+            {
+              "type": "Custom",
+              "type_id": 177,
+              "generics": []
+            }
+          ]
+        },
+        "export_name": "Radiswap_remove_liquidity"
+      },
+      {
+        "ident": "swap",
+        "mutability": "Mutable",
+        "input": {
+          "type": "Struct",
+          "name": "Radiswap_swap_Input",
+          "fields": {
+            "type": "Named",
+            "named": [
+              [
+                "arg0",
+                {
+                  "type": "Custom",
+                  "type_id": 177,
+                  "generics": []
+                }
+              ]
+            ]
+          }
+        },
         "output": {
           "type": "Custom",
-          "name": "Bucket",
+          "type_id": 177,
           "generics": []
-        }
+        },
+        "export_name": "Radiswap_swap"
       },
       {
-        "name": "get_pair",
+        "ident": "get_pair",
         "mutability": "Immutable",
-        "inputs": [],
+        "input": {
+          "type": "Struct",
+          "name": "Radiswap_get_pair_Input",
+          "fields": {
+            "type": "Named",
+            "named": []
+          }
+        },
         "output": {
           "type": "Tuple",
           "elements": [
             {
               "type": "Custom",
-              "name": "ResourceAddress",
+              "type_id": 182,
               "generics": []
             },
             {
               "type": "Custom",
-              "name": "ResourceAddress",
+              "type_id": 182,
               "generics": []
             }
           ]
-        }
+        },
+        "export_name": "Radiswap_get_pair"
       }
     ]
   }
+}
 "#
 }
 

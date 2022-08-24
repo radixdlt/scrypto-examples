@@ -1,8 +1,7 @@
 use radix_engine::ledger::*;
 use radix_engine::model::extract_package;
-use scrypto::core::Network;
 use scrypto::prelude::*;
-use scrypto::to_struct;
+use scrypto::args;
 use scrypto_unit::*;
 use transaction::builder::ManifestBuilder;
 
@@ -20,7 +19,7 @@ fn test_magic_card() {
 
     // Test the `instantiate_component` function.
     let transaction1 = ManifestBuilder::new(Network::LocalSimulator)
-        .call_function(package_address, "HelloNft", "instantiate_component", to_struct!())
+        .call_function(package_address, "HelloNft", "instantiate_component", args!())
         .build();
     let receipt1 = test_runner.execute_manifest_ignoring_fee(transaction1, vec![public_key]);
     println!("{:?}\n", receipt1);
@@ -34,7 +33,7 @@ fn test_magic_card() {
             builder.call_method(
                 component,
                 "buy_special_card",
-                to_struct!(
+                args!(
                     NonFungibleId::from_u64(2u64),
                     scrypto::resource::Bucket(bucket_id)
                 )
@@ -54,7 +53,7 @@ fn test_magic_card() {
             builder.call_method(
                 component,
                 "buy_random_card",
-                to_struct!(
+                args!(
                     scrypto::resource::Bucket(bucket_id)
                 )
             )

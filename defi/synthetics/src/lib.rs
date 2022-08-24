@@ -4,94 +4,191 @@ use scrypto::prelude::*;
 import! {
 r#"
 {
-    "package_address": "015d39c9a28c2ab646facfa9a7d303b1c9c7cf300611094a3ccc68",
+    "package_address": "package_sim1q8pe9fczej7zhq4ty35q8uvf58h7wj45y3gufz539ysqm7l0ur",
     "blueprint_name": "PriceOracle",
-    "functions": [
+    "abi": {
+      "structure": {
+        "type": "Struct",
+        "name": "PriceOracle",
+        "fields": {
+          "type": "Named",
+          "named": [
+            [
+              "prices",
+              {
+                "type": "Custom",
+                "type_id": 131,
+                "generics": [
+                  {
+                    "type": "Tuple",
+                    "elements": [
+                      {
+                        "type": "Custom",
+                        "type_id": 182,
+                        "generics": []
+                      },
+                      {
+                        "type": "Custom",
+                        "type_id": 182,
+                        "generics": []
+                      }
+                    ]
+                  },
+                  {
+                    "type": "Custom",
+                    "type_id": 161,
+                    "generics": []
+                  }
+                ]
+              }
+            ],
+            [
+              "admin_badge",
+              {
+                "type": "Custom",
+                "type_id": 182,
+                "generics": []
+              }
+            ]
+          ]
+        }
+      },
+      "fns": [
         {
-        "name": "instantiate_oracle",
-        "inputs": [
-            {
-            "type": "U32"
+          "ident": "instantiate_oracle",
+          "mutability": null,
+          "input": {
+            "type": "Struct",
+            "name": "PriceOracle_instantiate_oracle_Input",
+            "fields": {
+              "type": "Named",
+              "named": [
+                [
+                  "arg0",
+                  {
+                    "type": "U32"
+                  }
+                ]
+              ]
             }
-        ],
-        "output": {
+          },
+          "output": {
             "type": "Tuple",
             "elements": [
-            {
+              {
                 "type": "Custom",
-                "name": "Bucket",
+                "type_id": 177,
                 "generics": []
-            },
-            {
+              },
+              {
                 "type": "Custom",
-                "name": "ComponentAddress",
+                "type_id": 129,
                 "generics": []
-            }
+              }
             ]
-        }
-        }
-    ],
-    "methods": [
+          },
+          "export_name": "PriceOracle_instantiate_oracle"
+        },
         {
-        "name": "get_price",
-        "mutability": "Immutable",
-        "inputs": [
-            {
-            "type": "Custom",
-            "name": "ResourceAddress",
-            "generics": []
-            },
-            {
-            "type": "Custom",
-            "name": "ResourceAddress",
-            "generics": []
+          "ident": "get_price",
+          "mutability": "Immutable",
+          "input": {
+            "type": "Struct",
+            "name": "PriceOracle_get_price_Input",
+            "fields": {
+              "type": "Named",
+              "named": [
+                [
+                  "arg0",
+                  {
+                    "type": "Custom",
+                    "type_id": 182,
+                    "generics": []
+                  }
+                ],
+                [
+                  "arg1",
+                  {
+                    "type": "Custom",
+                    "type_id": 182,
+                    "generics": []
+                  }
+                ]
+              ]
             }
-        ],
-        "output": {
+          },
+          "output": {
             "type": "Option",
             "value": {
-            "type": "Custom",
-            "name": "Decimal",
-            "generics": []
+              "type": "Custom",
+              "type_id": 161,
+              "generics": []
             }
-        }
+          },
+          "export_name": "PriceOracle_get_price"
         },
         {
-        "name": "update_price",
-        "mutability": "Immutable",
-        "inputs": [
-            {
-            "type": "Custom",
-            "name": "ResourceAddress",
-            "generics": []
-            },
-            {
-            "type": "Custom",
-            "name": "ResourceAddress",
-            "generics": []
-            },
-            {
-            "type": "Custom",
-            "name": "Decimal",
-            "generics": []
+          "ident": "update_price",
+          "mutability": "Immutable",
+          "input": {
+            "type": "Struct",
+            "name": "PriceOracle_update_price_Input",
+            "fields": {
+              "type": "Named",
+              "named": [
+                [
+                  "arg0",
+                  {
+                    "type": "Custom",
+                    "type_id": 182,
+                    "generics": []
+                  }
+                ],
+                [
+                  "arg1",
+                  {
+                    "type": "Custom",
+                    "type_id": 182,
+                    "generics": []
+                  }
+                ],
+                [
+                  "arg2",
+                  {
+                    "type": "Custom",
+                    "type_id": 161,
+                    "generics": []
+                  }
+                ]
+              ]
             }
-        ],
-        "output": {
+          },
+          "output": {
             "type": "Unit"
-        }
+          },
+          "export_name": "PriceOracle_update_price"
         },
         {
-        "name": "admin_badge_address",
-        "mutability": "Immutable",
-        "inputs": [],
-        "output": {
+          "ident": "admin_badge_address",
+          "mutability": "Immutable",
+          "input": {
+            "type": "Struct",
+            "name": "PriceOracle_admin_badge_address_Input",
+            "fields": {
+              "type": "Named",
+              "named": []
+            }
+          },
+          "output": {
             "type": "Custom",
-            "name": "ResourceAddress",
+            "type_id": 182,
             "generics": []
+          },
+          "export_name": "PriceOracle_admin_badge_address"
         }
-        }
-    ]
-}
+      ]
+    }
+  }
 "#
 }
 
@@ -111,7 +208,7 @@ blueprint! {
         usd_resource_address: ResourceAddress,
 
         /// Users
-        users: LazyMap<ResourceAddress, User>,
+        users: KeyValueStore<ResourceAddress, User>,
         /// Synthetics
         synthetics: HashMap<String, SyntheticToken>,
         /// Mint badge
@@ -143,7 +240,7 @@ blueprint! {
                 collateralization_threshold,
                 snx_resource_address: snx_token_address,
                 usd_resource_address: usd_token_address,
-                users: LazyMap::new(),
+                users: KeyValueStore::new(),
                 synthetics: HashMap::new(),
                 synthetics_mint_badge: Vault::with_bucket(synthetics_mint_badge),
                 synthetics_global_debt_share_resource_address,
@@ -316,13 +413,12 @@ blueprint! {
 
         /// Parse user id from proof.
         fn get_user_id(user_auth: Proof) -> ResourceAddress {
-            assert!(user_auth.amount() > 0.into(), "Invalid user proof");
-            user_auth.resource_address()
+            user_auth.unsafe_skip_proof_validation().resource_address()
         }
 
         /// Retrieves user state.
-        fn get_user(&mut self, user_id: ResourceAddress, create_if_missing: bool) -> User {
-            if let Some(user) = self.users.get(&user_id) {
+        fn get_user(&mut self, user_id: ResourceAddress, create_if_missing: bool) -> scrypto::core::DataRefMut<User> {
+            if let Some(user) = self.users.get_mut(&user_id) {
                 user
             } else if create_if_missing {
                 self.users.insert(
@@ -332,7 +428,7 @@ blueprint! {
                         self.synthetics_global_debt_share_resource_address,
                     ),
                 );
-                self.users.get(&user_id).unwrap()
+                self.users.get_mut(&user_id).unwrap()
             } else {
                 panic!("User not found");
             }
