@@ -187,13 +187,13 @@ blueprint! {
             // At this point we know that the creation of the component can go through.
            
             // Instantiating the component and returning its address
-            return Self {
+            let mut local_component: LimitedWithdrawVault_Component = Self {
                 withdraw_information: HashMap::new(),
                 vault: Vault::new(tokens_resource_address),
             }
-            .instantiate()
-            .add_access_check(access_rules)
-            .globalize();
+            .instantiate();
+            local_component.add_access_check(access_rules);
+            return local_component.globalize();
         }
 
         /// Adds a new withdraw authority to the the list of authorities.
