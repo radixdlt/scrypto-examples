@@ -142,7 +142,7 @@ blueprint! {
                 .default(rule!(allow_all));
 
             // Instantiating the dutch auction sale component
-            let dutch_auction_sale: ComponentAddress = Self {
+            let mut dutch_auction: DutchAuction_Component = Self {
                 nft_vaults,
                 payment_vault: Vault::new(accepted_payment_token),
                 accepted_payment_token,
@@ -151,11 +151,11 @@ blueprint! {
                 starting_epoch: Runtime::current_epoch(),
                 ending_epoch: Runtime::current_epoch() + relative_ending_epoch,
             }
-            .instantiate()
-            .add_access_check(access_rules)
-            .globalize();
+            .instantiate();
+            dutch_auction.add_access_check(access_rules);
+            let dutch_auction: ComponentAddress = dutch_auction.globalize();
 
-            return (dutch_auction_sale, ownership_badge);
+            return (dutch_auction, ownership_badge);
         }
 
         /// Used for buying the NFT(s) controlled by this component.

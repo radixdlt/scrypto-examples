@@ -54,9 +54,7 @@ blueprint! {
                 .new_position(margin_amount, leverage, position_type);
 
             let mut positions = match self.trader_positions.get_mut(&user_id) {
-                Some(positions) => {
-                    positions
-                },
+                Some(positions) => positions,
                 None => {
                     self.trader_positions.insert(user_id, Vec::new());
                     self.trader_positions.get_mut(&user_id).unwrap()

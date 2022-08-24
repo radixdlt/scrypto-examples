@@ -115,15 +115,15 @@ blueprint! {
                 .default(rule!(allow_all));
 
             // Instantiating the fixed price sale component
-            let fixed_price_sale: ComponentAddress = Self {
+            let mut fixed_price_sale: FixedPriceSale_Component = Self {
                 nft_vaults,
                 payment_vault: Vault::new(accepted_payment_token),
                 accepted_payment_token,
                 price,
             }
-            .instantiate()
-            .add_access_check(access_rules)
-            .globalize();
+            .instantiate();
+            fixed_price_sale.add_access_check(access_rules);
+            let fixed_price_sale: ComponentAddress = fixed_price_sale.globalize();
 
             return (fixed_price_sale, ownership_badge);
         }

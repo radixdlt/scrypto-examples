@@ -1,8 +1,8 @@
 use radix_engine::ledger::*;
 use radix_engine::model::extract_package;
-use scrypto::core::Network;
+use scrypto::args;
+use scrypto::core::NetworkDefinition;
 use scrypto::prelude::*;
-use scrypto::to_struct;
 use scrypto_unit::*;
 use transaction::builder::ManifestBuilder;
 
@@ -19,8 +19,13 @@ fn test_create_additional_admin() {
     let package_address = test_runner.publish_package(extract_package(compile_package!()).unwrap());
 
     // Test the `instantiate_hello_nft` function.
-    let manifest1 = ManifestBuilder::new(Network::LocalSimulator)
-        .call_function(package_address, "HelloNft", "instantiate_hello_nft", to_struct!(dec!("5")))
+    let manifest1 = ManifestBuilder::new(&NetworkDefinition::local_simulator())
+        .call_function(
+            package_address,
+            "HelloNft",
+            "instantiate_hello_nft",
+            args!(dec!("5")),
+        )
         .call_method_with_all_resources(account_component, "deposit_batch")
         .build();
     let receipt1 = test_runner.execute_manifest_ignoring_fee(manifest1, vec![public_key]);
@@ -28,14 +33,19 @@ fn test_create_additional_admin() {
     receipt1.expect_success();
 
     // Test the `buy_ticket_by_id` method.
-    let component = receipt1.new_component_addresses[0];
-    let manifest2 = ManifestBuilder::new(Network::LocalSimulator)
+    let component = receipt1
+        .result
+        .get_commit_result()
+        .unwrap()
+        .entity_changes
+        .new_component_addresses[0];
+    let manifest2 = ManifestBuilder::new(&NetworkDefinition::local_simulator())
         .withdraw_from_account_by_amount(dec!("10"), RADIX_TOKEN, account_component)
         .take_from_worktop(RADIX_TOKEN, |builder, bucket_id| {
             builder.call_method(
                 component,
                 "buy_ticket",
-                to_struct!(scrypto::resource::Bucket(bucket_id))
+                args!(scrypto::resource::Bucket(bucket_id)),
             )
         })
         .call_method_with_all_resources(account_component, "deposit_batch")

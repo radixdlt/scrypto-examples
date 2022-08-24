@@ -22,10 +22,7 @@ blueprint! {
             let mut tickets = Vec::new();
             for row in 1..5 {
                 for column in 1..5 {
-                    tickets.push((
-                        NonFungibleId::random(),
-                        Ticket { row, column },
-                    ));
+                    tickets.push((NonFungibleId::random(), Ticket { row, column }));
                 }
             }
 

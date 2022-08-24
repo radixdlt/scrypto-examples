@@ -84,9 +84,18 @@ blueprint! {
 
             let random_card_resource_address = ResourceBuilder::new_non_fungible()
                 .metadata("name", "Random Cards")
-                .mintable(rule!(require(random_card_mint_badge.resource_address())), LOCKED)
-                .burnable(rule!(require(random_card_mint_badge.resource_address())), LOCKED)
-                .updateable_non_fungible_data(rule!(require(random_card_mint_badge.resource_address())), LOCKED)
+                .mintable(
+                    rule!(require(random_card_mint_badge.resource_address())),
+                    LOCKED,
+                )
+                .burnable(
+                    rule!(require(random_card_mint_badge.resource_address())),
+                    LOCKED,
+                )
+                .updateable_non_fungible_data(
+                    rule!(require(random_card_mint_badge.resource_address())),
+                    LOCKED,
+                )
                 .no_initial_supply();
 
             // Instantiate our component
@@ -107,7 +116,11 @@ blueprint! {
             .globalize()
         }
 
-        pub fn buy_special_card(&mut self, key: NonFungibleId, mut payment: Bucket) -> (Bucket, Bucket) {
+        pub fn buy_special_card(
+            &mut self,
+            key: NonFungibleId,
+            mut payment: Bucket,
+        ) -> (Bucket, Bucket) {
             // Take our price out of the payment bucket
             let price = self.special_card_prices.remove(&key).unwrap();
             self.collected_xrd.put(payment.take(price));
@@ -131,8 +144,10 @@ blueprint! {
                 level: random_seed as u8 % 8,
             };
             let nft_bucket = self.random_card_mint_badge.authorize(|| {
-                borrow_resource_manager!(self.random_card_resource_address)
-                    .mint_non_fungible(&NonFungibleId::from_u64(self.random_card_id_counter), new_card)
+                borrow_resource_manager!(self.random_card_resource_address).mint_non_fungible(
+                    &NonFungibleId::from_u64(self.random_card_id_counter),
+                    new_card,
+                )
             });
             self.random_card_id_counter += 1;
 
@@ -180,8 +195,10 @@ blueprint! {
 
             // Mint a new one.
             let new_non_fungible_bucket = self.random_card_mint_badge.authorize(|| {
-                borrow_resource_manager!(self.random_card_resource_address)
-                    .mint_non_fungible(&NonFungibleId::from_u64(self.random_card_id_counter), new_card)
+                borrow_resource_manager!(self.random_card_resource_address).mint_non_fungible(
+                    &NonFungibleId::from_u64(self.random_card_id_counter),
+                    new_card,
+                )
             });
             self.random_card_id_counter += 1;
 

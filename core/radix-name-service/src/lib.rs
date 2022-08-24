@@ -5,10 +5,10 @@ use sha2::{Digest, Sha256};
 struct DomainName {
     #[scrypto(mutable)]
     address: ComponentAddress,
-    
+
     #[scrypto(mutable)]
     last_valid_epoch: u64,
-    
+
     #[scrypto(mutable)]
     deposit_amount: Decimal,
 }
@@ -53,8 +53,14 @@ blueprint! {
                 .no_initial_supply();
 
             let rules = AccessRules::new()
-                .method("burn_expired_names", rule!(require(admin_badge.resource_address())))
-                .method("withdraw_fees", rule!(require(admin_badge.resource_address())))
+                .method(
+                    "burn_expired_names",
+                    rule!(require(admin_badge.resource_address())),
+                )
+                .method(
+                    "withdraw_fees",
+                    rule!(require(admin_badge.resource_address())),
+                )
                 .default(rule!(allow_all));
 
             let mut component = RadixNameService {
@@ -78,12 +84,11 @@ blueprint! {
         /// Panics if that name is not registered.
         pub fn lookup_address(&self, name: String) -> ComponentAddress {
             let hash = Self::hash_name(name);
-            
+
             let resource_manager = borrow_resource_manager!(self.name_resource);
-            let name_data: DomainName = resource_manager.get_non_fungible_data(
-                &NonFungibleId::from_bytes(hash.to_be_bytes().to_vec())
-            );
-            
+            let name_data: DomainName = resource_manager
+                .get_non_fungible_data(&NonFungibleId::from_bytes(hash.to_be_bytes().to_vec()));
+
             name_data.address
         }
 
@@ -130,7 +135,7 @@ blueprint! {
                 let resource_manager = borrow_resource_manager!(self.name_resource);
                 resource_manager.mint_non_fungible(
                     &NonFungibleId::from_bytes(hash.to_be_bytes().to_vec()),
-                    name_data
+                    name_data,
                 )
             });
 
@@ -155,9 +160,7 @@ blueprint! {
                 total_deposit_amount += nft.data().deposit_amount;
             }
 
-            self.minter.authorize(|| {
-                name_nft.burn()
-            });
+            self.minter.authorize(|| name_nft.burn());
 
             self.deposits.take(total_deposit_amount)
         }
@@ -177,7 +180,10 @@ blueprint! {
                 "The fee must be payed in XRD"
             );
             let name_nft: ValidatedProof = name_nft
-                .validate_proof(ProofValidationMode::ValidateContainsAmount(self.name_resource, dec!("1")))
+                .validate_proof(ProofValidationMode::ValidateContainsAmount(
+                    self.name_resource,
+                    dec!("1"),
+                ))
                 .expect("The provided badge is either of an invalid resource address or amount.");
 
             let fee_amount = self.fee_address_update;
@@ -187,7 +193,8 @@ blueprint! {
                 fee_amount
             );
 
-            let resource_manager: &mut ResourceManager = borrow_resource_manager!(self.name_resource);
+            let resource_manager: &mut ResourceManager =
+                borrow_resource_manager!(self.name_resource);
 
             let id = name_nft.non_fungible::<DomainName>().id();
             let old_name_data = resource_manager.get_non_fungible_data::<DomainName>(&id);
@@ -197,9 +204,8 @@ blueprint! {
                 deposit_amount: old_name_data.deposit_amount,
             };
 
-            self.minter.authorize(|| {
-                resource_manager.update_non_fungible_data(&id, new_name_data)
-            });
+            self.minter
+                .authorize(|| resource_manager.update_non_fungible_data(&id, new_name_data));
             self.fees.put(fee.take(fee_amount));
 
             name_nft.drop();
@@ -220,7 +226,10 @@ blueprint! {
                 "The name must be renewed for at least one year"
             );
             let name_nft: ValidatedProof = name_nft
-                .validate_proof(ProofValidationMode::ValidateContainsAmount(self.name_resource, dec!("1")))
+                .validate_proof(ProofValidationMode::ValidateContainsAmount(
+                    self.name_resource,
+                    dec!("1"),
+                ))
                 .expect("The provided badge is either of an invalid resource address or amount.");
 
             let fee_amount = self.fee_renewal_per_year * renew_years;
@@ -230,16 +239,16 @@ blueprint! {
                 fee_amount
             );
 
-            let resource_manager: &mut ResourceManager = borrow_resource_manager!(self.name_resource);
+            let resource_manager: &mut ResourceManager =
+                borrow_resource_manager!(self.name_resource);
 
             let id = name_nft.non_fungible::<DomainName>().id();
             let mut name_data = resource_manager.get_non_fungible_data::<DomainName>(&id);
             name_data.last_valid_epoch =
                 name_data.last_valid_epoch + EPOCHS_PER_YEAR * u64::from(renew_years);
-            
-            self.minter.authorize(|| {
-                resource_manager.update_non_fungible_data(&id, name_data)
-            });
+
+            self.minter
+                .authorize(|| resource_manager.update_non_fungible_data(&id, name_data));
             self.fees.put(fee.take(fee_amount));
 
             name_nft.drop();

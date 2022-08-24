@@ -147,7 +147,10 @@ blueprint! {
                 FlatAdmin::instantiate_flat_admin("My Managed Access Badge".into());
 
             let rules = AccessRules::new()
-                .method("withdraw_all", rule!(require(admin_badge.resource_address())))
+                .method(
+                    "withdraw_all",
+                    rule!(require(admin_badge.resource_address())),
+                )
                 .default(rule!(allow_all));
 
             let mut component = Self {
@@ -158,7 +161,7 @@ blueprint! {
             .instantiate();
             component.add_access_check(rules);
             let component = component.globalize();
-            
+
             (component, admin_badge)
         }
 

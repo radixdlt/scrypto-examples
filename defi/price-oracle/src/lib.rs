@@ -19,7 +19,7 @@ blueprint! {
                 .initial_supply(num_of_admins);
 
             let rules = AccessRules::new()
-                .method("update_price", rule!(require( badges.resource_address() )))
+                .method("update_price", rule!(require(badges.resource_address())))
                 .default(rule!(allow_all));
 
             let mut component = Self {
@@ -37,7 +37,7 @@ blueprint! {
         pub fn get_price(&self, base: ResourceAddress, quote: ResourceAddress) -> Option<Decimal> {
             match self.prices.get(&(base, quote)) {
                 Some(price) => Some(*price),
-                None => None                
+                None => None,
             }
         }
 

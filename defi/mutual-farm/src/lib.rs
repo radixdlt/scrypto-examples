@@ -12,7 +12,7 @@ use scrypto::prelude::*;
 // 5. Based on your contribution (in dollar amount), we issue MutualFund share tokens which allow you to redeem underlying assets and claim dividends.
 
 import! {
-  r#"
+r#"
   {
       "package_address": "package_sim1q8pe9fczej7zhq4ty35q8uvf58h7wj45y3gufz539ysqm7l0ur",
       "blueprint_name": "PriceOracle",
@@ -200,8 +200,8 @@ import! {
       }
     }
   "#
-  }
-  
+}
+
 import! {
 r#"
 {
@@ -1040,10 +1040,13 @@ blueprint! {
             let synthetic_pool: SyntheticPool = synthetic_pool_address.into();
             synthetic_pool.add_synthetic_token(asset_symbol.clone(), asset_address);
             synthetic_pool.stake(identity_badge.create_proof(), snx);
-            
+
             let quantity = snx_amount * snx_usd_price / 10 / tesla_usd_price;
-            let synth =
-                synthetic_pool.mint(identity_badge.create_proof(), quantity, asset_symbol.clone());
+            let synth = synthetic_pool.mint(
+                identity_badge.create_proof(),
+                quantity,
+                asset_symbol.clone(),
+            );
             let synth_address = synth.resource_address();
 
             debug!("Set up sTESLA/XRD swap pool");
@@ -1067,7 +1070,7 @@ blueprint! {
             let shares = identity_badge.authorize(|| {
                 borrow_resource_manager!(mutual_farm_share_resource_address).mint(initial_shares)
             });
-            
+
             debug!("Instantiate MutualFund component");
             let component = Self {
                 identity_badge: Vault::with_bucket(identity_badge),
@@ -1108,18 +1111,26 @@ blueprint! {
             debug!("Swap 3/4 of XRD for SNX");
             let xrd_address = xrd.resource_address();
             let xrd_amount = xrd.amount();
-            let snx = self.xrd_snx_radiswap.swap(xrd.take(xrd.amount() * dec!("3") / dec!("4")));
+            let snx = self
+                .xrd_snx_radiswap
+                .swap(xrd.take(xrd.amount() * dec!("3") / dec!("4")));
             let snx_amount = snx.amount();
 
             debug!("Deposit SNX into synthetic pool and mint sTESLA (1/10 of our SNX).");
-            self.synthetic_pool.stake(self.identity_badge.create_proof(), snx);
+            self.synthetic_pool
+                .stake(self.identity_badge.create_proof(), snx);
             let quantity = snx_amount * snx_usd_price / dec!("10") / tesla_usd_price;
-            let synth = self.synthetic_pool.mint(self.identity_badge.create_proof(), quantity, self.asset_symbol.clone());
+            let synth = self.synthetic_pool.mint(
+                self.identity_badge.create_proof(),
+                quantity,
+                self.asset_symbol.clone(),
+            );
 
             debug!("Add liquidity to sTESLA/XRD swap pool");
             let (lp_tokens, mut remainder) = self.radiswap.add_liquidity(synth, xrd);
             if remainder.resource_address() == self.synth_address {
-                self.synthetic_pool.burn(self.identity_badge.create_proof(), remainder);
+                self.synthetic_pool
+                    .burn(self.identity_badge.create_proof(), remainder);
                 remainder = Bucket::new(xrd_address);
             }
             self.radiswap_lp_tokens.put(lp_tokens);
@@ -1127,10 +1138,13 @@ blueprint! {
             debug!("Mint initial shares");
             let contribution = xrd_usd_price * (xrd_amount - remainder.amount());
             let num_shares_to_issue = contribution
-                / (self.total_contribution_in_usd / borrow_resource_manager!(self.mutual_farm_share_resource_address).total_supply());
+                / (self.total_contribution_in_usd
+                    / borrow_resource_manager!(self.mutual_farm_share_resource_address)
+                        .total_supply());
             self.total_contribution_in_usd += contribution;
             let shares = self.identity_badge.authorize(|| {
-                borrow_resource_manager!(self.mutual_farm_share_resource_address).mint(num_shares_to_issue)
+                borrow_resource_manager!(self.mutual_farm_share_resource_address)
+                    .mint(num_shares_to_issue)
             });
             (shares, remainder)
         }

@@ -14,7 +14,7 @@ blueprint! {
                 .initial_supply(1);
 
             // Create the ResourceManager for a mutable supply admin badge
-            let mut admin_badge = ResourceBuilder::new_fungible()
+            let admin_badge = ResourceBuilder::new_fungible()
                 .divisibility(DIVISIBILITY_NONE)
                 .metadata("name", badge_name)
                 .mintable(rule!(require(admin_mint_badge.resource_address())), LOCKED)
