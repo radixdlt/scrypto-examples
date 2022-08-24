@@ -11,38 +11,17 @@ If the function or method is from an already published package, we need to
     ```
     resim export-abi <PACKAGE_ADDRESS> Airdrop
     ```
-2. Import the ABI into our package, e.g.,
+2. Import the external blueprint. e.g,
     ```rust
-    import! {
-    r#"
-    {
-        "package_address": "01e9917332573b6332ffaaadc96bc1509cc24ef8aa69d1cd117d39",
-        "blueprint_name": "Airdrop",
-        "functions": [
+    external_blueprint! {
         {
-            "name": "instantiate_airdrop",
-            "inputs": [],
-            "output": {
-                "type": "Custom",
-                "name": "ComponentAddress",
-                "generics": []
-            }
+            package: "package_sim1qx7304nj09gmp8t8kd2xv6t9yxg7vug8su6wq9kjfutqzl29ru",
+            blueprint: "Airdrop"
+        },
+        Airdrop {
+            fn instantiate_airdrop() -> ComponentAddress;
+            fn free_token(&mut self) -> Bucket;
         }
-        ],
-        "methods": [
-        {
-            "name": "free_token",
-            "mutability": "Mutable",
-            "inputs": [],
-            "output": {
-                "type": "Custom",
-                "name": "Bucket",
-                "generics": []
-            }
-        }
-        ]
-    }
-    "#
     }
     ```
 Once the blueprint has been imported, we can then call any of its functions, for example,
