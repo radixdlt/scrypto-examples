@@ -115,7 +115,7 @@ blueprint! {
                 .default(rule!(allow_all));
 
             // Instantiating the fixed price sale component
-            let mut fixed_price_sale: FixedPriceSale_Component = Self {
+            let mut fixed_price_sale: FixedPriceSaleComponent = Self {
                 nft_vaults,
                 payment_vault: Vault::new(accepted_payment_token),
                 accepted_payment_token,

@@ -179,7 +179,7 @@ blueprint! {
                 // can take the shareholder badge in a `Proof`, get its ID, and use the data associated with it.
                 .default(rule!(allow_all));
 
-            let mut payment_splitter: PaymentSplitter_Component = Self {
+            let mut payment_splitter: PaymentSplitterComponent = Self {
                 accepted_token_resource_address: accepted_token_resource_address,
                 shareholder_badge_resource_address: shareholder_badge,
                 internal_admin_badge: Vault::with_bucket(internal_admin_badge),

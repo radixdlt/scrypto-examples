@@ -151,7 +151,7 @@ blueprint! {
                 // like to handle them all on our own.
                 .default(rule!(allow_all));
 
-            let mut vesting_component: Vesting_Component = Self {
+            let mut vesting_component: VestingComponent = Self {
                 funds: HashMap::new(),
                 beneficiary_vesting_badge: beneficiary_vesting_badge,
                 admin_badge: admin_badge.resource_address(),

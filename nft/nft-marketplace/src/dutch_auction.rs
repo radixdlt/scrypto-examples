@@ -142,7 +142,7 @@ blueprint! {
                 .default(rule!(allow_all));
 
             // Instantiating the dutch auction sale component
-            let mut dutch_auction: DutchAuction_Component = Self {
+            let mut dutch_auction: DutchAuctionComponent = Self {
                 nft_vaults,
                 payment_vault: Vault::new(accepted_payment_token),
                 accepted_payment_token,

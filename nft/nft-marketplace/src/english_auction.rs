@@ -171,7 +171,7 @@ blueprint! {
                 .default(rule!(allow_all));
 
             // Instantiating the english auction sale component
-            let mut english_auction: EnglishAuction_Component = Self {
+            let mut english_auction: EnglishAuctionComponent = Self {
                 nft_vaults,
                 bid_vaults: HashMap::new(),
                 payment_vault: Vault::new(accepted_payment_token),

@@ -190,7 +190,7 @@ blueprint! {
             // At this point we know that the creation of the component can go through.
 
             // Instantiating the component and returning its address
-            let mut local_component: LimitedWithdrawVault_Component = Self {
+            let mut local_component: LimitedWithdrawVaultComponent = Self {
                 withdraw_information: HashMap::new(),
                 vault: Vault::new(tokens_resource_address),
             }
