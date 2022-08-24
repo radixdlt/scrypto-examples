@@ -4,7 +4,7 @@ use scrypto::prelude::*;
 blueprint! {
     struct ClearingHouse {
         /// All traders' positions
-        trader_positions: LazyMap<ResourceAddress, Vec<Position>>,
+        trader_positions: KeyValueStore<ResourceAddress, Vec<Position>>,
         /// Deposit vault
         deposits_in_quote: Vault,
         /// Liquidation threshold
@@ -20,7 +20,7 @@ blueprint! {
             quote_init_supply: Decimal,
         ) -> ComponentAddress {
             Self {
-                trader_positions: LazyMap::new(),
+                trader_positions: KeyValueStore::new(),
                 deposits_in_quote: Vault::new(quote_address),
                 liquidation_threshold: "0.06".parse().unwrap(),
                 amm: AMM {
@@ -52,10 +52,19 @@ blueprint! {
             let position = self
                 .amm
                 .new_position(margin_amount, leverage, position_type);
-            let mut positions = self.trader_positions.get(&user_id).unwrap_or(Vec::new());
+
+            let mut positions = match self.trader_positions.get_mut(&user_id) {
+                Some(positions) => {
+                    positions
+                },
+                None => {
+                    self.trader_positions.insert(user_id, Vec::new());
+                    self.trader_positions.get_mut(&user_id).unwrap()
+                }
+            };
             positions.push(position);
 
-            self.trader_positions.insert(user_id, positions);
+            self.trader_positions.insert(user_id, positions.to_vec());
             self.deposits_in_quote.put(margin);
         }
 
@@ -107,12 +116,11 @@ blueprint! {
 
         /// Parse user id from proof.
         fn get_user_id(user_auth: Proof) -> ResourceAddress {
-            assert!(user_auth.amount() > dec!("0"), "Invalid user proof");
-            user_auth.resource_address()
+            user_auth.unsafe_skip_proof_validation().resource_address()
         }
 
         fn settle_internal(&mut self, user_id: ResourceAddress, nth: usize) -> Bucket {
-            let mut positions = self.trader_positions.get(&user_id).unwrap();
+            let mut positions = self.trader_positions.get_mut(&user_id).unwrap();
             let position = positions.get(nth).unwrap();
 
             let pnl = self.amm.settle_position(position);
@@ -125,7 +133,7 @@ blueprint! {
             let to_return = position.margin_in_quote + pnl;
 
             positions.swap_remove(nth);
-            self.trader_positions.insert(user_id, positions);
+            self.trader_positions.insert(user_id, positions.to_vec());
             self.deposits_in_quote.take(to_return)
         }
     }
