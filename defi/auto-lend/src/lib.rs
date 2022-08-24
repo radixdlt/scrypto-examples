@@ -24,7 +24,7 @@ blueprint! {
         /// Liquidation bonus
         liquidation_bonus: Decimal,
         /// User state
-        users: LazyMap<ResourceAddress, User>,
+        users: KeyValueStore<ResourceAddress, User>,
         /// The interest rate of deposits, per epoch
         deposit_interest_rate: Decimal,
         /// The (stable) interest rate of loans, per epoch
@@ -40,7 +40,7 @@ blueprint! {
                 max_borrow_percent: dec!("0.3"),
                 max_liquidation_percent: dec!("0.5"),
                 liquidation_bonus: dec!("0.05"),
-                users: LazyMap::new(),
+                users: KeyValueStore::new(),
                 deposit_interest_rate: dec!("0.01"),
                 borrow_interest_rate: dec!("0.02"),
             }
@@ -63,10 +63,10 @@ blueprint! {
 
             // Update user state
             let deposit_interest_rate = self.deposit_interest_rate;
-            let user = match self.users.get(&user_id) {
+            let user = match self.users.get_mut(&user_id) {
                 Some(mut user) => {
                     user.on_deposit(amount, deposit_interest_rate);
-                    user
+                    (*user).clone()
                 }
                 None => User {
                     deposit_balance: amount,
@@ -171,7 +171,7 @@ blueprint! {
         /// Returns the current state of a user.
         pub fn get_user(&self, user_id: ResourceAddress) -> User {
             match self.users.get(&user_id) {
-                Some(user) => user,
+                Some(user) => (*user).clone(),
                 _ => panic!("User not found"),
             }
         }
@@ -188,13 +188,12 @@ blueprint! {
 
         /// Parse user id from a proof.
         fn get_user_id(user_auth: Proof) -> ResourceAddress {
-            assert!(user_auth.amount() > dec!("0"), "Invalid user proof");
-            user_auth.resource_address()
+            user_auth.unsafe_skip_proof_validation().resource_address()
         }
     }
 }
 
-#[derive(Debug, TypeId, Encode, Decode, Describe, PartialEq, Eq)]
+#[derive(Debug, TypeId, Encode, Decode, Describe, PartialEq, Eq, Clone)]
 pub struct User {
     /// The user's deposit balance
     pub deposit_balance: Decimal,
