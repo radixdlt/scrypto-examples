@@ -1,6 +1,6 @@
 use radix_engine::ledger::*;
 use radix_engine::model::extract_package;
-use scrypto::core::Network;
+use scrypto::core::NetworkDefinition;
 use scrypto::prelude::*;
 use scrypto::to_struct;
 use scrypto_unit::*;
@@ -19,7 +19,7 @@ fn test_create_additional_admin() {
     let package_address = test_runner.publish_package(extract_package(compile_package!()).unwrap());
 
     // Test the `instantiate_hello_nft` function.
-    let manifest1 = ManifestBuilder::new(Network::LocalSimulator)
+    let manifest1 = ManifestBuilder::new(NetworkDefinition::LocalSimulator)
         .call_function(package_address, "Hello", "instantiate_hello", to_struct!())
         .call_method_with_all_resources(account_component, "deposit_batch")
         .build();

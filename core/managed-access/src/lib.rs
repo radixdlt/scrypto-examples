@@ -3,70 +3,134 @@ use scrypto::prelude::*;
 import! {
 r#"
 {
-    "package_address": "01a99c5f6d0f4b92e81968405bde0e14709ab6630dc0e215a38eef",
-    "blueprint_name": "FlatAdmin",
-    "functions": [
+  "package_address": "package_sim1q9h0dr0z36zaq6h66lg5putxtztyf0sgelxu654r67ks765aue",
+  "blueprint_name": "FlatAdmin",
+  "abi": {
+    "structure": {
+      "type": "Struct",
+      "name": "FlatAdmin",
+      "fields": {
+        "type": "Named",
+        "named": [
+          [
+            "admin_mint_badge",
+            {
+              "type": "Custom",
+              "type_id": 179,
+              "generics": []
+            }
+          ],
+          [
+            "admin_badge",
+            {
+              "type": "Custom",
+              "type_id": 182,
+              "generics": []
+            }
+          ]
+        ]
+      }
+    },
+    "fns": [
       {
-        "name": "instantiate_flat_admin",
-        "inputs": [
-          {
-            "type": "String"
+        "ident": "instantiate_flat_admin",
+        "mutability": null,
+        "input": {
+          "type": "Struct",
+          "name": "FlatAdmin_instantiate_flat_admin_Input",
+          "fields": {
+            "type": "Named",
+            "named": [
+              [
+                "arg0",
+                {
+                  "type": "String"
+                }
+              ]
+            ]
           }
-        ],
+        },
         "output": {
           "type": "Tuple",
           "elements": [
             {
               "type": "Custom",
-              "name": "ComponentAddress",
+              "type_id": 129,
               "generics": []
             },
             {
               "type": "Custom",
-              "name": "Bucket",
+              "type_id": 177,
               "generics": []
             }
           ]
-        }
-      }
-    ],
-    "methods": [
-      {
-        "name": "create_additional_admin",
-        "mutability": "Mutable",
-        "inputs": [],
-        "output": {
-          "type": "Custom",
-          "name": "Bucket",
-          "generics": []
-        }
+        },
+        "export_name": "FlatAdmin_instantiate_flat_admin"
       },
       {
-        "name": "destroy_admin_badge",
+        "ident": "create_additional_admin",
         "mutability": "Mutable",
-        "inputs": [
-          {
-            "type": "Custom",
-            "name": "Bucket",
-            "generics": []
+        "input": {
+          "type": "Struct",
+          "name": "FlatAdmin_create_additional_admin_Input",
+          "fields": {
+            "type": "Named",
+            "named": []
           }
-        ],
+        },
+        "output": {
+          "type": "Custom",
+          "type_id": 177,
+          "generics": []
+        },
+        "export_name": "FlatAdmin_create_additional_admin"
+      },
+      {
+        "ident": "destroy_admin_badge",
+        "mutability": "Mutable",
+        "input": {
+          "type": "Struct",
+          "name": "FlatAdmin_destroy_admin_badge_Input",
+          "fields": {
+            "type": "Named",
+            "named": [
+              [
+                "arg0",
+                {
+                  "type": "Custom",
+                  "type_id": 177,
+                  "generics": []
+                }
+              ]
+            ]
+          }
+        },
         "output": {
           "type": "Unit"
-        }
+        },
+        "export_name": "FlatAdmin_destroy_admin_badge"
       },
       {
-        "name": "get_admin_badge_address",
+        "ident": "get_admin_badge_address",
         "mutability": "Immutable",
-        "inputs": [],
+        "input": {
+          "type": "Struct",
+          "name": "FlatAdmin_get_admin_badge_address_Input",
+          "fields": {
+            "type": "Named",
+            "named": []
+          }
+        },
         "output": {
           "type": "Custom",
-          "name": "ResourceAddress",
+          "type_id": 182,
           "generics": []
-        }
+        },
+        "export_name": "FlatAdmin_get_admin_badge_address"
       }
     ]
   }
+}
 "#
 }
 
@@ -86,14 +150,14 @@ blueprint! {
                 .method("withdraw_all", rule!(require(admin_badge.resource_address())))
                 .default(rule!(allow_all));
 
-            let component = Self {
+            let mut component = Self {
                 admin_badge: admin_badge.resource_address(),
                 flat_admin_controller: flat_admin_component,
                 protected_vault: Vault::new(RADIX_TOKEN),
             }
-            .instantiate()
-            .add_access_check(rules)
-            .globalize();
+            .instantiate();
+            component.add_access_check(rules);
+            let component = component.globalize();
             
             (component, admin_badge)
         }
