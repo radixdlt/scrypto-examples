@@ -1,0 +1,61 @@
+name: CI
+
+on: [push, pull_request]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check-code-format:
+    name: Check code format
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+    - name: Install Scrypto toolchain
+      run: cargo install --git https://github.com/radixdlt/radixdlt-scrypto --rev c948bba0565746ac324fc4b004149da6149b5a96 --bins simulator
+    - name: Check format
+      run: bash ./check.sh
+  run-tests:
+    name: Run tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+    - name: Add wasm target
+      run: rustup target add wasm32-unknown-unknown
+    - name: Add wasm target (nightly)
+      run: rustup +nightly target add wasm32-unknown-unknown
+    - name: Install Scrypto toolchain
+      run: cargo install --git https://github.com/radixdlt/radixdlt-scrypto --rev c948bba0565746ac324fc4b004149da6149b5a96 --bins simulator
+    - name: Run tests
+      run: ./test.sh
+  run-defi-demo:
+    name: Run DEFI demo
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+    - name: Add wasm target
+      run: rustup target add wasm32-unknown-unknown
+    - name: Add wasm target (nightly)
+      run: rustup +nightly target add wasm32-unknown-unknown
+    - name: Install Scrypto toolchain
+      run: cargo install --git https://github.com/radixdlt/radixdlt-scrypto --rev c948bba0565746ac324fc4b004149da6149b5a96 --bins simulator
+    - name: Run tests
+      run: ./defi/demo.sh

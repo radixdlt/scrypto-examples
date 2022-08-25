@@ -28,13 +28,11 @@ fn test_magic_card() {
         .build();
     let receipt1 = test_runner.execute_manifest_ignoring_fee(transaction1, vec![public_key]);
     println!("{:?}\n", receipt1);
-    receipt1.expect_success();
+    receipt1.expect_commit_success();
 
     // Test the `buy_special_card` method.
     let component = receipt1
-        .result
-        .get_commit_result()
-        .unwrap()
+        .expect_commit()
         .entity_changes
         .new_component_addresses[0];
     let transaction2 = ManifestBuilder::new(&NetworkDefinition::local_simulator())
@@ -53,13 +51,11 @@ fn test_magic_card() {
         .build();
     let receipt2 = test_runner.execute_manifest_ignoring_fee(transaction2, vec![public_key]);
     println!("{:?}\n", receipt2);
-    receipt2.expect_success();
+    receipt2.expect_commit_success();
 
     // Test the `buy_special_card` method.
     let component = receipt1
-        .result
-        .get_commit_result()
-        .unwrap()
+        .expect_commit()
         .entity_changes
         .new_component_addresses[0];
     let transaction3 = ManifestBuilder::new(&NetworkDefinition::local_simulator())
@@ -75,5 +71,5 @@ fn test_magic_card() {
         .build();
     let receipt3 = test_runner.execute_manifest_ignoring_fee(transaction3, vec![public_key]);
     println!("{:?}\n", receipt3);
-    receipt3.expect_success();
+    receipt3.expect_commit_success();
 }

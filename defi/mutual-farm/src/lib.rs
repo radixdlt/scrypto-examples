@@ -13,7 +13,7 @@ use scrypto::prelude::*;
 
 external_blueprint! {
   {
-      package: "package_sim1q8pe9fczej7zhq4ty35q8uvf58h7wj45y3gufz539ysqm7l0ur",
+      package: "package_sim1q9nmp3gffream9we6wtzywce82ezku488s9c5ekuzgcsvz6tmy",
       blueprint: "PriceOracle"
   },
   PriceOracle {
@@ -26,7 +26,7 @@ external_blueprint! {
 
 external_blueprint! {
   {
-      package: "package_sim1qyna563fqj6pqvpss763w9hw4vrdxgapfucx8esqyq0s5auvae",
+      package: "package_sim1q9dakzhyhnx8yhgra8kmq5xzxvafcqau8vkyqtctjyhqpd4ncq",
       blueprint: "SyntheticPool"
   },
   SyntheticPool {
@@ -46,7 +46,7 @@ external_blueprint! {
 
 external_blueprint! {
   {
-      package: "package_sim1q8e4p0ut06dxeczmmhjlcs9mlkkhhml9ce58dlwxtugsfxedpm",
+      package: "package_sim1qxq55f43j0v84jq7pxmnvvl0w9gzss3a5lwgdxc7rspqzjcfq8",
       blueprint: "Radiswap"
   },
   Radiswap {

@@ -46,15 +46,11 @@ fn admin_can_add_shareholder() {
         test_runner.execute_manifest_ignoring_fee(instantiation_tx, vec![admin_public_key]);
 
     let payment_splitter_component_address: ComponentAddress = instantiation_receipt
-        .result
-        .get_commit_result()
-        .unwrap()
+        .expect_commit()
         .entity_changes
         .new_component_addresses[0];
     let admin_badge_resource_address: ResourceAddress = instantiation_receipt
-        .result
-        .get_commit_result()
-        .unwrap()
+        .expect_commit()
         .entity_changes
         .new_resource_addresses[0];
 
@@ -76,7 +72,7 @@ fn admin_can_add_shareholder() {
     let adding_shareholder_receipt: TransactionReceipt =
         test_runner.execute_manifest_ignoring_fee(adding_shareholder_tx, vec![admin_public_key]);
 
-    adding_shareholder_receipt.expect_success();
+    adding_shareholder_receipt.expect_commit_success();
 }
 
 #[test]
@@ -115,21 +111,15 @@ fn shareholder_cant_add_shareholder() {
         test_runner.execute_manifest_ignoring_fee(instantiation_tx, vec![admin_public_key]);
 
     let payment_splitter_component_address: ComponentAddress = instantiation_receipt
-        .result
-        .get_commit_result()
-        .unwrap()
+        .expect_commit()
         .entity_changes
         .new_component_addresses[0];
     let admin_badge_resource_address: ResourceAddress = instantiation_receipt
-        .result
-        .get_commit_result()
-        .unwrap()
+        .expect_commit()
         .entity_changes
         .new_resource_addresses[0];
     let shareholder_badge_resource_address: ResourceAddress = instantiation_receipt
-        .result
-        .get_commit_result()
-        .unwrap()
+        .expect_commit()
         .entity_changes
         .new_resource_addresses[2];
 
@@ -150,7 +140,7 @@ fn shareholder_cant_add_shareholder() {
             .build();
     let adding_shareholder_receipt: TransactionReceipt =
         test_runner.execute_manifest_ignoring_fee(adding_shareholder_tx, vec![admin_public_key]);
-    adding_shareholder_receipt.expect_success();
+    adding_shareholder_receipt.expect_commit_success();
 
     // Attempting to add a new shareholder to the payment splitter
     let unauthed_adding_shareholder_tx: TransactionManifest =
@@ -171,7 +161,7 @@ fn shareholder_cant_add_shareholder() {
         .execute_manifest_ignoring_fee(unauthed_adding_shareholder_tx, vec![admin_public_key]);
 
     // We know that we should not be authorized to add them; so, we check for an AuthorizationError
-    unauthed_adding_shareholder_receipt.expect_failure(|error: &RuntimeError| -> bool {
+    unauthed_adding_shareholder_receipt.expect_commit_failure(|error: &RuntimeError| -> bool {
         matches!(
             error,
             RuntimeError::ModuleError(ModuleError::AuthorizationError {
@@ -219,9 +209,7 @@ fn unauthed_cant_lock_splitter() {
         test_runner.execute_manifest_ignoring_fee(instantiation_tx, vec![admin_public_key]);
 
     let payment_splitter_component_address: ComponentAddress = instantiation_receipt
-        .result
-        .get_commit_result()
-        .unwrap()
+        .expect_commit()
         .entity_changes
         .new_component_addresses[0];
 
@@ -234,7 +222,7 @@ fn unauthed_cant_lock_splitter() {
         test_runner.execute_manifest_ignoring_fee(unauthed_locking_tx, vec![admin_public_key]);
 
     // We know that we should not be authorized to add them; so, we check for an AuthorizationError
-    unauthed_locking_receipt.expect_failure(|error: &RuntimeError| -> bool {
+    unauthed_locking_receipt.expect_commit_failure(|error: &RuntimeError| -> bool {
         matches!(
             error,
             RuntimeError::ModuleError(ModuleError::AuthorizationError {
@@ -282,15 +270,11 @@ fn admin_cant_add_shareholder_after_locking() {
         test_runner.execute_manifest_ignoring_fee(instantiation_tx, vec![admin_public_key]);
 
     let payment_splitter_component_address: ComponentAddress = instantiation_receipt
-        .result
-        .get_commit_result()
-        .unwrap()
+        .expect_commit()
         .entity_changes
         .new_component_addresses[0];
     let admin_badge_resource_address: ResourceAddress = instantiation_receipt
-        .result
-        .get_commit_result()
-        .unwrap()
+        .expect_commit()
         .entity_changes
         .new_resource_addresses[0];
 
@@ -326,7 +310,7 @@ fn admin_cant_add_shareholder_after_locking() {
         test_runner.execute_manifest_ignoring_fee(adding_shareholder_tx, vec![admin_public_key]);
 
     // Adding an additional shareholder should fail.
-    adding_shareholder_receipt.expect_failure(|_| true);
+    adding_shareholder_receipt.expect_commit_failure(|_| true);
 }
 
 #[test]
@@ -365,9 +349,7 @@ fn anybody_can_deposit() {
         test_runner.execute_manifest_ignoring_fee(instantiation_tx, vec![admin_public_key]);
 
     let payment_splitter_component_address: ComponentAddress = instantiation_receipt
-        .result
-        .get_commit_result()
-        .unwrap()
+        .expect_commit()
         .entity_changes
         .new_component_addresses[0];
 
@@ -392,7 +374,7 @@ fn anybody_can_deposit() {
         test_runner.execute_manifest_ignoring_fee(deposit_tx, vec![non_admin_public_key]);
 
     // Adding an additional shareholder should fail.
-    deposit_receipt.expect_success();
+    deposit_receipt.expect_commit_success();
 }
 
 #[test]
@@ -423,21 +405,15 @@ fn custom_rule_splitter_works_with_correct_badges() {
         test_runner.execute_manifest_ignoring_fee(badge_creation_tx, vec![admin_public_key]);
 
     let supervisor_badge_resource_address: ResourceAddress = badge_creation_receipt
-        .result
-        .get_commit_result()
-        .unwrap()
+        .expect_commit()
         .entity_changes
         .new_resource_addresses[0];
     let admin_badge_resource_address: ResourceAddress = badge_creation_receipt
-        .result
-        .get_commit_result()
-        .unwrap()
+        .expect_commit()
         .entity_changes
         .new_resource_addresses[1];
     let superadmin_badge_resource_address: ResourceAddress = badge_creation_receipt
-        .result
-        .get_commit_result()
-        .unwrap()
+        .expect_commit()
         .entity_changes
         .new_resource_addresses[2];
 
@@ -462,9 +438,7 @@ fn custom_rule_splitter_works_with_correct_badges() {
         test_runner.execute_manifest_ignoring_fee(instantiation_tx, vec![admin_public_key]);
 
     let payment_splitter_component_address: ComponentAddress = instantiation_receipt
-        .result
-        .get_commit_result()
-        .unwrap()
+        .expect_commit()
         .entity_changes
         .new_component_addresses[0];
 
@@ -498,7 +472,7 @@ fn custom_rule_splitter_works_with_correct_badges() {
     println!("{:?}", adding_shareholder_receipt);
 
     // Adding an additional shareholder should fail.
-    adding_shareholder_receipt.expect_success();
+    adding_shareholder_receipt.expect_commit_success();
 }
 
 #[test]
@@ -529,21 +503,15 @@ fn custom_rule_splitter_doesnt_work_with_incorrect_badges() {
         test_runner.execute_manifest_ignoring_fee(badge_creation_tx, vec![admin_public_key]);
 
     let supervisor_badge_resource_address: ResourceAddress = badge_creation_receipt
-        .result
-        .get_commit_result()
-        .unwrap()
+        .expect_commit()
         .entity_changes
         .new_resource_addresses[0];
     let admin_badge_resource_address: ResourceAddress = badge_creation_receipt
-        .result
-        .get_commit_result()
-        .unwrap()
+        .expect_commit()
         .entity_changes
         .new_resource_addresses[1];
     let superadmin_badge_resource_address: ResourceAddress = badge_creation_receipt
-        .result
-        .get_commit_result()
-        .unwrap()
+        .expect_commit()
         .entity_changes
         .new_resource_addresses[2];
 
@@ -568,9 +536,7 @@ fn custom_rule_splitter_doesnt_work_with_incorrect_badges() {
         test_runner.execute_manifest_ignoring_fee(instantiation_tx, vec![admin_public_key]);
 
     let payment_splitter_component_address: ComponentAddress = instantiation_receipt
-        .result
-        .get_commit_result()
-        .unwrap()
+        .expect_commit()
         .entity_changes
         .new_component_addresses[0];
 
@@ -599,5 +565,5 @@ fn custom_rule_splitter_doesnt_work_with_incorrect_badges() {
     println!("{:?}", adding_shareholder_receipt);
 
     // Adding an additional shareholder should fail.
-    adding_shareholder_receipt.expect_failure(|_| true);
+    adding_shareholder_receipt.expect_commit_failure(|_| true);
 }

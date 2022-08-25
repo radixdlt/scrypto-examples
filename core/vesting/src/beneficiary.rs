@@ -70,10 +70,6 @@ impl BeneficiaryVestingSchedule {
     ) -> Self {
         // Performing the checks to ensure that the vesting schedule may be created.
         assert!(
-            relative_cliff_epoch >= 0,
-            "[New Vesting Schedule]: Relative cliff epoch must be larger than or equal to zero."
-        );
-        assert!(
             relative_ending_epoch >= relative_cliff_epoch,
             "[New Vesting Schedule]: Relative ending epoch must be larger than or equal to the relative cliff epoch."
         );

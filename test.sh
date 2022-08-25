@@ -3,17 +3,14 @@
 set -x
 set -e
 
-(cd core/cross-blueprint-call; cargo build --target wasm32-unknown-unknown --release; cargo test --release)
-(cd core/flat-admin; cargo build --target wasm32-unknown-unknown --release; cargo test --release)
-(cd core/gumball-machine; cargo build --target wasm32-unknown-unknown --release; cargo test --release)
-(cd core/hello-nft; cargo build --target wasm32-unknown-unknown --release; cargo test --release)
-(cd core/hello-world; cargo build --target wasm32-unknown-unknown --release; cargo test --release)
-(cd core/managed-access; cargo build --target wasm32-unknown-unknown --release; cargo test --release)
-(cd core/no-std-lib; cargo build --target wasm32-unknown-unknown --release)
-(cd nft/magic-card; cargo build --target wasm32-unknown-unknown --release; cargo test --release)
-(cd nft/sporting-event; cargo build --target wasm32-unknown-unknown --release; cargo test --release)
-(cd defi/auto-lend; cargo build --target wasm32-unknown-unknown --release; cargo test --release)
-(cd defi/x-perp-futures; cargo build --target wasm32-unknown-unknown --release; cargo test --release)
-(cd defi; ./demo.sh)
+cd "$(dirname "$0")"
+
+(cd core; find . -maxdepth 1 -type d \( ! -name . \) -print0 | xargs -0 -n1 -I '{}' cargo build --release --target wasm32-unknown-unknown --manifest-path {}/Cargo.toml)
+(cd defi; find . -maxdepth 1 -type d \( ! -name . \) -print0 | xargs -0 -n1 -I '{}' cargo build --release --target wasm32-unknown-unknown --manifest-path {}/Cargo.toml)
+(cd nft; find . -maxdepth 1 -type d \( ! -name . \) -print0 | xargs -0 -n1 -I '{}' cargo build --release --target wasm32-unknown-unknown --manifest-path {}/Cargo.toml)
+
+(cd core; find . -maxdepth 1 -type d \( ! -name . \) -print0 | xargs -0 -n1 -I '{}' cargo test --manifest-path {}/Cargo.toml)
+(cd defi; find . -maxdepth 1 -type d \( ! -name . \) -print0 | xargs -0 -n1 -I '{}' cargo test --manifest-path {}/Cargo.toml)
+(cd nft; find . -maxdepth 1 -type d \( ! -name . \) -print0 | xargs -0 -n1 -I '{}' cargo test --manifest-path {}/Cargo.toml)
 
 echo "Congrats! All tests passed."

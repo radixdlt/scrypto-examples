@@ -30,19 +30,15 @@ fn test_create_additional_admin() {
         .build();
     let receipt1 = test_runner.execute_manifest_ignoring_fee(manifest1, vec![public_key]);
     println!("{:?}\n", receipt1);
-    receipt1.expect_success();
+    receipt1.expect_commit_success();
 
     // Test the `create_additional_admin` method.
     let flat_admin = receipt1
-        .result
-        .get_commit_result()
-        .unwrap()
+        .expect_commit()
         .entity_changes
         .new_component_addresses[0];
     let admin_badge = receipt1
-        .result
-        .get_commit_result()
-        .unwrap()
+        .expect_commit()
         .entity_changes
         .new_resource_addresses[1];
     let manifest2 = ManifestBuilder::new(&NetworkDefinition::local_simulator())
@@ -52,5 +48,5 @@ fn test_create_additional_admin() {
         .build();
     let receipt2 = test_runner.execute_manifest_ignoring_fee(manifest2, vec![public_key]);
     println!("{:?}\n", receipt2);
-    receipt2.expect_success();
+    receipt2.expect_commit_success();
 }

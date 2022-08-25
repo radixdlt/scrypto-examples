@@ -6,7 +6,6 @@
         "core/hello-nft/Cargo.toml",
         "core/hello-world/Cargo.toml",
         "core/managed-access/Cargo.toml",
-        "core/no-std-lib/Cargo.toml",
         "core/payment-splitter/Cargo.toml",
         "core/radix-name-service/Cargo.toml",
         "core/resource-creation/Cargo.toml",
