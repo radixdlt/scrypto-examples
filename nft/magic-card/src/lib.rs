@@ -155,13 +155,11 @@ blueprint! {
             (nft_bucket, payment)
         }
 
-        pub fn upgrade_my_card(&mut self, mut nft_bucket: Bucket) -> Bucket {
+        pub fn upgrade_my_card(&mut self, nft_bucket: Bucket) -> Bucket {
             assert!(
                 nft_bucket.amount() == dec!("1"),
                 "We can upgrade only one card each time"
             );
-
-            let nft_key = nft_bucket.non_fungible::<MagicCard>().id();
 
             // Get and update the mutable data
             let mut non_fungible_data: MagicCard = nft_bucket.non_fungible().data();

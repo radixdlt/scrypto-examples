@@ -123,7 +123,7 @@ blueprint! {
         }
 
         /// Passing an NFT into this function will switch it from the default Home team prediction to an Away team prediction
-        fn switch_nft_prediction(&mut self, mut nft_bucket: Bucket) -> Bucket {
+        fn switch_nft_prediction(&mut self, nft_bucket: Bucket) -> Bucket {
             // First, get the current data and change it to the desired state locally
             let mut nft_data: Ticket = nft_bucket.non_fungible().data();
             nft_data.prediction = Team::Away;
