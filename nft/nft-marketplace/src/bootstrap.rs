@@ -32,7 +32,8 @@ blueprint! {
                     ),
                     (
                         NonFungibleId::random(),
-                        Car { // Any raptor lovers? 
+                        Car {
+                            // Any raptor lovers?
                             name: "Raptor".to_string(),
                             manufacturer: "Ford".to_string(),
                         },

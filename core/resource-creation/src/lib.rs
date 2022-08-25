@@ -1,8 +1,8 @@
 use scrypto::prelude::*;
 
 blueprint! {
-    struct ResourceCreation {        
-        vaults: LazyMap<ResourceAddress, Vault>,
+    struct ResourceCreation {
+        vaults: KeyValueStore<ResourceAddress, Vault>,
         all_auth_resources: Vec<ResourceAddress>,
         auth_vault_alpha: Vault,
         auth_vault_bravo: Vault,
@@ -10,15 +10,21 @@ blueprint! {
     }
 
     impl ResourceCreation {
-
         pub fn instantiate() -> ComponentAddress {
-            let alpha = Vault::with_bucket(ResourceCreation::create_basic_badge("Alpha".to_owned()));
-            let bravo = Vault::with_bucket(ResourceCreation::create_basic_badge("Bravo".to_owned()));
-            let charlie = Vault::with_bucket(ResourceCreation::create_basic_badge("Charlie".to_owned()));
-            let authorities: Vec<ResourceAddress> = vec![alpha.resource_address(), bravo.resource_address(), charlie.resource_address()];
+            let alpha =
+                Vault::with_bucket(ResourceCreation::create_basic_badge("Alpha".to_owned()));
+            let bravo =
+                Vault::with_bucket(ResourceCreation::create_basic_badge("Bravo".to_owned()));
+            let charlie =
+                Vault::with_bucket(ResourceCreation::create_basic_badge("Charlie".to_owned()));
+            let authorities: Vec<ResourceAddress> = vec![
+                alpha.resource_address(),
+                bravo.resource_address(),
+                charlie.resource_address(),
+            ];
 
             Self {
-                vaults: LazyMap::new(),
+                vaults: KeyValueStore::new(),
                 all_auth_resources: authorities,
                 auth_vault_alpha: alpha,
                 auth_vault_bravo: bravo,
@@ -57,24 +63,39 @@ blueprint! {
 
             let bucket_3 = ResourceBuilder::new_fungible()
                 .metadata("name", "Mutable supply, single mint/burn authority")
-                .mintable(rule!(require(self.auth_vault_alpha.resource_address())), LOCKED)
-                .burnable(rule!(require(self.auth_vault_alpha.resource_address())), LOCKED)
+                .mintable(
+                    rule!(require(self.auth_vault_alpha.resource_address())),
+                    LOCKED,
+                )
+                .burnable(
+                    rule!(require(self.auth_vault_alpha.resource_address())),
+                    LOCKED,
+                )
                 .initial_supply(103);
             let resource_address_3 = bucket_3.resource_address();
             let vault_3 = Vault::with_bucket(bucket_3);
             self.vaults.insert(resource_address_3, vault_3);
-            
+
             let bucket_4 = ResourceBuilder::new_fungible()
-                .metadata("name", "Mutable supply, single mint authority, burnable by any holder")
-                .mintable(rule!(require(self.auth_vault_alpha.resource_address())), LOCKED)
+                .metadata(
+                    "name",
+                    "Mutable supply, single mint authority, burnable by any holder",
+                )
+                .mintable(
+                    rule!(require(self.auth_vault_alpha.resource_address())),
+                    LOCKED,
+                )
                 .burnable(rule!(allow_all), LOCKED)
                 .initial_supply(104);
             let resource_address_4 = bucket_4.resource_address();
             let vault_4 = Vault::with_bucket(bucket_4);
             self.vaults.insert(resource_address_4, vault_4);
-            
+
             let bucket_5 = ResourceBuilder::new_fungible()
-                .metadata("name", "Mutable supply, mintable by 2-of-3 admins, can not be burned")
+                .metadata(
+                    "name",
+                    "Mutable supply, mintable by 2-of-3 admins, can not be burned",
+                )
                 .mintable(rule!(require_n_of(2, "all_auth_resources")), LOCKED)
                 .initial_supply(105);
             let resource_address_5 = bucket_5.resource_address();
@@ -88,8 +109,8 @@ blueprint! {
                 .metadata("name", "Mintable token, any admin able to mint")
                 .mintable(rule!(require_any_of("all_auth_resources")), LOCKED)
                 .no_initial_supply();
-            
-            let resource_manager: &ResourceManager = borrow_resource_manager!(resource_address);
+
+            let resource_manager: &mut ResourceManager = borrow_resource_manager!(resource_address);
 
             // Mint method 1 - put one of our auth tokens into the local authorization zone and mint
             ComponentAuthZone::push(self.auth_vault_charlie.create_proof());
@@ -97,7 +118,9 @@ blueprint! {
             ComponentAuthZone::pop().drop();
 
             // Mint method 2 - use the convenience "authorize" method on Vault to accomplish the same
-            let bucket_2 = self.auth_vault_charlie.authorize(|| resource_manager.mint(20));
+            let bucket_2 = self
+                .auth_vault_charlie
+                .authorize(|| resource_manager.mint(20));
 
             // Combine our two buckets and then store in a vault
             bucket_1.put(bucket_2);
@@ -110,7 +133,10 @@ blueprint! {
             // Deposit-only is a good choice for something like a regulated token which
             // you can't have users freely passing around
             ResourceBuilder::new_fungible()
-                .metadata("name", "Token which can not be withdrawn from a vault once stored")
+                .metadata(
+                    "name",
+                    "Token which can not be withdrawn from a vault once stored",
+                )
                 .restrict_withdraw(rule!(deny_all), LOCKED)
                 .initial_supply(1)
         }
@@ -119,7 +145,10 @@ blueprint! {
         pub fn create_token_with_mutable_metadata(&mut self) {
             let bucket = ResourceBuilder::new_fungible()
                 .metadata("name", "Updateable metadata token")
-                .updateable_metadata(rule!(require(self.auth_vault_alpha.resource_address())), LOCKED)
+                .updateable_metadata(
+                    rule!(require(self.auth_vault_alpha.resource_address())),
+                    LOCKED,
+                )
                 .initial_supply(100);
             let resource_address = bucket.resource_address();
             let vault = Vault::with_bucket(bucket);
@@ -130,7 +159,7 @@ blueprint! {
             let mut new_metadata = HashMap::new();
             new_metadata.insert("name".to_owned(), "An even better name".to_owned());
             new_metadata.insert("some new key".to_owned(), "Interesting value".to_owned());
-            let resource_manager: &ResourceManager = borrow_resource_manager!(resource_address);
+            let resource_manager: &mut ResourceManager = borrow_resource_manager!(resource_address);
             self.auth_vault_alpha.authorize(|| {
                 resource_manager.update_metadata(new_metadata);
             });
@@ -141,8 +170,14 @@ blueprint! {
             // Start the token in a freely-transferrable state, with the alpha badge able to change the rules
             let bucket = ResourceBuilder::new_fungible()
                 .metadata("name", "Freezable token")
-                .restrict_deposit(rule!(allow_all), MUTABLE(rule!(require(self.auth_vault_alpha.resource_address()))))
-                .restrict_withdraw(rule!(allow_all), MUTABLE(rule!(require(self.auth_vault_alpha.resource_address()))))
+                .restrict_deposit(
+                    rule!(allow_all),
+                    MUTABLE(rule!(require(self.auth_vault_alpha.resource_address()))),
+                )
+                .restrict_withdraw(
+                    rule!(allow_all),
+                    MUTABLE(rule!(require(self.auth_vault_alpha.resource_address()))),
+                )
                 .initial_supply(100);
             let resource_address = bucket.resource_address();
             let vault = Vault::with_bucket(bucket);
@@ -152,7 +187,7 @@ blueprint! {
             ComponentAuthZone::push(self.auth_vault_alpha.create_proof());
 
             // Freeze the token, so no one may withdraw or deposit it
-            let resource_manager: &ResourceManager = borrow_resource_manager!(resource_address);
+            let resource_manager: &mut ResourceManager = borrow_resource_manager!(resource_address);
             resource_manager.set_depositable(rule!(deny_all));
             resource_manager.set_withdrawable(rule!(deny_all));
 
@@ -167,7 +202,7 @@ blueprint! {
 
         /// Withdraws all of specified resource
         pub fn withdraw_resource(&mut self, resource_address: ResourceAddress) -> Bucket {
-            let vault = self.vaults.get(&resource_address);
+            let vault = self.vaults.get_mut(&resource_address);
             match vault {
                 Some(mut vault) => vault.take_all(),
                 None => {
@@ -178,8 +213,11 @@ blueprint! {
 
         /// Withdraws all authority badges
         pub fn withdraw_admin_badges(&mut self) -> (Bucket, Bucket, Bucket) {
-            (self.auth_vault_alpha.take_all(), self.auth_vault_bravo.take_all(), self.auth_vault_charlie.take_all())
+            (
+                self.auth_vault_alpha.take_all(),
+                self.auth_vault_bravo.take_all(),
+                self.auth_vault_charlie.take_all(),
+            )
         }
-        
     }
 }

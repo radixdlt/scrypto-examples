@@ -128,7 +128,7 @@ $ resim show $ADMIN_ADDRESS
 Resources:
 ├─ { amount: 1000000, resource address: 03ce55ad1ab8ae1fd3081fa9d32c842f33c6139959ad9319af8361, name: "Tether", symbol: "USDT" }
 ├─ { amount: 1, resource address: 036076f8a8006d9619baed5fafee0d0c0b975903fccdef0e9d4c06, name: "Vesting Admin Badge" }
-└─ { amount: 1000000, resource address: 030000000000000000000000000000000000000000000000000004, name: "Radix", symbol: "XRD" }
+└─ { amount: 1000000, resource address: resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag, name: "Radix", symbol: "XRD" }
 ```
 
 We can indeed see that the admin's account has the 1,000,000 USDT tokens that we created and in addition to that it has a single "Vesting Admin Badge". This badge can be used by the admin to add or terminate beneficiaries.

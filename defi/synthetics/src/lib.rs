@@ -1,98 +1,17 @@
 use sbor::*;
 use scrypto::prelude::*;
 
-import! {
-r#"
-{
-    "package_address": "015d39c9a28c2ab646facfa9a7d303b1c9c7cf300611094a3ccc68",
-    "blueprint_name": "PriceOracle",
-    "functions": [
-        {
-        "name": "instantiate_oracle",
-        "inputs": [
-            {
-            "type": "U32"
-            }
-        ],
-        "output": {
-            "type": "Tuple",
-            "elements": [
-            {
-                "type": "Custom",
-                "name": "Bucket",
-                "generics": []
-            },
-            {
-                "type": "Custom",
-                "name": "ComponentAddress",
-                "generics": []
-            }
-            ]
-        }
-        }
-    ],
-    "methods": [
-        {
-        "name": "get_price",
-        "mutability": "Immutable",
-        "inputs": [
-            {
-            "type": "Custom",
-            "name": "ResourceAddress",
-            "generics": []
-            },
-            {
-            "type": "Custom",
-            "name": "ResourceAddress",
-            "generics": []
-            }
-        ],
-        "output": {
-            "type": "Option",
-            "value": {
-            "type": "Custom",
-            "name": "Decimal",
-            "generics": []
-            }
-        }
-        },
-        {
-        "name": "update_price",
-        "mutability": "Immutable",
-        "inputs": [
-            {
-            "type": "Custom",
-            "name": "ResourceAddress",
-            "generics": []
-            },
-            {
-            "type": "Custom",
-            "name": "ResourceAddress",
-            "generics": []
-            },
-            {
-            "type": "Custom",
-            "name": "Decimal",
-            "generics": []
-            }
-        ],
-        "output": {
-            "type": "Unit"
-        }
-        },
-        {
-        "name": "admin_badge_address",
-        "mutability": "Immutable",
-        "inputs": [],
-        "output": {
-            "type": "Custom",
-            "name": "ResourceAddress",
-            "generics": []
-        }
-        }
-    ]
-}
-"#
+external_blueprint! {
+  {
+      package: "package_sim1q8pe9fczej7zhq4ty35q8uvf58h7wj45y3gufz539ysqm7l0ur",
+      blueprint: "PriceOracle"
+  },
+  PriceOracle {
+    fn instantiate_oracle(num_of_admins: u32) -> (Bucket, ComponentAddress);
+    fn get_price(&self, base: ResourceAddress, quote: ResourceAddress) -> Option<Decimal>;
+    fn update_price(&self, base: ResourceAddress, quote: ResourceAddress, price: Decimal);
+    fn admin_badge_address(&self) -> ResourceAddress;
+  }
 }
 
 // Main missing features:
@@ -111,7 +30,7 @@ blueprint! {
         usd_resource_address: ResourceAddress,
 
         /// Users
-        users: LazyMap<ResourceAddress, User>,
+        users: KeyValueStore<ResourceAddress, User>,
         /// Synthetics
         synthetics: HashMap<String, SyntheticToken>,
         /// Mint badge
@@ -134,8 +53,14 @@ blueprint! {
             let synthetics_global_debt_share_resource_address = ResourceBuilder::new_fungible()
                 .divisibility(DIVISIBILITY_MAXIMUM)
                 .metadata("name", "Synthetics Global Debt")
-                .mintable(rule!(require(synthetics_mint_badge.resource_address())), LOCKED)
-                .burnable(rule!(require(synthetics_mint_badge.resource_address())), LOCKED)
+                .mintable(
+                    rule!(require(synthetics_mint_badge.resource_address())),
+                    LOCKED,
+                )
+                .burnable(
+                    rule!(require(synthetics_mint_badge.resource_address())),
+                    LOCKED,
+                )
                 .no_initial_supply();
 
             Self {
@@ -143,7 +68,7 @@ blueprint! {
                 collateralization_threshold,
                 snx_resource_address: snx_token_address,
                 usd_resource_address: usd_token_address,
-                users: LazyMap::new(),
+                users: KeyValueStore::new(),
                 synthetics: HashMap::new(),
                 synthetics_mint_badge: Vault::with_bucket(synthetics_mint_badge),
                 synthetics_global_debt_share_resource_address,
@@ -167,10 +92,16 @@ blueprint! {
                 .divisibility(DIVISIBILITY_MAXIMUM)
                 .metadata("name", format!("Synthetic {}", asset_symbol.clone()))
                 .metadata("symbol", format!("s{}", asset_symbol.clone()))
-                .mintable(rule!(require(self.synthetics_mint_badge.resource_address())), LOCKED)
-                .burnable(rule!(require(self.synthetics_mint_badge.resource_address())), LOCKED)
+                .mintable(
+                    rule!(require(self.synthetics_mint_badge.resource_address())),
+                    LOCKED,
+                )
+                .burnable(
+                    rule!(require(self.synthetics_mint_badge.resource_address())),
+                    LOCKED,
+                )
                 .no_initial_supply();
-            
+
             self.synthetics.insert(
                 asset_symbol.clone(),
                 SyntheticToken::new(asset_symbol, asset_address, token_resource_address.clone()),
@@ -215,21 +146,18 @@ blueprint! {
                     let synthetics_global_debt_share_resource_manager = borrow_resource_manager!(
                         self.synthetics_global_debt_share_resource_address
                     );
-                    synthetics_global_debt_share_resource_manager.mint(
-                        if global_debt.is_zero() {
-                            dec!("100")
-                        } else {
-                            new_debt
-                                / (global_debt
-                                    / synthetics_global_debt_share_resource_manager.total_supply())
-                        },
-                    )
+                    synthetics_global_debt_share_resource_manager.mint(if global_debt.is_zero() {
+                        dec!("100")
+                    } else {
+                        new_debt
+                            / (global_debt
+                                / synthetics_global_debt_share_resource_manager.total_supply())
+                    })
                 }));
-            let tokens = self.synthetics_mint_badge
-                .authorize(|| {
-                    let token_resource_manager = borrow_resource_manager!(synth.token_resource_address);
-                    token_resource_manager.mint(amount)
-                });
+            let tokens = self.synthetics_mint_badge.authorize(|| {
+                let token_resource_manager = borrow_resource_manager!(synth.token_resource_address);
+                token_resource_manager.mint(amount)
+            });
             user.check_collateralization_ratio(
                 self.get_snx_price(),
                 self.get_total_global_debt(),
@@ -253,8 +181,10 @@ blueprint! {
             let global_debt = self.get_total_global_debt();
             let debt_to_remove = self.get_asset_price(synth.asset_address) * bucket.amount();
             let shares_to_burn = user.global_debt_share.take(
-                borrow_resource_manager!(self.synthetics_global_debt_share_resource_address).total_supply() 
-                    * debt_to_remove / global_debt
+                borrow_resource_manager!(self.synthetics_global_debt_share_resource_address)
+                    .total_supply()
+                    * debt_to_remove
+                    / global_debt,
             );
 
             self.synthetics_mint_badge.authorize(|| {
@@ -269,8 +199,8 @@ blueprint! {
         pub fn get_total_global_debt(&self) -> Decimal {
             let mut total = Decimal::zero();
             for (_, synth) in &self.synthetics {
-                total +=
-                    self.get_asset_price(synth.asset_address) * borrow_resource_manager!(synth.token_resource_address).total_supply();
+                total += self.get_asset_price(synth.asset_address)
+                    * borrow_resource_manager!(synth.token_resource_address).total_supply();
             }
             total
         }
@@ -289,7 +219,7 @@ blueprint! {
                 panic!(
                     "Failed to obtain price of {}/{}",
                     asset_address, self.usd_resource_address
-                ) ;
+                );
             }
         }
 
@@ -302,7 +232,8 @@ blueprint! {
                 self.get_snx_price(),
                 self.get_total_global_debt(),
                 user.global_debt_share.amount(),
-                borrow_resource_manager!(self.synthetics_global_debt_share_resource_address).total_supply()
+                borrow_resource_manager!(self.synthetics_global_debt_share_resource_address)
+                    .total_supply()
             )
         }
 
@@ -316,13 +247,16 @@ blueprint! {
 
         /// Parse user id from proof.
         fn get_user_id(user_auth: Proof) -> ResourceAddress {
-            assert!(user_auth.amount() > 0.into(), "Invalid user proof");
-            user_auth.resource_address()
+            user_auth.unsafe_skip_proof_validation().resource_address()
         }
 
         /// Retrieves user state.
-        fn get_user(&mut self, user_id: ResourceAddress, create_if_missing: bool) -> User {
-            if let Some(user) = self.users.get(&user_id) {
+        fn get_user(
+            &mut self,
+            user_id: ResourceAddress,
+            create_if_missing: bool,
+        ) -> scrypto::core::DataRefMut<User> {
+            if let Some(user) = self.users.get_mut(&user_id) {
                 user
             } else if create_if_missing {
                 self.users.insert(
@@ -332,7 +266,7 @@ blueprint! {
                         self.synthetics_global_debt_share_resource_address,
                     ),
                 );
-                self.users.get(&user_id).unwrap()
+                self.users.get_mut(&user_id).unwrap()
             } else {
                 panic!("User not found");
             }
@@ -387,7 +321,8 @@ impl User {
         threshold: Decimal,
     ) {
         let resource_manager = borrow_resource_manager!(global_debt_resource_address);
-        if !resource_manager.total_supply().is_zero() && !self.global_debt_share.amount().is_zero() {
+        if !resource_manager.total_supply().is_zero() && !self.global_debt_share.amount().is_zero()
+        {
             assert!(
                 self.snx.amount() * snx_price
                     / (global_debt / resource_manager.total_supply()

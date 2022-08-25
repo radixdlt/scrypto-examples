@@ -1,5 +1,7 @@
 # Visual studio code
-.vscode
+core/*/.vscode
+defi/*/.vscode
+nft/*/.vscode
 
 # macOS folder attributes
 .DS_Store

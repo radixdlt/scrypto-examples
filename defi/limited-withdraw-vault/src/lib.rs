@@ -5,17 +5,17 @@ use scrypto::prelude::*;
 // =======================
 
 blueprint! {
-    /// This struct defines the fields of a store of funds which can be controlled by one or more entities which allows 
+    /// This struct defines the fields of a store of funds which can be controlled by one or more entities which allows
     /// other entities (called withdraw authorities in this context) to withdraw funds from the component within their
-    /// allowable limits which may be finite or infinite. 
-    /// 
-    /// In this blueprint, entities which are given the right to withdraw are called authorized entities and not any 
-    /// other name. This is because this blueprint allows for entities with badges that satisfy `AccessRule`s to 
-    /// withdraw from the blueprint. Authorized entities may be as simple as a single badge or as complex as an 
-    /// organizational structure where multiple badges need to be involved for people on different levels of the 
-    /// organization. 
-    /// 
-    /// An example of where this blueprint can be useful is the following: say that we wish to create a token store 
+    /// allowable limits which may be finite or infinite.
+    ///
+    /// In this blueprint, entities which are given the right to withdraw are called authorized entities and not any
+    /// other name. This is because this blueprint allows for entities with badges that satisfy `AccessRule`s to
+    /// withdraw from the blueprint. Authorized entities may be as simple as a single badge or as complex as an
+    /// organizational structure where multiple badges need to be involved for people on different levels of the
+    /// organization.
+    ///
+    /// An example of where this blueprint can be useful is the following: say that we wish to create a token store
     /// which allows us to have a withdraw authority schedule:
     ///
     /// * When an admin badge or supervisor badge are present: authorize the withdraw of up to 100 XRD
@@ -27,25 +27,25 @@ blueprint! {
     /// While at first glace, it might appear that the problem of limited vault withdrawals can be solved by creating
     /// multiple non-fungible badges and passing them to the involved entities, this solution makes the assumption that
     /// the entities for which we want to give withdraw authority are all singular non-complex entities which is a wrong
-    /// assumption in many cases. 
-    /// 
-    /// This blueprint can be used to model the above mentioned behavior using the `AccessRule`s functionality provided 
+    /// assumption in many cases.
+    ///
+    /// This blueprint can be used to model the above mentioned behavior using the `AccessRule`s functionality provided
     /// in Scrypto v0.4.0.
-    /// 
+    ///
     /// This blueprint makes no assumptions about the auth structure of the instantiator of the component. Meaning, this
     /// blueprint has constructors which allow for the setting of custom administration rule to to fit the needs of all
     /// kinds of people who might require to use this blueprint.
     struct LimitedWithdrawVault {
-        /// This is the main HashMap that stores all of the important information of components. The key in this 
-        /// `HashMap` is the access rule of authorized withdraw entities and the value is a tuple. This tuple contains 
+        /// This is the main HashMap that stores all of the important information of components. The key in this
+        /// `HashMap` is the access rule of authorized withdraw entities and the value is a tuple. This tuple contains
         /// the withdraw limit as well as a `Decimal` of the amount of funds withdrawn through this access rule since
         /// it was last reset.
-        /// 
+        ///
         /// The amount of funds withdrawn so far could be reset to allow for more withdrawals to take place. So, this
         /// should **not** be looked at as the total amount withdrawn. Instead, this is introduced as a way to stop an
-        /// access rule from making multiple withdrawals. Meaning, this is used to ensure that the withdraw limit is a 
+        /// access rule from making multiple withdrawals. Meaning, this is used to ensure that the withdraw limit is a
         /// global limit and not a per-call limit.
-        /// 
+        ///
         /// HashMap<AccessRule, (WithdrawLimit, Decimal)>
         ///                            |           |
         ///                            |           └─ The amount withdrawn by this access rule since the last reset.
@@ -53,8 +53,8 @@ blueprint! {
         withdraw_information: HashMap<AccessRule, (WithdrawLimit, Decimal)>,
 
         /// The underlying vault which will be storing the funds of the component. Keep in mind that this is a single
-        /// vault and not a vector of vaults. This means that a single component can only provide functionality for a 
-        /// single resource. If you wish to have such functionality with multiple tokens then you should instantiate 
+        /// vault and not a vector of vaults. This means that a single component can only provide functionality for a
+        /// single resource. If you wish to have such functionality with multiple tokens then you should instantiate
         /// multiple components.
         vault: Vault,
     }
@@ -62,10 +62,10 @@ blueprint! {
     impl LimitedWithdrawVault {
         /// Instantiates a new LimitedWithdrawVault component.
         ///
-        /// This function allows for the creation of a new limited withdraw vault account along with a badge which is 
-        /// given admin rights. This function returns the address of the newly instantiated component alongside the a 
+        /// This function allows for the creation of a new limited withdraw vault account along with a badge which is
+        /// given admin rights. This function returns the address of the newly instantiated component alongside the a
         /// bucket of the badge containing the admin badge. The admin badge returned may be used for:
-        /// 
+        ///
         /// * The addition of new withdraw authorities through `add_withdraw_authority`.
         /// * The removal of withdraw authorities through `remove_withdraw_authority`.
         /// * Resetting the authority history through `reset_withdraw_history_of_authority`.
@@ -103,10 +103,10 @@ blueprint! {
         /// Instantiates a new LimitedWithdrawVault component with a custom access rule.
         ///
         /// This function allows the caller to instantiate a limited withdraw vault which has a custom administration
-        /// rule for the methods which require "admin" rights. Administrative rights are rights to methods on the 
-        /// component which are typically seen as administrative such as the addition of new withdrawal authorities, the 
+        /// rule for the methods which require "admin" rights. Administrative rights are rights to methods on the
+        /// component which are typically seen as administrative such as the addition of new withdrawal authorities, the
         /// removal of them, and the changing of withdraw limits. This is a non-exhaustive list of the actions which may
-        /// be considered administrative. A more complete list of administrative methods can be seen below in the 
+        /// be considered administrative. A more complete list of administrative methods can be seen below in the
         /// arguments section.
         ///
         /// # Arguments:
@@ -134,16 +134,19 @@ blueprint! {
                 .default(administration_rule);
 
             // Instantiating the component and returning its address
-            return Self::instantiate_bare_bone_limited_withdraw_vault(access_rules, tokens_resource_address);
+            return Self::instantiate_bare_bone_limited_withdraw_vault(
+                access_rules,
+                tokens_resource_address,
+            );
         }
-        
+
         /// Instantiates a new LimitedWithdrawVault component with completely custom access rules.
         ///
         /// This function allows the caller to instantiate a limited withdraw vault which has a custom administration
-        /// rule for the methods which require "admin" rights. Administrative rights are rights to methods on the 
-        /// component which are typically seen as administrative such as the addition of new withdrawal authorities, the 
+        /// rule for the methods which require "admin" rights. Administrative rights are rights to methods on the
+        /// component which are typically seen as administrative such as the addition of new withdrawal authorities, the
         /// removal of them, and the changing of withdraw limits. This is a non-exhaustive list of the actions which may
-        /// be considered administrative. A more complete list of administrative methods can be seen below in the 
+        /// be considered administrative. A more complete list of administrative methods can be seen below in the
         /// arguments section.
         ///
         /// This function performs a number of checks before creating a new limited withdraw vault component:
@@ -152,7 +155,7 @@ blueprint! {
         ///
         /// # Arguments:
         ///
-        /// * `access_rules` (AccessRules) - The access rules which the caller wishes to use for the methods on this 
+        /// * `access_rules` (AccessRules) - The access rules which the caller wishes to use for the methods on this
         /// newly created component. The following are the methods which you can provide auth rules for:
         ///     * `add_withdraw_authority` - This is typically an administrative method.
         ///     * `remove_withdraw_authority` - This is typically an administrative method.
@@ -166,11 +169,11 @@ blueprint! {
         /// # Returns:
         ///
         /// * `ComponentAddress` - The component address of the newly instantiated limited withdraw vault.
-        /// 
+        ///
         /// # Note:
-        /// 
+        ///
         /// This function provides you with a great deal of flexibility in terms of how you want to set your auth but
-        /// also makes it possible to "shoot yourself in the leg" if you incorrectly setup the access rules for the 
+        /// also makes it possible to "shoot yourself in the leg" if you incorrectly setup the access rules for the
         /// methods. Use this function with caution and only use it you understand exactly what you're doing. If all
         /// that you care about is creating a more complex limited withdraw vault, then consider using other functions
         /// like `instantiate_custom_limited_withdraw_vault`.
@@ -185,15 +188,15 @@ blueprint! {
             );
 
             // At this point we know that the creation of the component can go through.
-           
+
             // Instantiating the component and returning its address
-            return Self {
+            let mut local_component: LimitedWithdrawVaultComponent = Self {
                 withdraw_information: HashMap::new(),
                 vault: Vault::new(tokens_resource_address),
             }
-            .instantiate()
-            .add_access_check(access_rules)
-            .globalize();
+            .instantiate();
+            local_component.add_access_check(access_rules);
+            return local_component.globalize();
         }
 
         /// Adds a new withdraw authority to the the list of authorities.
@@ -205,9 +208,13 @@ blueprint! {
         /// # Arguments:
         ///
         /// * `access_rule` (AccessRule) - The access rule which the withdrawal limit will be attached to.
-        /// * `withdraw_limit` (AccessRule) - A WithdrawLimit which defines the limit on withdrawal which will be 
+        /// * `withdraw_limit` (AccessRule) - A WithdrawLimit which defines the limit on withdrawal which will be
         /// imposed on the access_rule.
-        pub fn add_withdraw_authority(&mut self, access_rule: AccessRule, withdraw_limit: WithdrawLimit) {
+        pub fn add_withdraw_authority(
+            &mut self,
+            access_rule: AccessRule,
+            withdraw_limit: WithdrawLimit,
+        ) {
             // Checking the authority can be added
             assert!(
                 !self.withdraw_information.contains_key(&access_rule),
@@ -215,7 +222,8 @@ blueprint! {
             );
 
             // At this point we know that the authority can be added to our records.
-            self.withdraw_information.insert(access_rule, (withdraw_limit, dec!("0")));
+            self.withdraw_information
+                .insert(access_rule, (withdraw_limit, dec!("0")));
         }
 
         /// Removes a specific withdraw authority from the limited withdraw vault.
@@ -325,7 +333,7 @@ blueprint! {
             let limit: Option<(AccessRule, (WithdrawLimit, Decimal))> = valid_limits
                 .clone()
                 .into_iter()
-                .max_by(|a, b| a.1.0.cmp(&b.1.0));
+                .max_by(|a, b| a.1 .0.cmp(&b.1 .0));
             info!(
                 "[Withdraw]: Maximum withdraw limit for the rule is: {:?}",
                 limit

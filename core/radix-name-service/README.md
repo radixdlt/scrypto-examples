@@ -46,7 +46,7 @@ resim set-default-account $user_account $user_privkey
 7. Simulate that the user registers the name "satoshi.xrd" to point to his account address.  
 The name is reserved for 10 years which requires a refundable deposit of $XRD 500
 ```
-resim call-method $component register_name satoshi.xrd $user_account 10 "500,030000000000000000000000000000000000000000000000000004"
+resim call-method $component register_name satoshi.xrd $user_account 10 "500,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag"
 ```
 8. Display the user's account
 ```
@@ -56,7 +56,7 @@ Taking a look at the account, please note that the user is now the owner of a Do
 ownership of the "satoshi.xrd" name:
 ```
 Resources:
-├─ { amount: 999500, resource address: 030000000000000000000000000000000000000000000000000004, name: "Radix", symbol: "XRD" }
+├─ { amount: 999500, resource address: resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag, name: "Radix", symbol: "XRD" }
 └─ { amount: 1, resource address: 03d8541671ab09116ae450d468f91e5488a9b22c705d70dcfe9e09, name: "DomainName" }
   └─ NFT { id: 339715316826500606461318410874891739268, immutable_data: Struct {  }, mutable_data: Struct { 02b8dd9f4232ce3c00dcb3496956fb57096d5d50763b989ca56f3b, 150000, 500 } }
 ```
@@ -84,7 +84,7 @@ the mapped address (#339715316826500606461318410874891739268,$name_resource)
 2: The address of the newly created account ($new_user_account)  
 3: A bucket that contains the fee for the name update (10,$tokenXRD)
 ```
-resim call-method $component update_address "#339715316826500606461318410874891739268,$name_resource" $new_user_account "10,030000000000000000000000000000000000000000000000000004"
+resim call-method $component update_address "#339715316826500606461318410874891739268,$name_resource" $new_user_account "10,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag"
 ```
 
 |**NOTE**| The above command uses `FF92CA45964EA42935A62DD2645F2084` which is the hexadecimal representation of the non-fungible id `339715316826500606461318410874891739268` as this is the format accepted by resim.|
@@ -103,7 +103,7 @@ the mapped address (#339715316826500606461318410874891739268,$name_resource)
 2: The number of years for which the name should be renewed (10)  
 3: A bucket that contains the fee for the name renewal (250,$tokenXRD)  
 ```
-resim call-method $component renew_name "#FF92CA45964EA42935A62DD2645F2084,$name_resource" 10 "250,030000000000000000000000000000000000000000000000000004"
+resim call-method $component renew_name "#FF92CA45964EA42935A62DD2645F2084,$name_resource" 10 "250,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag"
 ```
 
 14. Again, display the user's account and note that the name is now reserved until epoch 300000.  

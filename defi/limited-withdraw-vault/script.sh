@@ -19,7 +19,7 @@ CP_OP=$(resim run transactions/component_creation.rtm)
 export component=$(echo "$CP_OP" | sed -nr "s/└─ Component: ([[:alnum:]_]+)/\1/p")
 
 resim run ./transactions/component_creation.rtm
-resim call-method $component deposit 1000000,030000000000000000000000000000000000000000000000000004
+resim call-method $component deposit 1000000,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag
 resim run ./transactions/adding_withdraw_authorities.rtm
 resim run ./transactions/withdraw_within_limit.rtm
 resim run transactions/remove_withdraw_auth.rtm

@@ -92,7 +92,7 @@ resim call-method <COMPONENT_ADDRESS> available_ticket_ids
 ```
 5. Call the `buy_ticket` method
 ```
-resim call-method <COMPONENT_ADDRESS> buy_ticket "100,030000000000000000000000000000000000000000000000000004"
+resim call-method <COMPONENT_ADDRESS> buy_ticket "100,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag"
 ```
 6. Check out our balance
 ```

@@ -1,73 +1,16 @@
 use scrypto::prelude::*;
 
-import! {
-r#"
-{
-    "package_address": "01a99c5f6d0f4b92e81968405bde0e14709ab6630dc0e215a38eef",
-    "blueprint_name": "FlatAdmin",
-    "functions": [
-      {
-        "name": "instantiate_flat_admin",
-        "inputs": [
-          {
-            "type": "String"
-          }
-        ],
-        "output": {
-          "type": "Tuple",
-          "elements": [
-            {
-              "type": "Custom",
-              "name": "ComponentAddress",
-              "generics": []
-            },
-            {
-              "type": "Custom",
-              "name": "Bucket",
-              "generics": []
-            }
-          ]
-        }
-      }
-    ],
-    "methods": [
-      {
-        "name": "create_additional_admin",
-        "mutability": "Mutable",
-        "inputs": [],
-        "output": {
-          "type": "Custom",
-          "name": "Bucket",
-          "generics": []
-        }
-      },
-      {
-        "name": "destroy_admin_badge",
-        "mutability": "Mutable",
-        "inputs": [
-          {
-            "type": "Custom",
-            "name": "Bucket",
-            "generics": []
-          }
-        ],
-        "output": {
-          "type": "Unit"
-        }
-      },
-      {
-        "name": "get_admin_badge_address",
-        "mutability": "Immutable",
-        "inputs": [],
-        "output": {
-          "type": "Custom",
-          "name": "ResourceAddress",
-          "generics": []
-        }
-      }
-    ]
+external_blueprint! {
+  {
+      package: "package_sim1q9h0dr0z36zaq6h66lg5putxtztyf0sgelxu654r67ks765aue",
+      blueprint: "FlatAdmin"
+  },
+  FlatAdmin {
+    fn instantiate_flat_admin(badge_name: String) -> (ComponentAddress, Bucket);
+    fn create_additional_admin(&mut self) -> Bucket;
+    fn destroy_admin_badge(&mut self, to_destroy: Bucket);
+    fn get_admin_badge_address(&self) -> ResourceAddress;
   }
-"#
 }
 
 blueprint! {
@@ -83,18 +26,21 @@ blueprint! {
                 FlatAdmin::instantiate_flat_admin("My Managed Access Badge".into());
 
             let rules = AccessRules::new()
-                .method("withdraw_all", rule!(require(admin_badge.resource_address())))
+                .method(
+                    "withdraw_all",
+                    rule!(require(admin_badge.resource_address())),
+                )
                 .default(rule!(allow_all));
 
-            let component = Self {
+            let mut component = Self {
                 admin_badge: admin_badge.resource_address(),
                 flat_admin_controller: flat_admin_component,
                 protected_vault: Vault::new(RADIX_TOKEN),
             }
-            .instantiate()
-            .add_access_check(rules)
-            .globalize();
-            
+            .instantiate();
+            component.add_access_check(rules);
+            let component = component.globalize();
+
             (component, admin_badge)
         }
 

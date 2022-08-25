@@ -14,7 +14,7 @@ blueprint! {
                 .initial_supply(1);
 
             // Create the ResourceManager for a mutable supply admin badge
-            let mut admin_badge = ResourceBuilder::new_fungible()
+            let admin_badge = ResourceBuilder::new_fungible()
                 .divisibility(DIVISIBILITY_NONE)
                 .metadata("name", badge_name)
                 .mintable(rule!(require(admin_mint_badge.resource_address())), LOCKED)
@@ -33,16 +33,16 @@ blueprint! {
                 .default(rule!(allow_all));
 
             // Initialize our component, placing the minting authority badge within its vault, where it will remain forever
-            let component = Self {
+            let mut component = Self {
                 admin_mint_badge: Vault::with_bucket(admin_mint_badge),
                 admin_badge: admin_badge,
             }
-            .instantiate()
-            .add_access_check(rules)
-            .globalize();
+            .instantiate();
+            component.add_access_check(rules);
+            let component_address = component.globalize();
 
             // Return the instantiated component and the admin badge we just minted
-            (component, first_admin_badge)
+            (component_address, first_admin_badge)
         }
 
         // Any existing admin may create another admin token

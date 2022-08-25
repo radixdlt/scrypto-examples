@@ -78,7 +78,11 @@ blueprint! {
 
         /// Adds liquidity to this pool and return the LP tokens representing pool shares
         /// along with any remainder.
-        pub fn add_liquidity(&mut self, mut a_tokens: Bucket, mut b_tokens: Bucket) -> (Bucket, Bucket) {
+        pub fn add_liquidity(
+            &mut self,
+            mut a_tokens: Bucket,
+            mut b_tokens: Bucket,
+        ) -> (Bucket, Bucket) {
             // Get the resource manager of the lp tokens
             let lp_resource_manager = borrow_resource_manager!(self.lp_resource_address);
 
@@ -108,16 +112,13 @@ blueprint! {
                         .put(a_tokens.take(self.a_pool.amount() * b_ratio));
                     (b_ratio, a_tokens)
                 };
-                (
-                    lp_resource_manager.total_supply() * actual_ratio,
-                    remainder,
-                )
+                (lp_resource_manager.total_supply() * actual_ratio, remainder)
             };
 
             // Mint LP tokens according to the share the provider is contributing
-            let lp_tokens = self.lp_mint_badge.authorize(|| {
-                lp_resource_manager.mint(supply_to_mint)
-            });
+            let lp_tokens = self
+                .lp_mint_badge
+                .authorize(|| lp_resource_manager.mint(supply_to_mint));
 
             // Return the LP tokens along with any remainder
             (lp_tokens, remainder)
@@ -153,11 +154,12 @@ blueprint! {
         pub fn swap(&mut self, input_tokens: Bucket) -> Bucket {
             // Get the resource manager of the lp tokens
             let lp_resource_manager = borrow_resource_manager!(self.lp_resource_address);
-            
+
             // Calculate the swap fee
             let fee_amount = input_tokens.amount() * self.fee;
 
-            let output_tokens = if input_tokens.resource_address() == self.a_pool.resource_address() {
+            let output_tokens = if input_tokens.resource_address() == self.a_pool.resource_address()
+            {
                 // Calculate how much of token B we will return
                 let b_amount = self.b_pool.amount()
                     - self.a_pool.amount() * self.b_pool.amount()

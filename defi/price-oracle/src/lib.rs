@@ -3,7 +3,7 @@ use scrypto::prelude::*;
 blueprint! {
     struct PriceOracle {
         /// Last price of each resource pair
-        prices: LazyMap<(ResourceAddress, ResourceAddress), Decimal>,
+        prices: KeyValueStore<(ResourceAddress, ResourceAddress), Decimal>,
         /// The admin badge resource def address
         admin_badge: ResourceAddress,
     }
@@ -19,23 +19,26 @@ blueprint! {
                 .initial_supply(num_of_admins);
 
             let rules = AccessRules::new()
-                .method("update_price", rule!(require( badges.resource_address() )))
+                .method("update_price", rule!(require(badges.resource_address())))
                 .default(rule!(allow_all));
 
-            let component = Self {
-                prices: LazyMap::new(),
+            let mut component = Self {
+                prices: KeyValueStore::new(),
                 admin_badge: badges.resource_address(),
             }
-            .instantiate()
-            .add_access_check(rules)
-            .globalize();
+            .instantiate();
+            component.add_access_check(rules);
+            let component_address = component.globalize();
 
-            (badges, component)
+            (badges, component_address)
         }
 
         /// Returns the current price of a resource pair BASE/QUOTE.
         pub fn get_price(&self, base: ResourceAddress, quote: ResourceAddress) -> Option<Decimal> {
-            self.prices.get(&(base, quote))
+            match self.prices.get(&(base, quote)) {
+                Some(price) => Some(*price),
+                None => None,
+            }
         }
 
         /// Updates the price of a resource pair BASE/QUOTE and its inverse.

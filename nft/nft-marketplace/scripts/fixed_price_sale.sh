@@ -31,7 +31,7 @@ CALL_FUNCTION
     \"FixedPriceSale\" 
     \"instantiate_fixed_price_sale\" 
     Vec<Bucket>(Bucket(\"bucket1\"), Bucket(\"bucket2\"))
-    ResourceAddress(\"030000000000000000000000000000000000000000000000000004\")
+    ResourceAddress(\"resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag\")
     Decimal(\"1000\");
 
 CALL_METHOD_WITH_ALL_RESOURCES ComponentAddress(\"$seller_account\") \"deposit_batch\";
@@ -42,7 +42,7 @@ export ownership_badge=$(echo "$CP_OP" | sed -nr "s/.*Resource: ([[:alnum:]_]+)/
 
 # Switching to the buyer's account and purchasing the NFTs
 resim set-default-account $buyer_account $buyer_private_key
-resim call-method $component "buy" 1000,030000000000000000000000000000000000000000000000000004
+resim call-method $component "buy" 1000,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag
 resim show $buyer_account
 
 # Switching to the seller's account and withdrawing the payment

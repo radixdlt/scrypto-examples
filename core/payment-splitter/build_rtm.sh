@@ -1,3 +1,5 @@
+set -x
+
 # # Getting the current script dir
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 echo $SCRIPT_DIR
@@ -69,3 +71,16 @@ sed "$REPLACEMENT_LOOKUP" $SCRIPT_DIR/raw_transactions/funding_the_splitter.rtm 
 
 # Building the "withdraw owed amount" file
 sed "$REPLACEMENT_LOOKUP" $SCRIPT_DIR/raw_transactions/withdrawing_owed_amount.rtm > $SCRIPT_DIR/transactions/withdrawing_owed_amount.rtm
+
+# Creating a new payment splitter
+resim run "$SCRIPT_DIR/transactions/component_creation.rtm"
+
+# Adding shareholders to the payment splitter
+resim run "$SCRIPT_DIR/transactions/adding_shareholders.rtm"
+
+# Funding the payment splitter
+resim run "$SCRIPT_DIR/transactions/funding_the_splittter.rtm"
+
+# Switching to the first shareholder' account and withdrawing the funds.
+resim set-default-account $SHAREHOLDER1_ADDRESS $SHAREHOLDER1_PRIV_KEY
+resim run "$SCRIPT_DIR/transactions/withdrawing_owed_amount.rtm"

@@ -1,58 +1,64 @@
-# We need to withdraw the admin badge from the admin's account and put it in the auth zone. Once its there, we do not 
-# need to worry about about auth in any way as everything will be handeled for us. 
+# Locking a fee from the account
 CALL_METHOD 
-    ComponentAddress("020d3869346218a5e8deaaf2001216dc00fcacb79fb43e30ded79a") 
+    ComponentAddress("account_sim1qwdydgqlja2kcz80esxzsxdue6450u80kxgyzctgc02qsd8e62") 
+    "lock_fee" 
+    Decimal("10");
+
+# We need to withdraw the admin badge from the admin's account and put it in the auth zone. Once its there, we do not 
+# need to worry about about auth in any way as everything will be handled for us. 
+CALL_METHOD 
+    ComponentAddress("account_sim1qwdydgqlja2kcz80esxzsxdue6450u80kxgyzctgc02qsd8e62") 
     "create_proof" 
-    ResourceAddress("0340199ea32079d92939caea1729cae9d6e48cb2469e56e6ed7af8");
+    ResourceAddress("resource_sim1qr5ycedjwnf4cqn3yc3nvqj74hgr67zcg8tgjer54prskpnf8t");
 
 # Adding the first shareholder to the payment splitter component
 CALL_METHOD 
-    ComponentAddress("0289fdd1b7e1b31e7e43380c2062f8e5d989809b5d189326dac966") 
+    ComponentAddress("component_sim1qfxvnpnvl5x6zee79477g6kptfd97h0sxsc3t4k25hlqh86uzf") 
     "add_shareholder" 
     Decimal("148.00");
 TAKE_FROM_WORKTOP 
-    ResourceAddress("03fb20c636cbf8235a81012fcfe424363f33c1b0cdf3c2f72622e2") 
+    ResourceAddress("resource_sim1qza094t4vl4adfshdqr23xavp00t5agl5rkk0a5359eswjnw6s") 
     Bucket("shareholder_badge1");
 CALL_METHOD 
-    ComponentAddress("020d3869346218a5e8deaaf2001216dc00fcacb79fb43e30ded79a") 
+    ComponentAddress("account_sim1qwdydgqlja2kcz80esxzsxdue6450u80kxgyzctgc02qsd8e62") 
     "deposit" 
     Bucket("shareholder_badge1");
 
 # Adding the second shareholder to the payment splitter component
 CALL_METHOD 
-    ComponentAddress("0289fdd1b7e1b31e7e43380c2062f8e5d989809b5d189326dac966") 
+    ComponentAddress("component_sim1qfxvnpnvl5x6zee79477g6kptfd97h0sxsc3t4k25hlqh86uzf") 
     "add_shareholder" 
     Decimal("200.00");
 TAKE_FROM_WORKTOP 
-    ResourceAddress("03fb20c636cbf8235a81012fcfe424363f33c1b0cdf3c2f72622e2") 
+    ResourceAddress("resource_sim1qza094t4vl4adfshdqr23xavp00t5agl5rkk0a5359eswjnw6s") 
     Bucket("shareholder_badge2");
 CALL_METHOD 
-    ComponentAddress("02e0905317d684478c275540e2ed7170f217e0c557805f7fd2a0d3") 
+    ComponentAddress("account_sim1qveucu2cwdz4mak203z35av352tc9g608q6geu2ea54qwkmjch") 
     "deposit" 
     Bucket("shareholder_badge2");
 
 # Adding the third shareholder to the payment splitter component
 CALL_METHOD 
-    ComponentAddress("0289fdd1b7e1b31e7e43380c2062f8e5d989809b5d189326dac966") 
+    ComponentAddress("component_sim1qfxvnpnvl5x6zee79477g6kptfd97h0sxsc3t4k25hlqh86uzf") 
     "add_shareholder" 
     Decimal("32.00");
 TAKE_FROM_WORKTOP 
-    ResourceAddress("03fb20c636cbf8235a81012fcfe424363f33c1b0cdf3c2f72622e2") 
+    ResourceAddress("resource_sim1qza094t4vl4adfshdqr23xavp00t5agl5rkk0a5359eswjnw6s") 
     Bucket("shareholder_badge3");
 CALL_METHOD 
-    ComponentAddress("02b61acea4378e307342b2b684fc35acf0238a4accb9f91e8a4364") 
+    ComponentAddress("account_sim1q0xeu3thwv5cmsc9dst9ae9s9ejv4hw6aa283zcgx76s8vqg7h") 
     "deposit" 
     Bucket("shareholder_badge3");
 
 # Adding the fourth shareholder to the payment splitter component
 CALL_METHOD 
-    ComponentAddress("0289fdd1b7e1b31e7e43380c2062f8e5d989809b5d189326dac966") 
+    ComponentAddress("component_sim1qfxvnpnvl5x6zee79477g6kptfd97h0sxsc3t4k25hlqh86uzf") 
     "add_shareholder" 
     Decimal("90.00");
 TAKE_FROM_WORKTOP 
-    ResourceAddress("03fb20c636cbf8235a81012fcfe424363f33c1b0cdf3c2f72622e2") 
+    ResourceAddress("resource_sim1qza094t4vl4adfshdqr23xavp00t5agl5rkk0a5359eswjnw6s") 
     Bucket("shareholder_badge4");
 CALL_METHOD 
-    ComponentAddress("02b61acea4378e307342b2b684fc35acf0238a4accb9f91e8a4364") 
+    ComponentAddress("account_sim1q0xeu3thwv5cmsc9dst9ae9s9ejv4hw6aa283zcgx76s8vqg7h") 
     "deposit" 
     Bucket("shareholder_badge4");

@@ -55,7 +55,8 @@ blueprint! {
 
             // Currently, Scrypto requires manual assignment of NFT IDs
             let mut ticket_bucket = Bucket::new(my_non_fungible_address);
-            let ticket_resource_manager = borrow_resource_manager!(ticket_bucket.resource_address());
+            let ticket_resource_manager =
+                borrow_resource_manager!(ticket_bucket.resource_address());
             let mut manual_id = 1u64;
 
             // Mint the Luxury seat tokens.  These seats have an assigned seat number
@@ -68,7 +69,8 @@ blueprint! {
                         prediction: Team::Home,
                     };
                     ticket_bucket.put(
-                        ticket_resource_manager.mint_non_fungible(&NonFungibleId::from_u64(manual_id), ticket)
+                        ticket_resource_manager
+                            .mint_non_fungible(&NonFungibleId::from_u64(manual_id), ticket),
                     );
                     manual_id += 1;
                 }
@@ -83,7 +85,8 @@ blueprint! {
                     prediction: Team::Home,
                 };
                 ticket_bucket.put(
-                    ticket_resource_manager.mint_non_fungible(&NonFungibleId::from_u64(manual_id), ticket)
+                    ticket_resource_manager
+                        .mint_non_fungible(&NonFungibleId::from_u64(manual_id), ticket),
                 );
             }
 
@@ -107,14 +110,14 @@ blueprint! {
             let nfts = self.tickets.non_fungibles::<Ticket>();
             // Currently, there is no way to search for particular NFT characteristics within a bucket/vault other than iterating through all of them.
             // A better implementation of this simple use case would be to provide a way to map Luxury seat numbers to an ID deterministically,
-            // and likely keep them in a separate vault from the Field tokens so that the semi-fungible Field tokens can be immediately grabbed.            
+            // and likely keep them in a separate vault from the Field tokens so that the semi-fungible Field tokens can be immediately grabbed.
             // This naive implementation is chosen to show the most basic way to achieve the goal.
             for nft in &nfts {
                 let ticket: Ticket = nft.data();
                 if ticket.section == section && ticket.seat == seat {
                     return self.tickets.take_non_fungible(&nft.id());
-                }                
-            };
+                }
+            }
 
             panic!("Could not find an appropriate ticket!");
         }
@@ -126,32 +129,40 @@ blueprint! {
             nft_data.prediction = Team::Away;
 
             // Then commit our updated data to our NFT
-            self.admin_authority.authorize(|| nft_bucket.non_fungible().update_data(nft_data));
+            self.admin_authority
+                .authorize(|| nft_bucket.non_fungible().update_data(nft_data));
 
             // All done, send it back
             nft_bucket
         }
 
         /// Purchases a Field level ticket, switching the prediction if appropriate, and returns it along with any change
-        pub fn buy_field_ticket(&mut self, will_home_team_win: bool, mut payment: Bucket) -> (Bucket, Bucket) {
+        pub fn buy_field_ticket(
+            &mut self,
+            will_home_team_win: bool,
+            mut payment: Bucket,
+        ) -> (Bucket, Bucket) {
             self.collected_xrd.put(payment.take(self.price_field));
             let nft_bucket = self.get_ticket(Section::Field, None);
             if !will_home_team_win {
                 return (self.switch_nft_prediction(nft_bucket), payment);
-            }
-            else {
+            } else {
                 return (nft_bucket, payment);
             }
         }
 
         /// Purchases a Luxury ticket with a specific desired seat, switching the prediction if appropriate, and returns it along with any change
-        pub fn buy_luxury_ticket(&mut self, seat: String, will_home_team_win: bool, mut payment: Bucket) -> (Bucket, Bucket) {
+        pub fn buy_luxury_ticket(
+            &mut self,
+            seat: String,
+            will_home_team_win: bool,
+            mut payment: Bucket,
+        ) -> (Bucket, Bucket) {
             self.collected_xrd.put(payment.take(self.price_luxury));
             let nft_bucket = self.get_ticket(Section::Luxury, Some(seat));
             if !will_home_team_win {
                 return (self.switch_nft_prediction(nft_bucket), payment);
-            }
-            else {
+            } else {
                 return (nft_bucket, payment);
             }
         }

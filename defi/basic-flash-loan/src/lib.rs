@@ -24,7 +24,7 @@ blueprint! {
                 .divisibility(DIVISIBILITY_NONE)
                 .metadata("name", "Admin authority for BasicFlashLoan")
                 .initial_supply(1);
-                
+
             // Define a "transient" resource which can never be deposited once created, only burned
             let address = ResourceBuilder::new_non_fungible()
                 .metadata(
@@ -82,7 +82,7 @@ blueprint! {
 
         pub fn repay_loan(&mut self, loan_repayment: Bucket, loan_terms: Bucket) {
             assert!(
-                loan_terms.resource_address() == self.transient_resource_address, 
+                loan_terms.resource_address() == self.transient_resource_address,
                 "Incorrect resource passed in for loan terms"
             );
 

@@ -106,7 +106,8 @@ impl BeneficiaryVestingSchedule {
     ///
     /// * `Decimal` - A decimal of the gradient of the vesting schedule.
     pub fn vesting_gradient(&self) -> Decimal {
-        return (self.total_vesting_amount - self.amount_available_on_cliff) / (self.end_epoch - self.cliff_epoch);
+        return (self.total_vesting_amount - self.amount_available_on_cliff)
+            / (self.end_epoch - self.cliff_epoch);
     }
 
     /// Calculates and returns the total amount vested by a given epoch
@@ -125,7 +126,8 @@ impl BeneficiaryVestingSchedule {
             dec!("0")
         } else {
             cmp::min(
-                self.vesting_gradient() * (epoch - self.cliff_epoch) + self.amount_available_on_cliff,
+                self.vesting_gradient() * (epoch - self.cliff_epoch)
+                    + self.amount_available_on_cliff,
                 self.total_vesting_amount,
             )
         };

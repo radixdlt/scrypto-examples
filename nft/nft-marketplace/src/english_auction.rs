@@ -171,7 +171,7 @@ blueprint! {
                 .default(rule!(allow_all));
 
             // Instantiating the english auction sale component
-            let english_auction_sale: ComponentAddress = Self {
+            let mut english_auction: EnglishAuctionComponent = Self {
                 nft_vaults,
                 bid_vaults: HashMap::new(),
                 payment_vault: Vault::new(accepted_payment_token),
@@ -181,11 +181,11 @@ blueprint! {
                 ending_epoch: Runtime::current_epoch() + relative_ending_epoch,
                 state: AuctionState::Open,
             }
-            .instantiate()
-            .add_access_check(access_rules)
-            .globalize();
+            .instantiate();
+            english_auction.add_access_check(access_rules);
+            let english_auction: ComponentAddress = english_auction.globalize();
 
-            return (english_auction_sale, ownership_badge);
+            return (english_auction, ownership_badge);
         }
 
         /// Cancels the auctioning of tokens and returns them back to their owner.
@@ -302,7 +302,7 @@ blueprint! {
             let non_fungible_id: NonFungibleId = NonFungibleId::random();
 
             let bidders_badge: Bucket = self.internal_admin_badge.authorize(|| {
-                let bidders_resource_manager: &ResourceManager =
+                let bidders_resource_manager: &mut ResourceManager =
                     borrow_resource_manager!(self.bidders_badge);
                 bidders_resource_manager.mint_non_fungible(
                     &non_fungible_id.clone(),
@@ -353,6 +353,12 @@ blueprint! {
                 "[Increase Bid]: Invalid tokens were provided as bid. Bids are only allowed in {}",
                 self.accepted_payment_token
             );
+            let bidders_badge: ValidatedProof = bidders_badge
+                .validate_proof(ProofValidationMode::ValidateContainsAmount(
+                    self.bidders_badge,
+                    dec!("1"),
+                ))
+                .expect("[Increase Bid]: Invalid proof provided");
 
             assert_eq!(
                 bidders_badge.resource_address(),
@@ -531,7 +537,7 @@ blueprint! {
                         // Update the bidder's badge associated with the above non-fungible id to reflect that this is
                         // the winner of the bid.
                         self.internal_admin_badge.authorize(|| {
-                            let resource_manager: &ResourceManager =
+                            let resource_manager: &mut ResourceManager =
                                 borrow_resource_manager!(self.bidders_badge);
 
                             // Getting the already existing NFT data of the bidder's badge to update it

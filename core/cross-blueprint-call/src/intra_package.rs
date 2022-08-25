@@ -1,17 +1,21 @@
+use crate::airdrop::*;
 use scrypto::prelude::*;
-
-use crate::airdrop::Airdrop;
 
 blueprint! {
     struct Proxy2 {
-        airdrop: Airdrop,
+        airdrop: AirdropComponent,
     }
 
     impl Proxy2 {
         pub fn instantiate_proxy() -> ComponentAddress {
             Self {
                 // The instantiate_airdrop() function returns a generic Component. We use `.into()` to convert it into an `Airdrop`.
-                airdrop: Airdrop::instantiate_airdrop().into(),
+                airdrop: AirdropComponent {
+                    component: scrypto::component::Component::try_from(
+                        AirdropComponent::instantiate_airdrop().to_vec().as_slice(),
+                    )
+                    .unwrap(),
+                },
             }
             .instantiate()
             .globalize()
