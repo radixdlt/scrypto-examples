@@ -41,7 +41,7 @@ jobs:
     - name: Run tests
       run: ./test.sh
   run-defi-demo:
-    name: Run DEFI demo
+    name: Run DeFi demo
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
