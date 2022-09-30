@@ -4,7 +4,6 @@ use scrypto::prelude::*;
 use scrypto_unit::*;
 use transaction::builder::ManifestBuilder;
 
-
 #[test]
 fn test_create_additional_admin() {
     // Set up environment.
@@ -26,8 +25,8 @@ fn test_create_additional_admin() {
             args!(dec!("5")),
         )
         .call_method(
-            account_component, 
-            "deposit_batch", 
+            account_component,
+            "deposit_batch",
             args!(Expression::entire_worktop()),
         )
         .build();
@@ -50,8 +49,8 @@ fn test_create_additional_admin() {
             )
         })
         .call_method(
-            account_component, 
-            "deposit_batch", 
+            account_component,
+            "deposit_batch",
             args!(Expression::entire_worktop()),
         )
         .build();

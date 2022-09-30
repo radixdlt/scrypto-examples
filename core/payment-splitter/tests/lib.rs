@@ -43,8 +43,12 @@ fn admin_can_add_shareholder() {
                 args!(Expression::entire_worktop()),
             )
             .build();
-    let instantiation_receipt: TransactionReceipt =
-        test_runner.execute_manifest_ignoring_fee(instantiation_tx, vec![radix_engine::types::PublicKey::EcdsaSecp256k1(admin_public_key)]);
+    let instantiation_receipt: TransactionReceipt = test_runner.execute_manifest_ignoring_fee(
+        instantiation_tx,
+        vec![radix_engine::types::PublicKey::EcdsaSecp256k1(
+            admin_public_key,
+        )],
+    );
 
     let payment_splitter_component_address: ComponentAddress = instantiation_receipt
         .expect_commit()
@@ -74,8 +78,12 @@ fn admin_can_add_shareholder() {
                 args!(Expression::entire_worktop()),
             )
             .build();
-    let adding_shareholder_receipt: TransactionReceipt =
-        test_runner.execute_manifest_ignoring_fee(adding_shareholder_tx, vec![radix_engine::types::PublicKey::EcdsaSecp256k1(admin_public_key)]);
+    let adding_shareholder_receipt: TransactionReceipt = test_runner.execute_manifest_ignoring_fee(
+        adding_shareholder_tx,
+        vec![radix_engine::types::PublicKey::EcdsaSecp256k1(
+            admin_public_key,
+        )],
+    );
 
     adding_shareholder_receipt.expect_commit_success();
 }
@@ -116,8 +124,12 @@ fn shareholder_cant_add_shareholder() {
                 args!(Expression::entire_worktop()),
             )
             .build();
-    let instantiation_receipt: TransactionReceipt =
-        test_runner.execute_manifest_ignoring_fee(instantiation_tx, vec![radix_engine::types::PublicKey::EcdsaSecp256k1(admin_public_key)]);
+    let instantiation_receipt: TransactionReceipt = test_runner.execute_manifest_ignoring_fee(
+        instantiation_tx,
+        vec![radix_engine::types::PublicKey::EcdsaSecp256k1(
+            admin_public_key,
+        )],
+    );
 
     let payment_splitter_component_address: ComponentAddress = instantiation_receipt
         .expect_commit()
@@ -151,8 +163,12 @@ fn shareholder_cant_add_shareholder() {
                 args!(Expression::entire_worktop()),
             )
             .build();
-    let adding_shareholder_receipt: TransactionReceipt =
-        test_runner.execute_manifest_ignoring_fee(adding_shareholder_tx, vec![radix_engine::types::PublicKey::EcdsaSecp256k1(admin_public_key)]);
+    let adding_shareholder_receipt: TransactionReceipt = test_runner.execute_manifest_ignoring_fee(
+        adding_shareholder_tx,
+        vec![radix_engine::types::PublicKey::EcdsaSecp256k1(
+            admin_public_key,
+        )],
+    );
     adding_shareholder_receipt.expect_commit_success();
 
     // Attempting to add a new shareholder to the payment splitter
@@ -175,7 +191,12 @@ fn shareholder_cant_add_shareholder() {
             )
             .build();
     let unauthed_adding_shareholder_receipt: TransactionReceipt = test_runner
-        .execute_manifest_ignoring_fee(unauthed_adding_shareholder_tx, vec![radix_engine::types::PublicKey::EcdsaSecp256k1(admin_public_key)]);
+        .execute_manifest_ignoring_fee(
+            unauthed_adding_shareholder_tx,
+            vec![radix_engine::types::PublicKey::EcdsaSecp256k1(
+                admin_public_key,
+            )],
+        );
 
     // We know that we should not be authorized to add them; so, we check for an AuthorizationError
     unauthed_adding_shareholder_receipt.expect_commit_failure();
@@ -217,8 +238,12 @@ fn unauthed_cant_lock_splitter() {
                 args!(Expression::entire_worktop()),
             )
             .build();
-    let instantiation_receipt: TransactionReceipt =
-        test_runner.execute_manifest_ignoring_fee(instantiation_tx, vec![radix_engine::types::PublicKey::EcdsaSecp256k1(admin_public_key)]);
+    let instantiation_receipt: TransactionReceipt = test_runner.execute_manifest_ignoring_fee(
+        instantiation_tx,
+        vec![radix_engine::types::PublicKey::EcdsaSecp256k1(
+            admin_public_key,
+        )],
+    );
 
     let payment_splitter_component_address: ComponentAddress = instantiation_receipt
         .expect_commit()
@@ -230,8 +255,12 @@ fn unauthed_cant_lock_splitter() {
         ManifestBuilder::new(&NetworkDefinition::simulator())
             .call_method(payment_splitter_component_address, "lock_splitter", args!())
             .build();
-    let unauthed_locking_receipt: TransactionReceipt =
-        test_runner.execute_manifest_ignoring_fee(unauthed_locking_tx, vec![radix_engine::types::PublicKey::EcdsaSecp256k1(admin_public_key)]);
+    let unauthed_locking_receipt: TransactionReceipt = test_runner.execute_manifest_ignoring_fee(
+        unauthed_locking_tx,
+        vec![radix_engine::types::PublicKey::EcdsaSecp256k1(
+            admin_public_key,
+        )],
+    );
 
     // We know that we should not be authorized to add them; so, we check for an AuthorizationError
     unauthed_locking_receipt.expect_commit_failure();
@@ -273,8 +302,12 @@ fn admin_cant_add_shareholder_after_locking() {
                 args!(Expression::entire_worktop()),
             )
             .build();
-    let instantiation_receipt: TransactionReceipt =
-        test_runner.execute_manifest_ignoring_fee(instantiation_tx, vec![radix_engine::types::PublicKey::EcdsaSecp256k1(admin_public_key)]);
+    let instantiation_receipt: TransactionReceipt = test_runner.execute_manifest_ignoring_fee(
+        instantiation_tx,
+        vec![radix_engine::types::PublicKey::EcdsaSecp256k1(
+            admin_public_key,
+        )],
+    );
 
     let payment_splitter_component_address: ComponentAddress = instantiation_receipt
         .expect_commit()
@@ -286,17 +319,20 @@ fn admin_cant_add_shareholder_after_locking() {
         .new_resource_addresses[0];
 
     // Locking the payment splitter
-    let locking_tx: TransactionManifest =
-        ManifestBuilder::new(&NetworkDefinition::simulator())
-            .create_proof_from_account_by_amount(
-                dec!("1"),
-                admin_badge_resource_address,
-                admin_component_address,
-            )
-            .call_method(payment_splitter_component_address, "lock_splitter", args!())
-            .build();
-    let _locking_receipt: TransactionReceipt =
-        test_runner.execute_manifest_ignoring_fee(locking_tx, vec![radix_engine::types::PublicKey::EcdsaSecp256k1(admin_public_key)]);
+    let locking_tx: TransactionManifest = ManifestBuilder::new(&NetworkDefinition::simulator())
+        .create_proof_from_account_by_amount(
+            dec!("1"),
+            admin_badge_resource_address,
+            admin_component_address,
+        )
+        .call_method(payment_splitter_component_address, "lock_splitter", args!())
+        .build();
+    let _locking_receipt: TransactionReceipt = test_runner.execute_manifest_ignoring_fee(
+        locking_tx,
+        vec![radix_engine::types::PublicKey::EcdsaSecp256k1(
+            admin_public_key,
+        )],
+    );
 
     // Attempting to add a new shareholder to the payment splitter
     let adding_shareholder_tx: TransactionManifest =
@@ -317,8 +353,12 @@ fn admin_cant_add_shareholder_after_locking() {
                 args!(Expression::entire_worktop()),
             )
             .build();
-    let adding_shareholder_receipt: TransactionReceipt =
-        test_runner.execute_manifest_ignoring_fee(adding_shareholder_tx, vec![radix_engine::types::PublicKey::EcdsaSecp256k1(admin_public_key)]);
+    let adding_shareholder_receipt: TransactionReceipt = test_runner.execute_manifest_ignoring_fee(
+        adding_shareholder_tx,
+        vec![radix_engine::types::PublicKey::EcdsaSecp256k1(
+            admin_public_key,
+        )],
+    );
 
     // Adding an additional shareholder should fail.
     adding_shareholder_receipt.expect_commit_failure();
@@ -360,8 +400,12 @@ fn anybody_can_deposit() {
                 args!(Expression::entire_worktop()),
             )
             .build();
-    let instantiation_receipt: TransactionReceipt =
-        test_runner.execute_manifest_ignoring_fee(instantiation_tx, vec![radix_engine::types::PublicKey::EcdsaSecp256k1(admin_public_key)]);
+    let instantiation_receipt: TransactionReceipt = test_runner.execute_manifest_ignoring_fee(
+        instantiation_tx,
+        vec![radix_engine::types::PublicKey::EcdsaSecp256k1(
+            admin_public_key,
+        )],
+    );
 
     let payment_splitter_component_address: ComponentAddress = instantiation_receipt
         .expect_commit()
@@ -369,28 +413,27 @@ fn anybody_can_deposit() {
         .new_component_addresses[0];
 
     // Depositing funds into the payment splitter
-    let deposit_tx: TransactionManifest =
-        ManifestBuilder::new(&NetworkDefinition::simulator())
-            .withdraw_from_account_by_amount(
-                dec!("100000"),
-                RADIX_TOKEN,
-                non_admin_component_address,
+    let deposit_tx: TransactionManifest = ManifestBuilder::new(&NetworkDefinition::simulator())
+        .withdraw_from_account_by_amount(dec!("100000"), RADIX_TOKEN, non_admin_component_address)
+        .take_from_worktop(RADIX_TOKEN, |builder, bucket_id| {
+            builder.call_method(
+                payment_splitter_component_address,
+                "deposit",
+                args!(Bucket(bucket_id)),
             )
-            .take_from_worktop(RADIX_TOKEN, |builder, bucket_id| {
-                builder.call_method(
-                    payment_splitter_component_address,
-                    "deposit",
-                    args!(Bucket(bucket_id)),
-                )
-            })
-            .call_method(
-                non_admin_component_address,
-                "deposit_batch",
-                args!(Expression::entire_worktop()),
-            )
-            .build();
-    let deposit_receipt: TransactionReceipt =
-        test_runner.execute_manifest_ignoring_fee(deposit_tx, vec![radix_engine::types::PublicKey::EcdsaSecp256k1(non_admin_public_key)]);
+        })
+        .call_method(
+            non_admin_component_address,
+            "deposit_batch",
+            args!(Expression::entire_worktop()),
+        )
+        .build();
+    let deposit_receipt: TransactionReceipt = test_runner.execute_manifest_ignoring_fee(
+        deposit_tx,
+        vec![radix_engine::types::PublicKey::EcdsaSecp256k1(
+            non_admin_public_key,
+        )],
+    );
 
     // Adding an additional shareholder should fail.
     deposit_receipt.expect_commit_failure();
@@ -424,8 +467,12 @@ fn custom_rule_splitter_works_with_correct_badges() {
                 args!(Expression::entire_worktop()),
             )
             .build();
-    let badge_creation_receipt: TransactionReceipt =
-        test_runner.execute_manifest_ignoring_fee(badge_creation_tx, vec![radix_engine::types::PublicKey::EcdsaSecp256k1(admin_public_key)]);
+    let badge_creation_receipt: TransactionReceipt = test_runner.execute_manifest_ignoring_fee(
+        badge_creation_tx,
+        vec![radix_engine::types::PublicKey::EcdsaSecp256k1(
+            admin_public_key,
+        )],
+    );
 
     let supervisor_badge_resource_address: ResourceAddress = badge_creation_receipt
         .expect_commit()
@@ -461,8 +508,12 @@ fn custom_rule_splitter_works_with_correct_badges() {
                 args!(Expression::entire_worktop()),
             )
             .build();
-    let instantiation_receipt: TransactionReceipt =
-        test_runner.execute_manifest_ignoring_fee(instantiation_tx, vec![radix_engine::types::PublicKey::EcdsaSecp256k1(admin_public_key)]);
+    let instantiation_receipt: TransactionReceipt = test_runner.execute_manifest_ignoring_fee(
+        instantiation_tx,
+        vec![radix_engine::types::PublicKey::EcdsaSecp256k1(
+            admin_public_key,
+        )],
+    );
 
     let payment_splitter_component_address: ComponentAddress = instantiation_receipt
         .expect_commit()
@@ -498,8 +549,12 @@ fn custom_rule_splitter_works_with_correct_badges() {
                 args!(Expression::entire_worktop()),
             )
             .build();
-    let adding_shareholder_receipt: TransactionReceipt =
-        test_runner.execute_manifest_ignoring_fee(adding_shareholder_tx, vec![radix_engine::types::PublicKey::EcdsaSecp256k1(admin_public_key)]);
+    let adding_shareholder_receipt: TransactionReceipt = test_runner.execute_manifest_ignoring_fee(
+        adding_shareholder_tx,
+        vec![radix_engine::types::PublicKey::EcdsaSecp256k1(
+            admin_public_key,
+        )],
+    );
     println!("{:?}", adding_shareholder_receipt);
 
     // Adding an additional shareholder should fail.
@@ -534,8 +589,12 @@ fn custom_rule_splitter_doesnt_work_with_incorrect_badges() {
                 args!(Expression::entire_worktop()),
             )
             .build();
-    let badge_creation_receipt: TransactionReceipt =
-        test_runner.execute_manifest_ignoring_fee(badge_creation_tx, vec![radix_engine::types::PublicKey::EcdsaSecp256k1(admin_public_key)]);
+    let badge_creation_receipt: TransactionReceipt = test_runner.execute_manifest_ignoring_fee(
+        badge_creation_tx,
+        vec![radix_engine::types::PublicKey::EcdsaSecp256k1(
+            admin_public_key,
+        )],
+    );
 
     let supervisor_badge_resource_address: ResourceAddress = badge_creation_receipt
         .expect_commit()
@@ -571,8 +630,12 @@ fn custom_rule_splitter_doesnt_work_with_incorrect_badges() {
                 args!(Expression::entire_worktop()),
             )
             .build();
-    let instantiation_receipt: TransactionReceipt =
-        test_runner.execute_manifest_ignoring_fee(instantiation_tx, vec![radix_engine::types::PublicKey::EcdsaSecp256k1(admin_public_key)]);
+    let instantiation_receipt: TransactionReceipt = test_runner.execute_manifest_ignoring_fee(
+        instantiation_tx,
+        vec![radix_engine::types::PublicKey::EcdsaSecp256k1(
+            admin_public_key,
+        )],
+    );
 
     let payment_splitter_component_address: ComponentAddress = instantiation_receipt
         .expect_commit()
@@ -603,8 +666,12 @@ fn custom_rule_splitter_doesnt_work_with_incorrect_badges() {
                 args!(Expression::entire_worktop()),
             )
             .build();
-    let adding_shareholder_receipt: TransactionReceipt =
-        test_runner.execute_manifest_ignoring_fee(adding_shareholder_tx, vec![radix_engine::types::PublicKey::EcdsaSecp256k1(admin_public_key)]);
+    let adding_shareholder_receipt: TransactionReceipt = test_runner.execute_manifest_ignoring_fee(
+        adding_shareholder_tx,
+        vec![radix_engine::types::PublicKey::EcdsaSecp256k1(
+            admin_public_key,
+        )],
+    );
     println!("{:?}", adding_shareholder_receipt);
 
     // Adding an additional shareholder should fail.
