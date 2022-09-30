@@ -1,4 +1,3 @@
-use radix_engine::engine::{ModuleError, RuntimeError};
 use radix_engine::ledger::*;
 use radix_engine::transaction::TransactionReceipt;
 use scrypto::core::NetworkDefinition;
@@ -394,7 +393,7 @@ fn anybody_can_deposit() {
         test_runner.execute_manifest_ignoring_fee(deposit_tx, vec![radix_engine::types::PublicKey::EcdsaSecp256k1(non_admin_public_key)]);
 
     // Adding an additional shareholder should fail.
-    deposit_receipt.expect_commit_success();
+    deposit_receipt.expect_commit_failure();
 }
 
 #[test]
