@@ -1,4 +1,5 @@
 use radix_engine::ledger::*;
+use radix_engine::model::extract_package;
 use scrypto::args;
 use scrypto::prelude::*;
 use scrypto_unit::*;
@@ -14,10 +15,10 @@ fn test_magic_card() {
     let (public_key, _private_key, account_component) = test_runner.new_account();
 
     // Publish package
-    let package_address = test_runner.compile_and_publish(this_package!());
+    let package_address = test_runner.publish_package(extract_package(compile_package!()).unwrap());
 
     // Test the `instantiate_component` function.
-    let transaction1 = ManifestBuilder::new(&NetworkDefinition::simulator())
+    let transaction1 = ManifestBuilder::new(&NetworkDefinition::local_simulator())
         .call_function(
             package_address,
             "HelloNft",
@@ -25,7 +26,7 @@ fn test_magic_card() {
             args!(),
         )
         .build();
-    let receipt1 = test_runner.execute_manifest_ignoring_fee(transaction1, vec![public_key.into()]);
+    let receipt1 = test_runner.execute_manifest_ignoring_fee(transaction1, vec![public_key]);
     println!("{:?}\n", receipt1);
     receipt1.expect_commit_success();
 
@@ -34,7 +35,7 @@ fn test_magic_card() {
         .expect_commit()
         .entity_changes
         .new_component_addresses[0];
-    let transaction2 = ManifestBuilder::new(&NetworkDefinition::simulator())
+    let transaction2 = ManifestBuilder::new(&NetworkDefinition::local_simulator())
         .withdraw_from_account_by_amount(dec!("666"), RADIX_TOKEN, account_component)
         .take_from_worktop(RADIX_TOKEN, |builder, bucket_id| {
             builder.call_method(
@@ -46,13 +47,9 @@ fn test_magic_card() {
                 ),
             )
         })
-        .call_method(
-            account_component,
-            "deposit_batch",
-            args!(Expression::entire_worktop()),
-        )
+        .call_method_with_all_resources(account_component, "deposit_batch")
         .build();
-    let receipt2 = test_runner.execute_manifest_ignoring_fee(transaction2, vec![public_key.into()]);
+    let receipt2 = test_runner.execute_manifest_ignoring_fee(transaction2, vec![public_key]);
     println!("{:?}\n", receipt2);
     receipt2.expect_commit_success();
 
@@ -61,7 +58,7 @@ fn test_magic_card() {
         .expect_commit()
         .entity_changes
         .new_component_addresses[0];
-    let transaction3 = ManifestBuilder::new(&NetworkDefinition::simulator())
+    let transaction3 = ManifestBuilder::new(&NetworkDefinition::local_simulator())
         .withdraw_from_account_by_amount(dec!("1000"), RADIX_TOKEN, account_component)
         .take_from_worktop(RADIX_TOKEN, |builder, bucket_id| {
             builder.call_method(
@@ -70,13 +67,9 @@ fn test_magic_card() {
                 args!(scrypto::resource::Bucket(bucket_id)),
             )
         })
-        .call_method(
-            account_component,
-            "deposit_batch",
-            args!(Expression::entire_worktop()),
-        )
+        .call_method_with_all_resources(account_component, "deposit_batch")
         .build();
-    let receipt3 = test_runner.execute_manifest_ignoring_fee(transaction3, vec![public_key.into()]);
+    let receipt3 = test_runner.execute_manifest_ignoring_fee(transaction3, vec![public_key]);
     println!("{:?}\n", receipt3);
     receipt3.expect_commit_success();
 }
