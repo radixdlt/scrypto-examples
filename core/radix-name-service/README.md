@@ -1,4 +1,7 @@
 # Radix Name Service (RNS)
+
+> Note: the instructions listed here were made for an older version of Scrypto and are now outdated.
+
 This is a very basic implementation of a DNS on Radix. It is conceptually similar to and heavily inspired by the ENS
 project: https://ens.domains
 

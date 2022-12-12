@@ -47,11 +47,11 @@ blueprint! {
     impl HelloNft {
         pub fn instantiate_component() -> ComponentAddress {
             // Creates a fixed set of NFTs
-            let special_cards_bucket = ResourceBuilder::new_non_fungible()
+            let special_cards_bucket = ResourceBuilder::new_non_fungible(NonFungibleIdType::U64)
                 .metadata("name", "Russ' Magic Card Collection")
                 .initial_supply([
                     (
-                        NonFungibleId::from_u64(1u64),
+                        NonFungibleId::U64(1u64),
                         MagicCard {
                             color: Color::Black,
                             rarity: Rarity::MythicRare,
@@ -59,7 +59,7 @@ blueprint! {
                         },
                     ),
                     (
-                        NonFungibleId::from_u64(2u64),
+                        NonFungibleId::U64(2u64),
                         MagicCard {
                             color: Color::Green,
                             rarity: Rarity::Rare,
@@ -67,7 +67,7 @@ blueprint! {
                         },
                     ),
                     (
-                        NonFungibleId::from_u64(3u64),
+                        NonFungibleId::U64(3u64),
                         MagicCard {
                             color: Color::Red,
                             rarity: Rarity::Uncommon,
@@ -82,7 +82,7 @@ blueprint! {
                 .metadata("name", "Random Cards Mint Badge")
                 .initial_supply(1);
 
-            let random_card_resource_address = ResourceBuilder::new_non_fungible()
+            let random_card_resource_address = ResourceBuilder::new_non_fungible(NonFungibleIdType::U64)
                 .metadata("name", "Random Cards")
                 .mintable(
                     rule!(require(random_card_mint_badge.resource_address())),
@@ -102,9 +102,9 @@ blueprint! {
             Self {
                 special_cards: Vault::with_bucket(special_cards_bucket),
                 special_card_prices: HashMap::from([
-                    (NonFungibleId::from_u64(1u64), 500.into()),
-                    (NonFungibleId::from_u64(2u64), 666.into()),
-                    (NonFungibleId::from_u64(3u64), 123.into()),
+                    (NonFungibleId::U64(1u64), 100.into()),
+                    (NonFungibleId::U64(2u64), 200.into()),
+                    (NonFungibleId::U64(3u64), 123.into()),
                 ]),
                 random_card_mint_badge: Vault::with_bucket(random_card_mint_badge),
                 random_card_resource_address,
@@ -145,7 +145,7 @@ blueprint! {
             };
             let nft_bucket = self.random_card_mint_badge.authorize(|| {
                 borrow_resource_manager!(self.random_card_resource_address).mint_non_fungible(
-                    &NonFungibleId::from_u64(self.random_card_id_counter),
+                    &NonFungibleId::U64(self.random_card_id_counter),
                     new_card,
                 )
             });
@@ -194,7 +194,7 @@ blueprint! {
             // Mint a new one.
             let new_non_fungible_bucket = self.random_card_mint_badge.authorize(|| {
                 borrow_resource_manager!(self.random_card_resource_address).mint_non_fungible(
-                    &NonFungibleId::from_u64(self.random_card_id_counter),
+                    &NonFungibleId::U64(self.random_card_id_counter),
                     new_card,
                 )
             });

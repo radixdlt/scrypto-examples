@@ -1,5 +1,6 @@
 use crate::beneficiary::*;
 use scrypto::prelude::*;
+use scrypto::resource::ProofValidationMode;
 
 blueprint! {
     /// The vesting blueprint allows for a vesting schedule to be setup whereby "beneficiaries" are given tokens over a
@@ -112,6 +113,7 @@ blueprint! {
                     rule!(require(internal_admin_badge.resource_address())),
                     Mutability::LOCKED,
                 )
+                .id_type(NonFungibleIdType::U64)
                 .no_initial_supply();
 
             // Setting up the auth for the vesting component. With v0.4.0 of Scrypto we can now make the authentication
@@ -122,6 +124,7 @@ blueprint! {
                 .method(
                     "add_beneficiary",
                     rule!(require(admin_badge.resource_address())),
+                    LOCKED
                 )
                 // Only transactions where a minimum of `min_admins_required_for_multi_admin` admin badges are present
                 // in the auth zone are allowed to make calls to these methods. This makes these methods dynamic as this
@@ -132,6 +135,7 @@ blueprint! {
                         "min_admins_required_for_multi_admin",
                         admin_badge.resource_address()
                     )),
+                    LOCKED
                 )
                 .method(
                     "add_admin",
@@ -139,6 +143,7 @@ blueprint! {
                         "min_admins_required_for_multi_admin",
                         admin_badge.resource_address()
                     )),
+                    LOCKED
                 )
                 .method(
                     "disable_termination",
@@ -146,10 +151,11 @@ blueprint! {
                         "min_admins_required_for_multi_admin",
                         admin_badge.resource_address()
                     )),
+                    LOCKED
                 )
                 // We do not want to handle the authentication of other methods through the auth zone. Instead, we would
                 // like to handle them all on our own.
-                .default(rule!(allow_all));
+                .default(rule!(allow_all), AccessRule::DenyAll);
 
             let mut vesting_component: VestingComponent = Self {
                 funds: HashMap::new(),
@@ -196,11 +202,10 @@ blueprint! {
             percentage_available_on_cliff: Decimal,
         ) -> Bucket {
             // Performing checks to ensure that the beneficiary may be added.
-            assert!(
-                borrow_resource_manager!(funds.resource_address()).resource_type()
-                    != ResourceType::NonFungible,
-                "[Add Beneficiary]: Can't vest non-fungible tokens for the beneficiary."
-            );
+            match borrow_resource_manager!(funds.resource_address()).resource_type() {
+                ResourceType::NonFungible { id_type: _ } => { panic!("[Add Beneficiary]: Can't vest non-fungible tokens for the beneficiary.") },
+                _ => {}
+            }
             assert!(
                 !funds.is_empty(),
                 "[Add Beneficiary]: Can't vest an empty bucket of funds."
@@ -209,7 +214,7 @@ blueprint! {
             // At this point we know that the beneficiary may be added to the vesting component, so we go ahead and mint
             // them a non-fungible token with their vesting schedule
             let beneficiary_id: NonFungibleId =
-                NonFungibleId::from_u64((self.funds.len() + self.dead_vaults.len()) as u64 + 1u64);
+                NonFungibleId::U64((self.funds.len() + self.dead_vaults.len()) as u64 + 1u64);
             let beneficiary_badge: Bucket = self.internal_admin_badge.authorize(|| {
                 borrow_resource_manager!(self.beneficiary_vesting_badge).mint_non_fungible(
                     &beneficiary_id,

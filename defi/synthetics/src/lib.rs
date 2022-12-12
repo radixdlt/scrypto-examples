@@ -1,17 +1,12 @@
 use sbor::*;
 use scrypto::prelude::*;
 
-external_blueprint! {
-  {
-      package: "package_sim1q8pe9fczej7zhq4ty35q8uvf58h7wj45y3gufz539ysqm7l0ur",
-      blueprint: "PriceOracle"
-  },
-  PriceOracle {
-    fn instantiate_oracle(num_of_admins: u32) -> (Bucket, ComponentAddress);
-    fn get_price(&self, base: ResourceAddress, quote: ResourceAddress) -> Option<Decimal>;
-    fn update_price(&self, base: ResourceAddress, quote: ResourceAddress, price: Decimal);
-    fn admin_badge_address(&self) -> ResourceAddress;
-  }
+external_component! {
+    PriceOracleComponentTarget {
+        fn get_price(&self, base: ResourceAddress, quote: ResourceAddress) -> Option<Decimal>;
+        fn update_price(&self, base: ResourceAddress, quote: ResourceAddress, price: Decimal);
+        fn admin_badge_address(&self) -> ResourceAddress;
+    }
 }
 
 // Main missing features:
@@ -212,12 +207,12 @@ blueprint! {
 
         /// Retrieves the prices of pair XYZ/USD
         pub fn get_asset_price(&self, asset_address: ResourceAddress) -> Decimal {
-            let oracle: PriceOracle = self.oracle_address.into();
+            let oracle: PriceOracleComponentTarget = self.oracle_address.into();
             if let Some(oracle_price) = oracle.get_price(asset_address, self.usd_resource_address) {
                 oracle_price
             } else {
                 panic!(
-                    "Failed to obtain price of {}/{}",
+                    "Failed to obtain price of {:?}/{:?}",
                     asset_address, self.usd_resource_address
                 );
             }
@@ -255,7 +250,7 @@ blueprint! {
             &mut self,
             user_id: ResourceAddress,
             create_if_missing: bool,
-        ) -> scrypto::core::DataRefMut<User> {
+        ) -> scrypto::runtime::DataRefMut<User> {
             if let Some(user) = self.users.get_mut(&user_id) {
                 user
             } else if create_if_missing {
@@ -274,7 +269,8 @@ blueprint! {
     }
 }
 
-#[derive(Debug, Clone, TypeId, Encode, Decode, Describe, PartialEq, Eq)]
+#[derive(Debug, Clone, Describe, PartialEq, Eq)]
+#[scrypto(TypeId, Encode, Decode)]
 pub struct SyntheticToken {
     /// The symbol of the asset
     asset_symbol: String,
@@ -298,7 +294,8 @@ impl SyntheticToken {
     }
 }
 
-#[derive(Debug, TypeId, Encode, Decode, Describe)]
+#[derive(Debug, Describe)]
+#[scrypto(TypeId, Encode, Decode)]
 pub struct User {
     snx: Vault,
     global_debt_share: Vault,

@@ -1,12 +1,13 @@
 use scrypto::prelude::*;
 
 external_blueprint! {
-    {
-        package: "package_sim1qx7304nj09gmp8t8kd2xv6t9yxg7vug8su6wq9kjfutqzl29ru",
-        blueprint: "Airdrop"
-    },
-    Airdrop {
+    AirdropPackageTarget {
         fn instantiate_airdrop() -> ComponentAddress;
+    }
+}
+
+external_component! {
+    AirdropComponentTarget {
         fn free_token(&mut self) -> Bucket;
     }
 }
@@ -17,11 +18,11 @@ blueprint! {
     }
 
     impl Proxy1 {
-        pub fn instantiate_proxy() -> ComponentAddress {
+        pub fn instantiate_proxy(airdrop_package_address: PackageAddress) -> ComponentAddress {
             Self {
                 // The instantiate_airdrop() function returns a generic ComponentAddress which we store to make calls
                 // to the component at a later point.
-                airdrop: Airdrop::instantiate_airdrop(),
+                airdrop: AirdropPackageTarget::at(airdrop_package_address, "Airdrop").instantiate_airdrop(),
             }
             .instantiate()
             .globalize()
@@ -29,7 +30,7 @@ blueprint! {
 
         pub fn free_token(&self) -> Bucket {
             // Calling a method on a component using `.free_token()`.
-            let mut airdrop: Airdrop = self.airdrop.into();
+            let mut airdrop: AirdropComponentTarget = AirdropComponentTarget::at(self.airdrop);
             airdrop.free_token()
         }
     }

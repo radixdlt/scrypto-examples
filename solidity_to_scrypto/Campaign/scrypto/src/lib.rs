@@ -1,5 +1,13 @@
 use scrypto::prelude::*;
 
+// Define a part of the ABI of the account component
+// so that we can easily call its deposit method.
+external_component! {
+    AccountComponentTarget {
+        fn deposit(&mut self, bucket: Bucket);
+    }
+}
+
 // Define the data attached to the member NFTs.
 // Right now its empty but you could add fields.
 // ** Access control can be done at the platform-level which is very
@@ -11,10 +19,10 @@ struct MemberData {
 }
 
 // Define the structure of the requests.
-// The `derive(TypeId, Encode, Decode, Describe)` makes this structure
+// The `scrypto(TypeId, Encode, Decode, Describe)` makes this structure
 // compatible with the Radix network so that we can store instantiations 
 // of it in the component's state
-#[derive(TypeId, Encode, Decode, Describe)]
+#[scrypto(TypeId, Encode, Decode, Describe)]
 struct Request {
     description: String,
     amount: Decimal,
@@ -55,7 +63,7 @@ blueprint! {
             // The resource is set as mintable and it is initialized with an initial supply
             // for the manager.
             // For more information please read the "user badge pattern" page: https://docs.radixdlt.com/main/scrypto/design-patterns/user-badge-pattern.html
-            let manager_member_badge = ResourceBuilder::new_non_fungible()
+            let manager_member_badge = ResourceBuilder::new_non_fungible(NonFungibleIdType::UUID)
                 .metadata("name", "Campaign Member Badge")
                 .metadata("symbol", "CMB")
                 // Read this documentation page to learn more about the resource access control flags:
@@ -129,19 +137,21 @@ blueprint! {
             // Verify that the caller is in fact a member of the dApp
             let member_proof = member_proof.validate_proof(self.member_badge_address).expect("Wrong member badge provided!");
             // Find out the ID of the NFT that the caller sent a proof of
-            let caller_id = member_proof.non_fungible::<MemberData>().id();
+            let non_fungible: NonFungible<MemberData> = member_proof.non_fungible::<MemberData>();
+            let caller_id = non_fungible.id();
 
             let request = self.requests.get_mut(index).expect("Request not found!");
             assert!(!request.approvals.contains(&caller_id), "You already voted for this proposal!");
 
-            request.approvals.insert(caller_id);
+            request.approvals.insert(caller_id.clone());
         }
 
         pub fn finalize_request(&mut self, index: usize, member_proof: Proof) {
             // Make sure the caller is the manager
             let member_proof = member_proof.validate_proof(self.member_badge_address).expect("Wrong member badge provided!");
-            let caller_id = member_proof.non_fungible::<MemberData>().id();
-            assert_eq!(caller_id, self.manager_id, "You are not the manager!");
+            let non_fungible: NonFungible<MemberData> = member_proof.non_fungible::<MemberData>();
+            let caller_id = non_fungible.id();
+            assert_eq!(*caller_id, self.manager_id, "You are not the manager!");
 
             let mut request = self.requests.get_mut(index).expect("Request not found!");
             assert!(request.approvals.len() as u32 > (self.approvers_count / 2), "Not enough approvals");
@@ -150,7 +160,7 @@ blueprint! {
             // Transfer the funds directly. Note that this is insecure and the `withdraw pattern`
             // should be used instead! https://docs.radixdlt.com/main/scrypto/design-patterns/withdraw-pattern.html
             let funds: Bucket = self.contributions.take(request.amount);
-            Component::from(request.recipient).call::<()>("deposit", args![funds]);
+            AccountComponentTarget::at(request.recipient).deposit(funds);
 
             request.complete = true;
         }

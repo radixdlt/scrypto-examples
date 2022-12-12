@@ -3,29 +3,28 @@ This example demonstrates the use of the `FlatAdmin` blueprint to manage access 
 
 Note that in order for this example to function, you will have to publish the package containing the `FlatAdmin` blueprint to your simulator to a specific address (or change the address imported near the top of `lib.rs` in this package).
 
-If you wish to publish `FlatAdmin` to the appropriate address, switch to that directory and run:
+Before trying this example, you should have created and account with `resim new-account` and created a simple badge used to manage the blueprint with `resim new-simple-badge`.
+
+If you wish to publish `FlatAdmin`, switch to that directory and run:
 ```bash
-resim publish . --address 01a99c5f6d0f4b92e81968405bde0e14709ab6630dc0e215a38eef
+resim publish . <owner_badge_NFAddress>
 ```
 
 ## Importing & Calling a Blueprint
 Currently, importing another blueprint requires a few manual steps.  We expect to simplify this process in the future, but for now here are the steps:
 
 1. Publish the package containing the blueprint you wish to import.
-2. Export the ABI for that blueprint using the command `resim export-abi <package_address> <blueprint_name>`
-3. Copy the output of that command, and paste it into the source file you wish to consume it from.  Enclose the content within an opening `import! {
-r#"` and enclosing `"#}` block.  Example:
-```rust
-use scrypto::prelude::*;
+2. Define the functions of the blueprint with a call to the `external_blueprint!` macro:
 
-import! {
-r#"
-<EXPORTED_ABI>
-"#
+```rust
+external_blueprint! {
+  FlatAdminPackageTarget {
+    fn instantiate_flat_admin(badge_name: String) -> (ComponentAddress, Bucket);
+  }
 }
 ```
 
-Now you'll be able to call functions on that blueprint like so: `FlatAdmin::some_function(<args>)`
+Now you'll be able to call functions on that blueprint like so: `FlatAdminPackageTarget::at(<PackageAddress>, "FlatAdmin").some_function(<args>)`
 
 ## Resources and Data
 ```rust
@@ -41,37 +40,42 @@ Our instantiated component will maintain a single vault which stores XRD.  Anyon
 The only state we need to maintain is the aforementioned vault, and the `ResourceAddress` of the badge used for authorization.  As a convenience for the user, we will also store the address of the `FlatAdmin` component which manages the supply of those badges.
 
 ## Getting Ready for Instantiation
-In order to instantiate, we'll require no parameters and return to the caller a tuple containing the address of the newly instantiated component, and a bucket containing the first admin badge created by our `FlatAdmin` badge manager:
+In order to instantiate, we'll require the caller to specify the addess of the package containing the `FlagAdmin` blueprint and return to the caller a tuple containing the address of the newly instantiated component, and a bucket containing the first admin badge created by our `FlatAdmin` badge manager:
 ```rust
-pub fn instantiate_managed_access() -> (ComponentAddress, Bucket) {
+pub fn instantiate_managed_access(flat_admin_package_address: PackageAddress) -> (ComponentAddress, Bucket) {
 ```
 
 Our first step will be to instantiate a `FlatAdmin` component, and store the results of that instantiation.
 
 ```rust
 let (flat_admin_component, admin_badge) =
-  FlatAdmin::instantiate_flat_admin("My Managed Access Badge".into());
+  FlatAdminPackageTarget::at(flat_admin_package_address, "FlatAdmin")
+      .instantiate_flat_admin("My Managed Access Badge".into());
 ```
 
 We then need to specify that only a holder of the admin badge may withdraw funds from a managed access component. 
 
 ```rust
 let rules = AccessRules::new()
-  .method("withdraw_all", rule!(require(admin_badge.resource_address())))
-  .default(rule!(allow_all));
+  .method(
+      "withdraw_all",
+      rule!(require(admin_badge.resource_address())),
+      LOCKED
+  )
+  .default(rule!(allow_all), AccessRule::AllowAll);
 ```
 
 That gives us everything we need to populate our `struct`, instantiate, and return the results to our caller:
 
 ```rust
-let component = Self {
-    admin_badge: admin_badge.resource_address(),
-    flat_admin_controller: flat_admin_component,
-    protected_vault: Vault::new(RADIX_TOKEN),
+let mut component = Self {
+  admin_badge: admin_badge.resource_address(),
+  flat_admin_controller: flat_admin_component,
+  protected_vault: Vault::new(RADIX_TOKEN),
 }
-.instantiate()
-.add_access_check(rules)
-.globalize();
+.instantiate();
+component.add_access_check(rules);
+let component = component.globalize();
 
 (component, admin_badge)
 ```        

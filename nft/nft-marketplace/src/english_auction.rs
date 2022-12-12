@@ -90,14 +90,12 @@ blueprint! {
                 !non_fungible_tokens
                     .iter()
                     .any(
-                        |x| borrow_resource_manager!(x.resource_address()).resource_type()
-                            != ResourceType::NonFungible
+                        |x| !matches!(borrow_resource_manager!(x.resource_address()).resource_type(), ResourceType::NonFungible{ id_type: _ })
                     ),
                 "[Instantiation]: Can not perform a sale for fungible tokens."
             );
             assert!(
-                borrow_resource_manager!(accepted_payment_token).resource_type()
-                    != ResourceType::NonFungible,
+                !matches!(borrow_resource_manager!(accepted_payment_token).resource_type(), ResourceType::NonFungible{ id_type: _ }),
                 "[Instantiation]: Only payments of fungible resources are accepted."
             );
             assert!(
@@ -141,7 +139,7 @@ blueprint! {
 
             // Creating the bidder's badge which will be used to track the bidder's information and bids.
             let bidder_badge_resource_address: ResourceAddress =
-                ResourceBuilder::new_non_fungible()
+                ResourceBuilder::new_non_fungible(NonFungibleIdType::UUID)
                     .metadata("name", "Bidder Badge")
                     .metadata(
                         "description",
@@ -166,9 +164,9 @@ blueprint! {
             // make calls to the protected methods.
             let access_rule: AccessRule = rule!(require(ownership_badge.resource_address()));
             let access_rules: AccessRules = AccessRules::new()
-                .method("cancel_auction", access_rule.clone())
-                .method("withdraw_payment", access_rule.clone())
-                .default(rule!(allow_all));
+                .method("cancel_auction", access_rule.clone(), AccessRule::DenyAll)
+                .method("withdraw_payment", access_rule.clone(), AccessRule::DenyAll)
+                .default(rule!(allow_all), AccessRule::DenyAll);
 
             // Instantiating the english auction sale component
             let mut english_auction: EnglishAuctionComponent = Self {
@@ -350,7 +348,7 @@ blueprint! {
             assert_eq!(
                 funds.resource_address(),
                 self.accepted_payment_token,
-                "[Increase Bid]: Invalid tokens were provided as bid. Bids are only allowed in {}",
+                "[Increase Bid]: Invalid tokens were provided as bid. Bids are only allowed in {:?}",
                 self.accepted_payment_token
             );
             let bidders_badge: ValidatedProof = bidders_badge

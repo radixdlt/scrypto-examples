@@ -1,5 +1,6 @@
 use sbor::*;
 use scrypto::prelude::*;
+use std::ops::Deref;
 
 // This is a barebone implementation of Lending protocol.
 //
@@ -63,10 +64,10 @@ blueprint! {
 
             // Update user state
             let deposit_interest_rate = self.deposit_interest_rate;
-            let user = match self.users.get_mut(&user_id) {
+            let user: User = match self.users.get_mut(&user_id) {
                 Some(mut user) => {
                     user.on_deposit(amount, deposit_interest_rate);
-                    (*user).clone()
+                    (*user.deref()).clone()
                 }
                 None => User {
                     deposit_balance: amount,
@@ -168,12 +169,10 @@ blueprint! {
             to_return
         }
 
-        /// Returns the current state of a user.
+        /// Displays the current state of a user.
         pub fn get_user(&self, user_id: ResourceAddress) -> User {
-            match self.users.get(&user_id) {
-                Some(user) => (*user).clone(),
-                _ => panic!("User not found"),
-            }
+            let user = self.users.get(&user_id).expect("User not found");
+            (*user.deref()).clone()
         }
 
         /// Returns the deposit interest rate per epoch
@@ -193,7 +192,8 @@ blueprint! {
     }
 }
 
-#[derive(Debug, TypeId, Encode, Decode, Describe, PartialEq, Eq, Clone)]
+#[derive(Clone)]
+#[scrypto(Debug, TypeId, Encode, Decode, Describe, PartialEq, Eq)]
 pub struct User {
     /// The user's deposit balance
     pub deposit_balance: Decimal,

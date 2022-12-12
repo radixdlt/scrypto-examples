@@ -4,14 +4,14 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-sbor = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "v0.6.0" }
-scrypto = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "v0.6.0" }
+sbor = { git = "https://github.com/radixdlt/radixdlt-scrypto", branch = "release/betanet-v1" }
+scrypto = { git = "https://github.com/radixdlt/radixdlt-scrypto", branch = "release/betanet-v1" }
 regex = "1"
 
 [dev-dependencies]
-transaction = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "v0.6.0" }
-radix-engine = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "v0.6.0" }
-scrypto-unit = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "v0.6.0" }
+transaction = { git = "https://github.com/radixdlt/radixdlt-scrypto", branch = "release/betanet-v1" }
+radix-engine = { git = "https://github.com/radixdlt/radixdlt-scrypto", branch = "release/betanet-v1" }
+scrypto-unit = { git = "https://github.com/radixdlt/radixdlt-scrypto", branch = "release/betanet-v1" }
 
 [profile.release]
 opt-level = 's'        # Optimize for size.
@@ -23,3 +23,7 @@ overflow-checks = true # Panic in the case of an overflow.
 
 [lib]
 crate-type = ["cdylib", "lib"]
+
+[workspace]
+# Set the package crate as its own empty workspace, to hide it from any potential ancestor workspace
+# Remove this [workspace] section if you intend the package to be part of a Cargo workspace
