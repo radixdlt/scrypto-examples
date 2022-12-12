@@ -103,7 +103,7 @@ blueprint! {
                 .initial_supply(dec!("1"));
 
             // Creating the beneficiary's badge which is used to keep track of their vesting schedule.
-            let beneficiary_vesting_badge: ResourceAddress = ResourceBuilder::new_non_fungible()
+            let beneficiary_vesting_badge: ResourceAddress = ResourceBuilder::new_non_fungible(NonFungibleIdType::U64)
                 .metadata("name", "Beneficiary Badge")
                 .metadata(
                     "description",
@@ -124,7 +124,7 @@ blueprint! {
                 .method(
                     "add_beneficiary",
                     rule!(require(admin_badge.resource_address())),
-                    LOCKED
+                    AccessRule::DenyAll
                 )
                 // Only transactions where a minimum of `min_admins_required_for_multi_admin` admin badges are present
                 // in the auth zone are allowed to make calls to these methods. This makes these methods dynamic as this
@@ -135,7 +135,7 @@ blueprint! {
                         "min_admins_required_for_multi_admin",
                         admin_badge.resource_address()
                     )),
-                    LOCKED
+                    AccessRule::DenyAll
                 )
                 .method(
                     "add_admin",
@@ -143,7 +143,7 @@ blueprint! {
                         "min_admins_required_for_multi_admin",
                         admin_badge.resource_address()
                     )),
-                    LOCKED
+                    AccessRule::DenyAll
                 )
                 .method(
                     "disable_termination",
@@ -151,7 +151,7 @@ blueprint! {
                         "min_admins_required_for_multi_admin",
                         admin_badge.resource_address()
                     )),
-                    LOCKED
+                    AccessRule::DenyAll
                 )
                 // We do not want to handle the authentication of other methods through the auth zone. Instead, we would
                 // like to handle them all on our own.

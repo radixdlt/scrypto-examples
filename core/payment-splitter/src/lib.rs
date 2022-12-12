@@ -1,5 +1,4 @@
 use scrypto::prelude::*;
-use crate::scrypto::resource::ProofValidationMode;
 
 #[derive(NonFungibleData)]
 struct Shareholder {
@@ -156,7 +155,7 @@ blueprint! {
             // Creating the shareholder NFT which we will be using as a badge to authenticate shareholders and setting
             // the auth of the shareholder badge such that it can be moved around but can only be minted and burned by
             // the internal admin badge.
-            let shareholder_badge: ResourceAddress = ResourceBuilder::new_non_fungible()
+            let shareholder_badge: ResourceAddress = ResourceBuilder::new_non_fungible(NonFungibleIdType::UUID)
                 .metadata("name", "Shareholder Badge")
                 .metadata(
                     "description",
@@ -174,8 +173,8 @@ blueprint! {
 
             // Creating the PaymentSplitter component and setting the auth on the methods
             let access_rules: AccessRules = AccessRules::new()
-                .method("add_shareholder", withdraw_and_lock_rule.clone(), LOCKED)
-                .method("lock_splitter", withdraw_and_lock_rule.clone(), LOCKED)
+                .method("add_shareholder", withdraw_and_lock_rule.clone(), AccessRule::DenyAll)
+                .method("lock_splitter", withdraw_and_lock_rule.clone(), AccessRule::DenyAll)
                 // All other methods which we didn't set auth for. In this case we did not specify that we would like
                 // the auth system to handle the auth for us. We told it to allow all access to these methods so that we
                 // can take the shareholder badge in a `Proof`, get its ID, and use the data associated with it.

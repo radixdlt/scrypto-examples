@@ -1,6 +1,5 @@
 use scrypto::prelude::*;
 use sha2::{Digest, Sha256};
-use crate::scrypto::resource::ProofValidationMode;
 
 #[derive(NonFungibleData)]
 struct DomainName {
@@ -46,9 +45,8 @@ blueprint! {
                 .divisibility(DIVISIBILITY_NONE)
                 .initial_supply(dec!("1"));
 
-            let name_resource = ResourceBuilder::new_non_fungible()
+            let name_resource = ResourceBuilder::new_non_fungible(NonFungibleIdType::Bytes)
                 .metadata("name", "DomainName")
-                .id_type(NonFungibleIdType::Bytes)
                 .mintable(rule!(require(minter.resource_address())), LOCKED)
                 .burnable(rule!(require(minter.resource_address())), LOCKED)
                 .updateable_non_fungible_data(rule!(require(minter.resource_address())), LOCKED)

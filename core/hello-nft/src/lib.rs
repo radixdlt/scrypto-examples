@@ -27,7 +27,7 @@ blueprint! {
             }
 
             // Creates a fixed supply of NFTs.
-            let ticket_bucket = ResourceBuilder::new_non_fungible()
+            let ticket_bucket = ResourceBuilder::new_non_fungible(NonFungibleIdType::UUID)
                 .metadata("name", "Ticket")
                 .initial_supply(tickets);
 
