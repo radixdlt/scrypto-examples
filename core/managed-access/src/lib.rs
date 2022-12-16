@@ -28,12 +28,8 @@ blueprint! {
                                         .instantiate_flat_admin("My Managed Access Badge".into());
 
             let rules = AccessRules::new()
-                .method(
-                    "withdraw_all",
-                    rule!(require(admin_badge.resource_address())),
-                    LOCKED
-                )
-                .default(rule!(allow_all), AccessRule::AllowAll);
+                .method("withdraw_all", rule!(require(admin_badge.resource_address())), AccessRule::DenyAll)
+                .default(rule!(allow_all), AccessRule::DenyAll);
 
             let mut component = Self {
                 admin_badge: admin_badge.resource_address(),
