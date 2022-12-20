@@ -41,7 +41,7 @@ for row in 1..5 {
 Then, the whole vector of NFT data is passed to `ResourceBuilder` as the initial supply.
 
 ```rust
-let ticket_bucket = ResourceBuilder::new_non_fungible()
+let ticket_bucket = ResourceBuilder::new_non_fungible(NonFungibleIdType::UUID)
     .metadata("name", "Ticket")
     .initial_supply(tickets);
 ```

@@ -26,7 +26,6 @@ Within the `instantiate_gumball_machine` function, the first thing we need to do
 
 ```rust
 let bucket_of_gumballs = ResourceBuilder::new_fungible()
-  .divisibility(DIVISIBILITY_MAXIMUM)
   .metadata("name", "Gumball")
   .metadata("symbol", "GUM")
   .metadata("description", "A delicious gumball")
@@ -37,9 +36,9 @@ All that's left is to populate our `GumballMachine` struct with our supply of gu
 
 ```rust
 Self {
-  gumballs: Vault::with_bucket(bucket_of_gumballs),
-  collected_xrd: Vault::new(RADIX_TOKEN),
-  price: price
+    gumballs: Vault::with_bucket(bucket_of_gumballs),
+    collected_xrd: Vault::new(RADIX_TOKEN),
+    price: price,
 }
 .instantiate()
 .globalize()

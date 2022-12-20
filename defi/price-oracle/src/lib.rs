@@ -19,8 +19,8 @@ blueprint! {
                 .initial_supply(num_of_admins);
 
             let rules = AccessRules::new()
-                .method("update_price", rule!(require(badges.resource_address())))
-                .default(rule!(allow_all));
+                .method("update_price", rule!(require(badges.resource_address())), AccessRule::DenyAll)
+                .default(rule!(allow_all), AccessRule::DenyAll);
 
             let mut component = Self {
                 prices: KeyValueStore::new(),

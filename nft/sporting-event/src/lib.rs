@@ -47,7 +47,7 @@ blueprint! {
             ComponentAuthZone::push(my_admin.create_proof());
 
             // Create our NFT
-            let my_non_fungible_address = ResourceBuilder::new_non_fungible()
+            let my_non_fungible_address = ResourceBuilder::new_non_fungible(NonFungibleIdType::U64)
                 .metadata("name", "Ticket to the big game")
                 .mintable(rule!(require(my_admin.resource_address())), LOCKED)
                 .updateable_non_fungible_data(rule!(require(my_admin.resource_address())), LOCKED)
@@ -70,7 +70,7 @@ blueprint! {
                     };
                     ticket_bucket.put(
                         ticket_resource_manager
-                            .mint_non_fungible(&NonFungibleId::from_u64(manual_id), ticket),
+                            .mint_non_fungible(&NonFungibleId::U64(manual_id), ticket),
                     );
                     manual_id += 1;
                 }
@@ -86,7 +86,7 @@ blueprint! {
                 };
                 ticket_bucket.put(
                     ticket_resource_manager
-                        .mint_non_fungible(&NonFungibleId::from_u64(manual_id), ticket),
+                        .mint_non_fungible(&NonFungibleId::U64(manual_id), ticket),
                 );
             }
 

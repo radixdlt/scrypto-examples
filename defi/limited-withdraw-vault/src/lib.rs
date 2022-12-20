@@ -1,3 +1,5 @@
+// NOTE: This example was not fully updated to the latest Scrypto version and thus cannot run.
+
 use scrypto::prelude::*;
 
 // =======================
@@ -129,9 +131,9 @@ blueprint! {
         ) -> ComponentAddress {
             // Defining the access rules for the component.
             let access_rules: AccessRules = AccessRules::new()
-                .method("withdraw", rule!(allow_all))
-                .method("deposit", rule!(allow_all))
-                .default(administration_rule);
+                .method("withdraw", rule!(allow_all), AccessRule::DenyAll)
+                .method("deposit", rule!(allow_all), AccessRule::DenyAll)
+                .default(administration_rule, AccessRule::DenyAll);
 
             // Instantiating the component and returning its address
             return Self::instantiate_bare_bone_limited_withdraw_vault(
@@ -183,7 +185,7 @@ blueprint! {
         ) -> ComponentAddress {
             // Performing the checks to determine if the limited withdraw vault can be created
             assert!(
-                !matches!(borrow_resource_manager!(tokens_resource_address).resource_type(), ResourceType::NonFungible),
+                !matches!(borrow_resource_manager!(tokens_resource_address).resource_type(), ResourceType::NonFungible{ id_type: _ }),
                 "[Bare Bone Instantiation]: A limited withdraw vault can not be created with a non-fungible token."
             );
 
@@ -317,6 +319,7 @@ blueprint! {
         ///
         /// * `Bucket` - A bucket of the withdrawn tokens.
         pub fn withdraw(&mut self, withdraw_amount: Decimal, proofs: Vec<Proof>) -> Bucket {
+            
             // Getting the limits which are valid for the proofs that we currently have
             let valid_limits: HashMap<AccessRule, (WithdrawLimit, Decimal)> = self
                 .withdraw_information
@@ -404,7 +407,8 @@ blueprint! {
 
 /// An enum which defines the amount of funds that can be withdrawn, typically in relation to some access rule. The
 /// limit can be finite or infinite.
-#[derive(Describe, Encode, Decode, TypeId, Debug, Clone, Copy, PartialEq, PartialOrd, Ord, Eq)]
+#[derive(Describe, Debug, Clone, Copy, PartialEq, PartialOrd, Ord, Eq)]
+#[scrypto(TypeId, Encode, Decode)]
 pub enum WithdrawLimit {
     /// A variant which defines a finite withdrawal limit with a given amount of tokens that can be withdrawn.
     Finite(Decimal),

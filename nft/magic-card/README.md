@@ -20,7 +20,7 @@ pub struct MagicCard {
 and pass an array of instances to resource builder:
 
 ```rust
-let special_cards_bucket = ResourceBuilder::new_non_fungible()
+let special_cards_bucket = ResourceBuilder::new_non_fungible(NonFungibleIdType::U64)
     .metadata("name", "Russ' Magic Card Collection")
     .initial_supply([
         (
@@ -50,7 +50,7 @@ let random_card_mint_badge = ResourceBuilder::new_fungible()
     .metadata("name", "Random Cards Mint Badge")
     .initial_supply(1);
 
-let random_card_resource_address = ResourceBuilder::new_non_fungible()
+let random_card_resource_address = ResourceBuilder::new_non_fungible(NonFungibleIdType::U64)
     .metadata("name", "Random Cards")
     .mintable(rule!(require(random_card_mint_badge.resource_address())), LOCKED)
     .burnable(rule!(require(random_card_mint_badge.resource_address())), LOCKED)

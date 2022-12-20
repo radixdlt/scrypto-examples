@@ -45,7 +45,7 @@ blueprint! {
                 .divisibility(DIVISIBILITY_NONE)
                 .initial_supply(dec!("1"));
 
-            let name_resource = ResourceBuilder::new_non_fungible()
+            let name_resource = ResourceBuilder::new_non_fungible(NonFungibleIdType::Bytes)
                 .metadata("name", "DomainName")
                 .mintable(rule!(require(minter.resource_address())), LOCKED)
                 .burnable(rule!(require(minter.resource_address())), LOCKED)
@@ -56,12 +56,14 @@ blueprint! {
                 .method(
                     "burn_expired_names",
                     rule!(require(admin_badge.resource_address())),
+                    LOCKED
                 )
                 .method(
                     "withdraw_fees",
                     rule!(require(admin_badge.resource_address())),
+                    LOCKED
                 )
-                .default(rule!(allow_all));
+                .default(rule!(allow_all), AccessRule::DenyAll);
 
             let mut component = RadixNameService {
                 admin_badge: admin_badge.resource_address(),
@@ -82,14 +84,14 @@ blueprint! {
 
         /// Lookup the address for a given `name`.
         /// Panics if that name is not registered.
-        pub fn lookup_address(&self, name: String) -> ComponentAddress {
+        pub fn lookup_address(&self, name: String) -> String {
             let hash = Self::hash_name(name);
 
             let resource_manager = borrow_resource_manager!(self.name_resource);
             let name_data: DomainName = resource_manager
-                .get_non_fungible_data(&NonFungibleId::from_bytes(hash.to_be_bytes().to_vec()));
+                .get_non_fungible_data(&NonFungibleId::Bytes(hash.to_be_bytes().to_vec()));
 
-            name_data.address
+            name_data.address.to_hex()
         }
 
         /// Registers the given `name` and maps it to the given `target_address` for `reserve_years`.
@@ -134,7 +136,7 @@ blueprint! {
             let name_nft = self.minter.authorize(|| {
                 let resource_manager = borrow_resource_manager!(self.name_resource);
                 resource_manager.mint_non_fungible(
-                    &NonFungibleId::from_bytes(hash.to_be_bytes().to_vec()),
+                    &NonFungibleId::Bytes(hash.to_be_bytes().to_vec()),
                     name_data,
                 )
             });
@@ -196,7 +198,9 @@ blueprint! {
             let resource_manager: &mut ResourceManager =
                 borrow_resource_manager!(self.name_resource);
 
-            let id = name_nft.non_fungible::<DomainName>().id();
+            let non_fungible: NonFungible<DomainName> = name_nft.non_fungible();
+            let id = non_fungible.id();
+
             let old_name_data = resource_manager.get_non_fungible_data::<DomainName>(&id);
             let new_name_data = DomainName {
                 address: new_address,
@@ -208,7 +212,6 @@ blueprint! {
                 .authorize(|| resource_manager.update_non_fungible_data(&id, new_name_data));
             self.fees.put(fee.take(fee_amount));
 
-            name_nft.drop();
             fee
         }
 
@@ -242,7 +245,9 @@ blueprint! {
             let resource_manager: &mut ResourceManager =
                 borrow_resource_manager!(self.name_resource);
 
-            let id = name_nft.non_fungible::<DomainName>().id();
+            let non_fungible: NonFungible<DomainName> = name_nft.non_fungible();
+            let id = non_fungible.id();
+
             let mut name_data = resource_manager.get_non_fungible_data::<DomainName>(&id);
             name_data.last_valid_epoch =
                 name_data.last_valid_epoch + EPOCHS_PER_YEAR * u64::from(renew_years);
@@ -251,7 +256,6 @@ blueprint! {
                 .authorize(|| resource_manager.update_non_fungible_data(&id, name_data));
             self.fees.put(fee.take(fee_amount));
 
-            name_nft.drop();
             fee
         }
 

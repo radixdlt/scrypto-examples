@@ -143,7 +143,8 @@ pub enum PositionType {
     Short,
 }
 
-#[derive(Debug, Clone, TypeId, Encode, Decode, Describe, PartialEq, Eq)]
+#[derive(Debug, Clone, Describe, PartialEq, Eq)]
+#[scrypto(TypeId, Encode, Decode)]
 pub struct Position {
     /// The position type, either long or short
     pub position_type: PositionType,
@@ -155,7 +156,8 @@ pub struct Position {
     pub position_in_base: Decimal,
 }
 
-#[derive(TypeId, Encode, Decode, Describe)]
+#[derive(Describe)]
+#[scrypto(TypeId, Encode, Decode)]
 struct AMM {
     /// Supply of base asset
     base_supply: Decimal,

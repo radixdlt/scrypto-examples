@@ -59,7 +59,6 @@ To define a new resource, we use the `ResourceBuilder`, specifying the metadata 
 
 ```rust
 let my_bucket: Bucket = ResourceBuilder::new_fungible()
-    .divisibility(DIVISIBILITY_MAXIMUM)
     .metadata("name", "HelloToken")
     .metadata("symbol", "HT")
     .initial_supply(1000);
@@ -76,9 +75,15 @@ let vault: Vault = Vault::with_bucket(my_bucket);
 ```
 resim new-account
 ```
+
+1. Create a badge used to manage the Hello package. Remember the NFAddress.
+```
+resim new-simple-badge
+```
+
 2. Publish the package, and save the package address
 ```
-resim publish .
+resim publish . <simple_badge_NFAddress>
 ```
 3. Call the `instantiate_hello` function to instantiate a component, and save the component address
 ```
