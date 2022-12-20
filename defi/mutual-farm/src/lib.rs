@@ -12,50 +12,54 @@ use scrypto::prelude::*;
 // 5. Based on your contribution (in dollar amount), we issue MutualFund share tokens which allow you to redeem underlying assets and claim dividends.
 
 external_blueprint! {
-  {
-      package: "package_sim1q9nmp3gffream9we6wtzywce82ezku488s9c5ekuzgcsvz6tmy",
-      blueprint: "PriceOracle"
-  },
-  PriceOracle {
+  PriceOraclePackageTarget {
     fn instantiate_oracle(num_of_admins: u32) -> (Bucket, ComponentAddress);
-    fn get_price(&self, base: ResourceAddress, quote: ResourceAddress) -> Option<Decimal>;
-    fn update_price(&self, base: ResourceAddress, quote: ResourceAddress, price: Decimal);
-    fn admin_badge_address(&self) -> ResourceAddress;
+    
   }
 }
 
+external_component! {
+    PriceOracleComponentTarget {
+        fn get_price(&self, base: ResourceAddress, quote: ResourceAddress) -> Option<Decimal>;
+        fn update_price(&self, base: ResourceAddress, quote: ResourceAddress, price: Decimal);
+        fn admin_badge_address(&self) -> ResourceAddress;
+    }
+}
+
 external_blueprint! {
-  {
-      package: "package_sim1q9dakzhyhnx8yhgra8kmq5xzxvafcqau8vkyqtctjyhqpd4ncq",
-      blueprint: "SyntheticPool"
-  },
-  SyntheticPool {
+  SyntheticPoolPackageTarget {
     fn instantiate_pool(oracle_address: ComponentAddress, snx_token_address: ResourceAddress, usd_token_address: ResourceAddress, collateralization_threshold: Decimal) -> ComponentAddress;
-    fn add_synthetic_token(&mut self,asset_symbol: String,asset_address: ResourceAddress) -> ResourceAddress;
-    fn stake(&mut self, user_auth: Proof, stake_in_snx: Bucket);
-    fn unstake(&mut self, user_auth: Proof, amount: Decimal) -> Bucket;
-    fn mint(&mut self, user_auth: Proof, amount: Decimal, symbol: String) -> Bucket;
-    fn burn(&mut self, user_auth: Proof, bucket: Bucket);
-    fn get_total_global_debt(&self) -> Decimal;
-    fn get_snx_price(&self) -> Decimal;
-    fn get_asset_price(&self, asset_address: ResourceAddress) -> Decimal;
-    fn get_user_summary(&mut self, user_id: ResourceAddress) -> String;
-    fn new_user(&self) -> Bucket;
   }
 }
 
+external_component! {
+    SyntheticPoolComponentTarget {
+        fn add_synthetic_token(&mut self,asset_symbol: String,asset_address: ResourceAddress) -> ResourceAddress;
+        fn stake(&mut self, user_auth: Proof, stake_in_snx: Bucket);
+        fn unstake(&mut self, user_auth: Proof, amount: Decimal) -> Bucket;
+        fn mint(&mut self, user_auth: Proof, amount: Decimal, symbol: String) -> Bucket;
+        fn burn(&mut self, user_auth: Proof, bucket: Bucket);
+        fn get_total_global_debt(&self) -> Decimal;
+        fn get_snx_price(&self) -> Decimal;
+        fn get_asset_price(&self, asset_address: ResourceAddress) -> Decimal;
+        fn get_user_summary(&mut self, user_id: ResourceAddress) -> String;
+        fn new_user(&self) -> Bucket;
+    }
+}
+
 external_blueprint! {
-  {
-      package: "package_sim1qxq55f43j0v84jq7pxmnvvl0w9gzss3a5lwgdxc7rspqzjcfq8",
-      blueprint: "Radiswap"
-  },
-  Radiswap {
+  RadiswapPackageTarget {
     fn instantiate_pool(a_tokens: Bucket, b_tokens: Bucket, lp_initial_supply: Decimal, lp_symbol: String, lp_name: String, lp_url: String, fee: Decimal) -> (ComponentAddress, Bucket);
-    fn add_liquidity(&mut self, a_tokens: Bucket, b_tokens: Bucket) -> (Bucket, Bucket);
-    fn remove_liquidity(&mut self, lp_tokens: Bucket) -> (Bucket, Bucket);
-    fn swap(&mut self, input_tokens: Bucket) -> Bucket;
-    fn get_pair(&self) -> (ResourceAddress, ResourceAddress);
   }
+}
+
+external_component! {
+    RadiswapComponentTarget {
+        fn add_liquidity(&mut self, a_tokens: Bucket, b_tokens: Bucket) -> (Bucket, Bucket);
+        fn remove_liquidity(&mut self, lp_tokens: Bucket) -> (Bucket, Bucket);
+        fn swap(&mut self, input_tokens: Bucket) -> Bucket;
+        fn get_pair(&self) -> (ResourceAddress, ResourceAddress);
+      }
 }
 
 blueprint! {
@@ -63,11 +67,11 @@ blueprint! {
         /// Badge for interacting with other components.
         identity_badge: Vault,
         /// XRD/SNX Radiswap
-        xrd_snx_radiswap: Radiswap,
+        xrd_snx_radiswap: RadiswapComponentTarget,
         /// Price Oracle
-        price_oracle: PriceOracle,
+        price_oracle: PriceOracleComponentTarget,
         /// Synthetic for minting synthetic tokens
-        synthetic_pool: SyntheticPool,
+        synthetic_pool: SyntheticPoolComponentTarget,
 
         /// Asset symbol
         asset_symbol: String,
@@ -81,7 +85,7 @@ blueprint! {
         usd_address: ResourceAddress,
 
         /// Radiswap for sTESLA/XRD
-        radiswap: Radiswap,
+        radiswap: RadiswapComponentTarget,
         /// Radiswap LP token vault
         radiswap_lp_tokens: Vault,
 
@@ -93,6 +97,7 @@ blueprint! {
 
     impl MutualFarm {
         pub fn instantiate_farm(
+            radiswap_package_address: PackageAddress,
             price_oracle_address: ComponentAddress,
             xrd_snx_radiswap_address: ComponentAddress,
             synthetic_pool_address: ComponentAddress,
@@ -111,7 +116,7 @@ blueprint! {
             let identity_badge_address = identity_badge.resource_address();
 
             debug!("Fetch price info from oracle");
-            let price_oracle: PriceOracle = price_oracle_address.into();
+            let price_oracle: PriceOracleComponentTarget = price_oracle_address.into();
             let xrd_usd_price = price_oracle
                 .get_price(initial_xrd.resource_address(), usd_address)
                 .unwrap();
@@ -119,14 +124,14 @@ blueprint! {
             let tesla_usd_price = price_oracle.get_price(asset_address, usd_address).unwrap();
 
             debug!("Swap 3/4 of XRD for SNX");
-            let mut xrd_snx_radiswap: Radiswap = xrd_snx_radiswap_address.into();
+            let mut xrd_snx_radiswap: RadiswapComponentTarget = xrd_snx_radiswap_address.into();
             let xrd_amount = initial_xrd.amount();
             let snx = xrd_snx_radiswap.swap(initial_xrd.take(initial_xrd.amount() * 3 / 4));
             let snx_amount = snx.amount();
 
             debug!("Deposit SNX into synthetic pool and mint sTESLA (1/10 of our SNX).");
-            let price_oracle: PriceOracle = price_oracle_address.into();
-            let mut synthetic_pool: SyntheticPool = synthetic_pool_address.into();
+            let price_oracle: PriceOracleComponentTarget = price_oracle_address.into();
+            let mut synthetic_pool: SyntheticPoolComponentTarget = synthetic_pool_address.into();
             synthetic_pool.add_synthetic_token(asset_symbol.clone(), asset_address);
             synthetic_pool.stake(identity_badge.create_proof(), snx);
 
@@ -139,7 +144,7 @@ blueprint! {
             let synth_address = synth.resource_address();
 
             debug!("Set up sTESLA/XRD swap pool");
-            let (radiswap_comp, lp_tokens) = Radiswap::instantiate_pool(
+            let (radiswap_comp, lp_tokens) = RadiswapPackageTarget::at(radiswap_package_address, "Radiswap").instantiate_pool(
                 synth,
                 initial_xrd,
                 dec!("1000000"),

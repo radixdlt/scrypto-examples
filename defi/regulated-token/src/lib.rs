@@ -45,9 +45,9 @@ blueprint! {
                     "stage",
                     "Stage 1 - Fixed supply, may be restricted transfer",
                 )
-                .updateable_metadata(access_rule.clone(), MUTABLE(access_rule.clone()))
-                .restrict_withdraw(access_rule.clone(), MUTABLE(access_rule.clone()))
-                .mintable(access_rule.clone(), MUTABLE(access_rule.clone()))
+                .updateable_metadata(access_rule.clone(), access_rule.clone())
+                .restrict_withdraw(access_rule.clone(), access_rule.clone())
+                .mintable(access_rule.clone(), access_rule.clone())
                 .initial_supply(100);
 
             // Next we need to setup the access rules for the methods of the component
@@ -57,17 +57,17 @@ blueprint! {
                     rule!(
                         require(general_admin.resource_address())
                             || require(freeze_admin.resource_address())
-                    ),
+                    ), AccessRule::DenyAll
                 )
                 .method(
                     "collect_payments",
-                    rule!(require(general_admin.resource_address())),
+                    rule!(require(general_admin.resource_address())), AccessRule::DenyAll,
                 )
                 .method(
                     "advance_stage",
-                    rule!(require(general_admin.resource_address())),
+                    rule!(require(general_admin.resource_address())), AccessRule::DenyAll
                 )
-                .default(rule!(allow_all));
+                .default(rule!(allow_all), AccessRule::DenyAll);
 
             let mut component = Self {
                 token_supply: Vault::with_bucket(my_bucket),
@@ -127,12 +127,7 @@ blueprint! {
                 self.current_stage = 2;
 
                 // Update token's metadata to reflect the current stage
-                let mut metadata = token_resource_manager.metadata();
-                metadata.insert(
-                    "stage".into(),
-                    "Stage 2 - Unlimited supply, may be restricted transfer".into(),
-                );
-                token_resource_manager.update_metadata(metadata);
+                token_resource_manager.set_metadata("stage".into(), "Stage 2 - Unlimited supply, may be restricted transfer".into());
 
                 // Enable minting for the token
                 token_resource_manager
@@ -147,13 +142,9 @@ blueprint! {
                 // Restricted transfer will be permanently turned off, supply will be made permanently immutable
                 self.current_stage = 3;
 
+
                 // Update token's metadata to reflect the final stage
-                let mut metadata = token_resource_manager.metadata();
-                metadata.insert(
-                    "stage".into(),
-                    "Stage 3 - Unregulated token, fixed supply".into(),
-                );
-                token_resource_manager.update_metadata(metadata);
+                token_resource_manager.set_metadata("stage".into(), "Stage 3 - Unregulated token, fixed supply".into());
 
                 // Set our behavior appropriately now that the regulated period has ended
                 token_resource_manager.set_mintable(rule!(deny_all));
@@ -173,6 +164,7 @@ blueprint! {
                 ComponentAuthZone::pop().drop();
 
                 self.internal_authority.take_all().burn();
+
                 info!("Advanced to stage 3");
             }
         }

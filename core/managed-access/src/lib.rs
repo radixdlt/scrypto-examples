@@ -1,16 +1,17 @@
 use scrypto::prelude::*;
 
 external_blueprint! {
-  {
-      package: "package_sim1q9h0dr0z36zaq6h66lg5putxtztyf0sgelxu654r67ks765aue",
-      blueprint: "FlatAdmin"
-  },
-  FlatAdmin {
+  FlatAdminPackageTarget {
     fn instantiate_flat_admin(badge_name: String) -> (ComponentAddress, Bucket);
-    fn create_additional_admin(&mut self) -> Bucket;
-    fn destroy_admin_badge(&mut self, to_destroy: Bucket);
-    fn get_admin_badge_address(&self) -> ResourceAddress;
   }
+}
+
+external_component! {
+    FlatAdminComponentTarget {
+        fn create_additional_admin(&mut self) -> Bucket;
+        fn destroy_admin_badge(&mut self, to_destroy: Bucket);
+        fn get_admin_badge_address(&self) -> ResourceAddress;
+    }
 }
 
 blueprint! {
@@ -21,16 +22,14 @@ blueprint! {
     }
 
     impl ManagedAccess {
-        pub fn instantiate_managed_access() -> (ComponentAddress, Bucket) {
+        pub fn instantiate_managed_access(flat_admin_package_address: PackageAddress) -> (ComponentAddress, Bucket) {
             let (flat_admin_component, admin_badge) =
-                FlatAdmin::instantiate_flat_admin("My Managed Access Badge".into());
+                FlatAdminPackageTarget::at(flat_admin_package_address, "FlatAdmin")
+                                        .instantiate_flat_admin("My Managed Access Badge".into());
 
             let rules = AccessRules::new()
-                .method(
-                    "withdraw_all",
-                    rule!(require(admin_badge.resource_address())),
-                )
-                .default(rule!(allow_all));
+                .method("withdraw_all", rule!(require(admin_badge.resource_address())), AccessRule::DenyAll)
+                .default(rule!(allow_all), AccessRule::DenyAll);
 
             let mut component = Self {
                 admin_badge: admin_badge.resource_address(),

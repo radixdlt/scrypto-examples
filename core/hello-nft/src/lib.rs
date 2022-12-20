@@ -27,7 +27,7 @@ blueprint! {
             }
 
             // Creates a fixed supply of NFTs.
-            let ticket_bucket = ResourceBuilder::new_non_fungible()
+            let ticket_bucket = ResourceBuilder::new_non_fungible(NonFungibleIdType::UUID)
                 .metadata("name", "Ticket")
                 .initial_supply(tickets);
 
@@ -52,14 +52,14 @@ blueprint! {
             (ticket, payment)
         }
 
-        pub fn buy_ticket_by_id(&mut self, id: u64, mut payment: Bucket) -> (Bucket, Bucket) {
+        pub fn buy_ticket_by_id(&mut self, id: u128, mut payment: Bucket) -> (Bucket, Bucket) {
             // Take our price out of the payment bucket
             self.collected_xrd.put(payment.take(self.ticket_price));
 
             // Take the specific ticket
             let ticket = self
                 .available_tickets
-                .take_non_fungible(&NonFungibleId::from_u64(id));
+                .take_non_fungible(&NonFungibleId::UUID(id));
 
             // Return the ticket and change
             (ticket, payment)

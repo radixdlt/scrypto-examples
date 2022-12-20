@@ -26,7 +26,7 @@ blueprint! {
                 .initial_supply(1);
 
             // Define a "transient" resource which can never be deposited once created, only burned
-            let address = ResourceBuilder::new_non_fungible()
+            let address = ResourceBuilder::new_non_fungible(NonFungibleIdType::UUID)
                 .metadata(
                     "name",
                     "Promise token for BasicFlashLoan - must be returned to be burned!",

@@ -14,28 +14,24 @@ blueprint! {
                 .initial_supply(1);
 
             // Create the ResourceManager for a mutable supply admin badge
-            let admin_badge = ResourceBuilder::new_fungible()
+            let first_admin_badge = ResourceBuilder::new_fungible()
                 .divisibility(DIVISIBILITY_NONE)
                 .metadata("name", badge_name)
                 .mintable(rule!(require(admin_mint_badge.resource_address())), LOCKED)
                 .burnable(rule!(require(admin_mint_badge.resource_address())), LOCKED)
-                .no_initial_supply();
-
-            // Using our minting authority badge, mint a single admin badge
-            let first_admin_badge = admin_mint_badge.authorize(|| {
-                let admin_badge_manager = borrow_resource_manager!(admin_badge);
-                admin_badge_manager.mint(1)
-            });
+                .initial_supply(1);
 
             // Setting uo the access rules of the component
             let rules: AccessRules = AccessRules::new()
-                .method("create_additional_admin", rule!(require(admin_badge)))
-                .default(rule!(allow_all));
+                // The third parameter here specifies the authority allowed to update the rule.
+                .method("create_additional_admin", rule!(require(first_admin_badge.resource_address())), LOCKED)
+                // The second parameter here specifies the authority allowed to update the rule.
+                .default(AccessRule::AllowAll, AccessRule::DenyAll); 
 
             // Initialize our component, placing the minting authority badge within its vault, where it will remain forever
             let mut component = Self {
                 admin_mint_badge: Vault::with_bucket(admin_mint_badge),
-                admin_badge: admin_badge,
+                admin_badge: first_admin_badge.resource_address(),
             }
             .instantiate();
             component.add_access_check(rules);
@@ -60,8 +56,7 @@ blueprint! {
                 "Can not destroy the contents of this bucket!"
             );
             self.admin_mint_badge.authorize(|| {
-                let admin_badge_manager = borrow_resource_manager!(self.admin_badge);
-                admin_badge_manager.burn(to_destroy)
+                to_destroy.burn();
             })
         }
 

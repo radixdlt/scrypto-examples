@@ -11,6 +11,16 @@ blueprint! {
 
     impl Airdrop {
         pub fn instantiate_airdrop() -> ComponentAddress {
+            // .globalize makes the component accessible globally through a public component address
+            Self::instantiate_airdrop_local()
+                .globalize()
+        }
+
+        pub fn instantiate_airdrop_local() -> AirdropComponent {
+            // Simply instantiating the component (without globalizing it) makes its methods
+            // not callable from outside. In this case, it has to be owned by a particular component. Only that
+            // component will be able to call methods on it. You can see an example of this in `intra_package.rs`
+
             Self {
                 tokens: Vault::with_bucket(
                     ResourceBuilder::new_fungible()
@@ -20,7 +30,6 @@ blueprint! {
                 ),
             }
             .instantiate()
-            .globalize()
         }
 
         pub fn free_token(&mut self) -> Bucket {

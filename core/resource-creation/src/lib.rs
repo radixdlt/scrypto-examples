@@ -96,7 +96,7 @@ blueprint! {
                     "name",
                     "Mutable supply, mintable by 2-of-3 admins, can not be burned",
                 )
-                .mintable(rule!(require_n_of(2, "all_auth_resources")), LOCKED)
+                .mintable(rule!(require_n_of(2, self.all_auth_resources.clone())), LOCKED)
                 .initial_supply(105);
             let resource_address_5 = bucket_5.resource_address();
             let vault_5 = Vault::with_bucket(bucket_5);
@@ -107,7 +107,7 @@ blueprint! {
         pub fn create_and_mint_as_separate_actions(&mut self) {
             let resource_address = ResourceBuilder::new_fungible()
                 .metadata("name", "Mintable token, any admin able to mint")
-                .mintable(rule!(require_any_of("all_auth_resources")), LOCKED)
+                .mintable(rule!(require_any_of(self.all_auth_resources.clone())), LOCKED)
                 .no_initial_supply();
 
             let resource_manager: &mut ResourceManager = borrow_resource_manager!(resource_address);
@@ -156,12 +156,10 @@ blueprint! {
 
             // Example of how to update the metadata
             // You can overwrite an old value, or create a new key, or both, in a single action
-            let mut new_metadata = HashMap::new();
-            new_metadata.insert("name".to_owned(), "An even better name".to_owned());
-            new_metadata.insert("some new key".to_owned(), "Interesting value".to_owned());
             let resource_manager: &mut ResourceManager = borrow_resource_manager!(resource_address);
             self.auth_vault_alpha.authorize(|| {
-                resource_manager.update_metadata(new_metadata);
+                resource_manager.set_metadata("name".to_owned(), "An even better name".to_owned());
+                resource_manager.set_metadata("some new key".to_owned(), "Interesting value".to_owned());
             });
         }
 
