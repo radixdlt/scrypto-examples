@@ -7,6 +7,8 @@ import WalletSdk, {
   Expression,
   Decimal,
 } from '@radixdlt/wallet-sdk';
+// There are four classes exported in the Gateway-SDK These serve as a thin wrapper around the gateway API
+// API docs are available @ https://betanet-gateway.redoc.ly/
 import { TransactionApi, StateApi, StatusApi, StreamApi } from "@radixdlt/babylon-gateway-api-sdk";
 
 const transactionApi = new TransactionApi();
@@ -21,7 +23,8 @@ console.log("walletSdk: ", walletSdk)
 let accountAddress: string // User account address
 let componentAddress: string  // GumballMachine component address
 let resourceAddress: string // GUM resource address
-// package address package_tdx_b_1qyjhg0d0nvx48xuss8dnykpa0er8kfmvpql6v6awepnqhssqnf
+// packageAddress package_tdx_b_1q87n8rez3k3c0lazln3fm5nnxe9ydja9jyukv7j9xfpqpa3tdt
+// xrdAddress resource_tdx_b_1qzkcyv5dwq3r6kawy6pxpvcythx8rh8ntum6ws62p95s9hhz9x
 
 // Fetch list of account Addresses on button click
 document.getElementById('fetchAccountAddress').onclick = async function () {
@@ -52,7 +55,7 @@ document.getElementById('instantiateComponent').onclick = async function () {
     .callFunction(packageAddress, "GumballMachine", "instantiate_gumball_machine", [Decimal("10")])
     .build()
     .toString();
-  console.log("manifest: ", manifest)
+  console.log("Instantiate Manifest: ", manifest)
   // Send manifest to extension for signing
   const result = await walletSdk
     .sendTransaction({
@@ -62,22 +65,35 @@ document.getElementById('instantiateComponent').onclick = async function () {
 
   if (result.isErr()) throw result.error
 
-  console.log("Intantiate Result: ", result.value)
+  console.log("Intantiate WalletSDK Result: ", result.value)
 
   // Fetch the receipt from the Gateway API
   // const receipt = await transactionApi.transactionReceiptPost({
   //   v0CommittedTransactionRequest: { intent_hash: result.value },
   // })
+
   let response = await transactionApi.transactionStatus({
     transactionStatusRequest: {
       intent_hash_hex: result.value.transactionIntentHash
     }
   });
-  console.log('response', response)
+  console.log('Instantiate TransactionApi Response', response)
+
 
   // fetch component address from gateway api and set componentAddress variable 
-  // componentAddress = receipt.committed.receipt.state_updates.new_global_entities[1].global_address
-  // document.getElementById('componentAddress').innerText = componentAddress;
+  let commitReceipt = await transactionApi.transactionCommittedDetails({
+    transactionCommittedDetailsRequest: {
+      transaction_identifier: {
+        type: 'payload_hash',
+        value_hex: response.known_payloads[0].payload_hash_hex
+      }
+    }
+  })
+  console.log('Committed Details Receipt', commitReceipt)
+
+  // fetch component address from gateway api and set componentAddress variable 
+  componentAddress = commitReceipt.details.receipt.state_updates.new_global_entities[0].global_address
+  document.getElementById('componentAddress').innerText = componentAddress;
 
   // resourceAddress = receipt.committed.receipt.state_updates.new_global_entities[0].global_address
   // document.getElementById('gumAddress').innerText = resourceAddress;
@@ -87,12 +103,12 @@ document.getElementById('buyGumball').onclick = async function () {
 
   let manifest = new ManifestBuilder()
     .withdrawFromAccountByAmount(accountAddress, 10, "resource_tdx_b_1qzkcyv5dwq3r6kawy6pxpvcythx8rh8ntum6ws62p95s9hhz9x")
-    .takeFromWorktopByAmount(10, "resource_tdx_b_1qzkcyv5dwq3r6kawy6pxpvcythx8rh8ntum6ws62p95s9hhz9x", "bucket1")
-    .callMethod(componentAddress, "buy_gumball", ['Bucket("bucket1")'])
-    .callMethod(accountAddress, "deposit_batch", ['Expression("ENTIRE_WORKTOP")'])
+    .takeFromWorktopByAmount(10, "resource_tdx_b_1qzkcyv5dwq3r6kawy6pxpvcythx8rh8ntum6ws62p95s9hhz9x", "xrd_bucket")
+    .callMethod(componentAddress, "buy_gumball", [Bucket("xrd_bucket")])
+    .callMethod(accountAddress, "deposit_batch", [Expression("ENTIRE_WORKTOP")])
     .build()
     .toString();
-
+  console.log('buy_gumball manifest: ', manifest)
   // Send manifest to extension for signing
   const result = await walletSdk
     .sendTransaction({
@@ -102,12 +118,16 @@ document.getElementById('buyGumball').onclick = async function () {
 
   if (result.isErr()) throw result.error
 
-  console.log("buyGumball result: ", result)
+  console.log("Buy Gumball WalletSDK Result: ", result)
 
   // Fetch the receipt from the Gateway SDK
-  // const receipt = await transactionApi.transactionReceiptPost({
-  //   v0CommittedTransactionRequest: { intent_hash: hash.value },
-  // })
+  let response = await transactionApi.transactionStatus({
+    transactionStatusRequest: {
+      intent_hash_hex: result.value.transactionIntentHash
+    }
+  });
+  console.log('Buy Gumball TransactionAPI Response', response)
+
 
   // Show the receipt on the DOM
   // document.getElementById('receipt').innerText = JSON.stringify(receipt.committed.receipt, null, 2);
