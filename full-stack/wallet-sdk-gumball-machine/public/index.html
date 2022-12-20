@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Radix SDK Sandbox</title>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <script type="module" src="/dist/index.js"></script>
+    
+    <h1>Gumball Machine</h1>
+
+    <h2>1. Fetch User Account Address</h2>
+    <p><button id="fetchAccountAddress">Get wallet account address</button></p>
+    <p>Account Address: <pre id="accountAddress"></pre></p>
+    
+    <h2>2. Instantiate Gumball Machine</h2>
+    <input type="text" placeholder="Package address" id="packageAddress" />
+    <p><button id="instantiateComponent">Instantiate component</button></p>
+    <p>Component Address: <span id="componentAddress"></span></p>
+    <p>GUM token address: <span id="gumAddress"></span></p>
+
+    <h2>3. Buy Gumball</h2>
+    <p><button id="buyGumball">Buy 1 GUM</button></p>
+    <p>Receipt:<br><pre id="receipt"></pre></p>
+
+    <h2>4. Check balance</h2>
+    <p><button id="checkBalance">Check balance</button></p>
+    <p>I have <span id="userBalance">?</span> GUM, and the machine has <span id="machineBalance">?</span> GUM.</p>
+  </body>
+</html>
