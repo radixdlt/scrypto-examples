@@ -11,19 +11,21 @@ import WalletSdk, {
 // API docs are available @ https://betanet-gateway.redoc.ly/
 import { TransactionApi, StateApi, StatusApi, StreamApi } from "@radixdlt/babylon-gateway-api-sdk";
 
+// Instantiate Wallet SDK
+const walletSdk = WalletSdk({ dAppId: 'Gumball', networkId: 0x0b })
+console.log("walletSdk: ", walletSdk)
+
+// Instantiate Gateway SDK
 const transactionApi = new TransactionApi();
 const stateApi = new StateApi();
 const statusApi = new StatusApi();
 const streamApi = new StreamApi();
 
-const walletSdk = WalletSdk({ dAppId: 'Gumball', networkId: 0x0b })
-console.log("walletSdk: ", walletSdk)
-
 // Global states
 let accountAddress: string // User account address
 let componentAddress: string  // GumballMachine component address
 let resourceAddress: string // GUM resource address
-// packageAddress package_tdx_b_1qywqgg8an0xz2dk87dr038sy7zu472mt349kpxe8ljqscaur8z
+// You can use this packageAddress to skip the dashboard publishing step package_tdx_b_1qywqgg8an0xz2dk87dr038sy7zu472mt349kpxe8ljqscaur8z
 // xrdAddress resource_tdx_b_1qzkcyv5dwq3r6kawy6pxpvcythx8rh8ntum6ws62p95s9hhz9x
 
 // Fetch list of account Addresses on button click
@@ -76,7 +78,6 @@ document.getElementById('instantiateComponent').onclick = async function () {
   });
   console.log('Instantiate TransactionApi Response', response)
 
-
   // fetch component address from gateway api and set componentAddress variable 
   let commitReceipt = await transactionApi.transactionCommittedDetails({
     transactionCommittedDetailsRequest: {
@@ -89,7 +90,7 @@ document.getElementById('instantiateComponent').onclick = async function () {
   console.log('Instantiate Committed Details Receipt', commitReceipt)
 
   // fetch component address from gateway api and set componentAddress variable 
-  // componentAddress = commitReceipt.details.receipt.state_updates.new_global_entities[0].global_address
+  // componentAddress = commitReceipt.details.receipt.state_updates.new_global_entities[0].global_address <- long way -- shorter way below ->
   componentAddress = commitReceipt.details.referenced_global_entities[0]
   document.getElementById('componentAddress').innerText = componentAddress;
 
@@ -106,7 +107,9 @@ document.getElementById('buyGumball').onclick = async function () {
     .callMethod(accountAddress, "deposit_batch", [Expression("ENTIRE_WORKTOP")])
     .build()
     .toString();
+
   console.log('buy_gumball manifest: ', manifest)
+
   // Send manifest to extension for signing
   const result = await walletSdk
     .sendTransaction({
