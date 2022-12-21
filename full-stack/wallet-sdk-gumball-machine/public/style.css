@@ -1,0 +1,24 @@
+body {
+    background-image: url("./BackgroundGradient.png");
+    color: whitesmoke;
+    margin-left: 3.3rem;
+}
+
+button {
+    padding: 1.33rem;
+    background-color: rgb(206, 65, 166);
+    border-radius: 33rem;
+    border: none;
+    font-size: xx-large;
+    color: rgb(7, 10, 233);
+    min-width: 33%
+}
+
+input {
+    padding: 1.33rem;
+    border-radius: 33rem;
+    min-width: 29%;
+    margin-bottom: 1.33rem;
+    display: block;
+    border: none;
+}
