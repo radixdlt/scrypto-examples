@@ -1,14 +1,10 @@
 # The Gumball Machine on Betanet
-This example is meant to guide you through building, deploying and using the [Gumball Machine Scrypto example](https://github.com/radixdlt/scrypto-examples/tree/main/full-stack/wallet-sdk-gumball-machine) using the [Betanet Wallet SDK](https://docs.radixdlt.com/main/wallet/wallet-sdk.html).
-
-## Prefer to watch a video tutorial?
-Follow along and build a full stack Betanet Gumball Machine Example.
-[Scrypto Radix Youtube](https://www.youtube.com/@scrypto_radix)
+This example is meant to guide you through building, deploying and using the [Gumball Machine Scrypto example](https://github.com/radixdlt/scrypto-examples/tree/main/full-stack/wallet-sdk-gumball-machine) using the [Betanet Wallet SDK](https://github.com/radixdlt/wallet-sdk#readme).
 
 ## Pre-requisites
 1. Node >= 12.17.0
-2. The Betanet wallet & Radix-connector browser extenstion installed. Instructions [here](https://docs.radixdlt.com/main/getting-started-developers/wallet-and-connector.html)
-3. Scrypto v0.7.0. Instructions to install [here](https://docs.radixdlt.com/main/getting-started-developers/first-component/install-scrypto.html) and update [here](https://docs.radixdlt.com/main/scrypto/getting-started/updating-scrypto.html)
+2. The Betanet wallet & Radix-connector browser extenstion installed. Instructions [here](https://docs-babylon.radixdlt.com/main/getting-started-developers/wallet-and-connector.html)
+3. Scrypto v0.7.0. Instructions to install [here](https://docs-babylon.radixdlt.com/main/getting-started-developers/first-component/install-scrypto.html) and update [here](https://docs-babylon.radixdlt.com/main/getting-started-developers/first-component/updating-scrypto.html)
 
 ## Building the Scrypto code
 1. Enter the scrypto directory in a terminal: `cd scrypto`
@@ -26,14 +22,14 @@ Follow along and build a full stack Betanet Gumball Machine Example.
 8. The deployed package address should get displayed. **You will need it for the next step**.
 
 ## Interacting with our package
-1. In a terminal go back to the root of this project (gumball-machine-example)
+1. In a terminal go back to the root of this project (wallet-sdk-gumball-machine)
 2. Install the npm dependencies: `npm install`
 3. Start the local server with `npm start`
 4. Open up your browser at the provided url if it doesn't open automatically.
-5. Make sure you created an account on the wallet extension.
+5. Make sure you created an account on the wallet and added funds via the faucet by clicking on account name and then the three dots a button to get XRD from faucet should open.
 6. Click on the button to fetch your wallet address. You should see your address appearing
-7. Fill the package address you got in the previous section and click on "instantiate component"
+7. Fill the package address you got in the previous section and enter a symbol name for your gumball to display in the wallet then click on "instantiate component"
 8. Your wallet will again open up. Click on "submit". You should now see the instantiated component address on the page.
 9. Buy a gumball by clicking on "Buy 1 GUM"
-10. Your wallet will open up. Click on "submit". The transaction receipt will get displayed on the page.
-11. Check the number of GUM token you have by clicking on the "check balance" button.
+10. Your wallet will open up. Click on "sign transaction". The transaction receipt will get displayed on the page.
+11. Check the number of GUM tokens you have by clicking on the account name in your wallet and viewing the tokens tab.
