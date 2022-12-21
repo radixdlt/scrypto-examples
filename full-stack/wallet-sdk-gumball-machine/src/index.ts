@@ -140,24 +140,3 @@ document.getElementById('buyGumball').onclick = async function () {
   // Show the receipt on the DOM
   document.getElementById('receipt').innerText = JSON.stringify(commitReceipt.details.receipt, null, 2);
 };
-
-// document.getElementById('checkBalance').onclick = async function () {
-
-//   // Fetch the state of the account component
-//   const account_state = await stateApi.stateComponentPost({
-//     v0StateComponentRequest: { component_address: accountAddress }
-//   })
-
-//   let account_gum_vault = account_state.owned_vaults.find(vault => vault.resource_amount.resource_address == `${resourceAddress}`)
-
-//   // Fetch the state of the machine component
-//   const machine_state = await stateApi.stateComponentPost({
-//     v0StateComponentRequest: { component_address: componentAddress }
-//   })
-
-//   let machine_gum_vault = machine_state.owned_vaults.find(vault => vault.resource_amount.resource_address == `${resourceAddress}`)
-
-//   // Update the DOM
-//   document.getElementById("userBalance").innerText = account_gum_vault.resource_amount.amount_attos / Math.pow(10, 18)
-//   document.getElementById("machineBalance").innerText = machine_gum_vault.resource_amount.amount_attos / Math.pow(10, 18)
-// };

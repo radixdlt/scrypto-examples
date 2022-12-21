@@ -33,6 +33,6 @@ input {
     color: #414141;
     max-width: 100%;
     padding: 1rem;
-    overflow: scroll;
+    overflow-x: scroll;
     border-radius: .33rem;
 }
