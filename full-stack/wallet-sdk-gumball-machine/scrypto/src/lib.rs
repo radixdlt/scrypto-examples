@@ -5,15 +5,16 @@ blueprint! {
         gumballs: Vault,
         collected_xrd: Vault,
         price: Decimal,
+        // flavor: String,
     }
 
     impl GumballMachine {
         // given a price in XRD, creates a ready-to-use gumball machine
-        pub fn instantiate_gumball_machine(price: Decimal) -> ComponentAddress {
+        pub fn instantiate_gumball_machine(price: Decimal, flavor: String) -> ComponentAddress {
             // create a new Gumball resource, with a fixed quantity of 100
             let bucket_of_gumballs = ResourceBuilder::new_fungible()
                 .metadata("name", "Gumball")
-                .metadata("symbol", "GUM")
+                .metadata("symbol", flavor)
                 .metadata("description", "A delicious gumball")
                 .initial_supply(100);
 
@@ -22,6 +23,7 @@ blueprint! {
                 gumballs: Vault::with_bucket(bucket_of_gumballs),
                 collected_xrd: Vault::new(RADIX_TOKEN),
                 price: price,
+                // flavor: flavor,
             }
             .instantiate()
             .globalize()
