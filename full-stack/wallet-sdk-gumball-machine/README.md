@@ -28,8 +28,8 @@ This example is meant to guide you through building, deploying and using the [Gu
 4. Open up your browser at the provided url if it doesn't open automatically.
 5. Make sure you created an account on the wallet and added funds via the faucet by clicking on account name and then the three dots a button to get XRD from faucet should open.
 6. Click on the button to fetch your wallet address. You should see your address appearing
-7. Fill the package address you got in the previous section and enter a symbol name for your gumball to display in the wallet then click on "instantiate component"
-8. Your wallet will again open up. Click on "submit". You should now see the instantiated component address on the page.
+7. Fill the package address you got in the previous section and enter a symbol name for your gumball to display in the wallet then click on "instantiate gumball machine"
+8. Your wallet will again open up. Click on "sign transaction". You should now see the instantiated component address and Gumball resource address on the page.
 9. Buy a gumball by clicking on "Buy 1 GUM"
 10. Your wallet will open up. Click on "sign transaction". The transaction receipt will get displayed on the page.
 11. Check the number of GUM tokens you have by clicking on the account name in your wallet and viewing the tokens tab.
