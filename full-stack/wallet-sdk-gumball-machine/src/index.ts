@@ -23,7 +23,7 @@ console.log("walletSdk: ", walletSdk)
 let accountAddress: string // User account address
 let componentAddress: string  // GumballMachine component address
 let resourceAddress: string // GUM resource address
-// packageAddress package_tdx_b_1q87n8rez3k3c0lazln3fm5nnxe9ydja9jyukv7j9xfpqpa3tdt
+// packageAddress package_tdx_b_1qywqgg8an0xz2dk87dr038sy7zu472mt349kpxe8ljqscaur8z
 // xrdAddress resource_tdx_b_1qzkcyv5dwq3r6kawy6pxpvcythx8rh8ntum6ws62p95s9hhz9x
 
 // Fetch list of account Addresses on button click
@@ -50,9 +50,10 @@ document.getElementById('fetchAccountAddress').onclick = async function () {
 // Instantiate component
 document.getElementById('instantiateComponent').onclick = async function () {
   let packageAddress = document.getElementById("packageAddress").value;
+  let flavor = document.getElementById("flavor").value;
 
   let manifest = new ManifestBuilder()
-    .callFunction(packageAddress, "GumballMachine", "instantiate_gumball_machine", [Decimal("10")])
+    .callFunction(packageAddress, "GumballMachine", "instantiate_gumball_machine", [Decimal("10"), `"${flavor}"`])
     .build()
     .toString();
   console.log("Instantiate Manifest: ", manifest)
@@ -67,11 +68,7 @@ document.getElementById('instantiateComponent').onclick = async function () {
 
   console.log("Intantiate WalletSDK Result: ", result.value)
 
-  // Fetch the receipt from the Gateway API
-  // const receipt = await transactionApi.transactionReceiptPost({
-  //   v0CommittedTransactionRequest: { intent_hash: result.value },
-  // })
-
+  // Fetch the transaction status from the Gateway API
   let response = await transactionApi.transactionStatus({
     transactionStatusRequest: {
       intent_hash_hex: result.value.transactionIntentHash
@@ -89,14 +86,15 @@ document.getElementById('instantiateComponent').onclick = async function () {
       }
     }
   })
-  console.log('Committed Details Receipt', commitReceipt)
+  console.log('Instantiate Committed Details Receipt', commitReceipt)
 
   // fetch component address from gateway api and set componentAddress variable 
-  componentAddress = commitReceipt.details.receipt.state_updates.new_global_entities[0].global_address
+  // componentAddress = commitReceipt.details.receipt.state_updates.new_global_entities[0].global_address
+  componentAddress = commitReceipt.details.referenced_global_entities[0]
   document.getElementById('componentAddress').innerText = componentAddress;
 
-  // resourceAddress = receipt.committed.receipt.state_updates.new_global_entities[0].global_address
-  // document.getElementById('gumAddress').innerText = resourceAddress;
+  resourceAddress = commitReceipt.details.referenced_global_entities[1]
+  document.getElementById('gumAddress').innerText = resourceAddress;
 }
 
 document.getElementById('buyGumball').onclick = async function () {
@@ -128,9 +126,19 @@ document.getElementById('buyGumball').onclick = async function () {
   });
   console.log('Buy Gumball TransactionAPI Response', response)
 
+  // fetch component address from gateway api and set componentAddress variable 
+  let commitReceipt = await transactionApi.transactionCommittedDetails({
+    transactionCommittedDetailsRequest: {
+      transaction_identifier: {
+        type: 'payload_hash',
+        value_hex: response.known_payloads[0].payload_hash_hex
+      }
+    }
+  })
+  console.log('Buy Gumball Committed Details Receipt', commitReceipt)
 
   // Show the receipt on the DOM
-  // document.getElementById('receipt').innerText = JSON.stringify(receipt.committed.receipt, null, 2);
+  document.getElementById('receipt').innerText = JSON.stringify(commitReceipt.details.receipt, null, 2);
 };
 
 // document.getElementById('checkBalance').onclick = async function () {
