@@ -25,7 +25,7 @@ const streamApi = new StreamApi();
 let accountAddress: string // User account address
 let componentAddress: string  // GumballMachine component address
 let resourceAddress: string // GUM resource address
-// You can use this packageAddress to skip the dashboard publishing step package_tdx_b_1qywqgg8an0xz2dk87dr038sy7zu472mt349kpxe8ljqscaur8z
+// You can use this packageAddress to skip the dashboard publishing step package_tdx_b_1qx5a2htahyjygp974tap7d0x7pn8lxl00muz7wjtdhxqe90wfd
 // xrdAddress resource_tdx_b_1qzkcyv5dwq3r6kawy6pxpvcythx8rh8ntum6ws62p95s9hhz9x
 
 // Fetch list of account Addresses on button click
@@ -71,25 +71,25 @@ document.getElementById('instantiateComponent').onclick = async function () {
   console.log("Intantiate WalletSDK Result: ", result.value)
 
   // Fetch the transaction status from the Gateway API
-  let response = await transactionApi.transactionStatus({
+  let status = await transactionApi.transactionStatus({
     transactionStatusRequest: {
       intent_hash_hex: result.value.transactionIntentHash
     }
   });
-  console.log('Instantiate TransactionApi Response', response)
+  console.log('Instantiate TransactionApi transaction/status:', status)
 
   // fetch component address from gateway api and set componentAddress variable 
   let commitReceipt = await transactionApi.transactionCommittedDetails({
     transactionCommittedDetailsRequest: {
       transaction_identifier: {
-        type: 'payload_hash',
-        value_hex: response.known_payloads[0].payload_hash_hex
+        type: 'intent_hash',
+        value_hex: result.value.transactionIntentHash
       }
     }
   })
   console.log('Instantiate Committed Details Receipt', commitReceipt)
 
-  // fetch component address from gateway api and set componentAddress variable 
+  //  set componentAddress and resourceAddress variables with gateway api commitReciept payload
   // componentAddress = commitReceipt.details.receipt.state_updates.new_global_entities[0].global_address <- long way -- shorter way below ->
   componentAddress = commitReceipt.details.referenced_global_entities[0]
   document.getElementById('componentAddress').innerText = componentAddress;
@@ -121,20 +121,20 @@ document.getElementById('buyGumball').onclick = async function () {
 
   console.log("Buy Gumball WalletSDK Result: ", result)
 
-  // Fetch the receipt from the Gateway SDK
-  let response = await transactionApi.transactionStatus({
+  // Fetch the transaction status from the Gateway SDK
+  let status = await transactionApi.transactionStatus({
     transactionStatusRequest: {
       intent_hash_hex: result.value.transactionIntentHash
     }
   });
-  console.log('Buy Gumball TransactionAPI Response', response)
+  console.log('Buy Gumball TransactionAPI transaction/status: ', status)
 
-  // fetch component address from gateway api and set componentAddress variable 
+  // fetch commit reciept from gateway api 
   let commitReceipt = await transactionApi.transactionCommittedDetails({
     transactionCommittedDetailsRequest: {
       transaction_identifier: {
-        type: 'payload_hash',
-        value_hex: response.known_payloads[0].payload_hash_hex
+        type: 'intent_hash',
+        value_hex: result.value.transactionIntentHash
       }
     }
   })
