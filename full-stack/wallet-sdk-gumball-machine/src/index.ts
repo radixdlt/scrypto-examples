@@ -127,14 +127,14 @@ document.getElementById('buyGumball').onclick = async function () {
       intent_hash_hex: result.value.transactionIntentHash
     }
   });
-  console.log('Buy Gumball TransactionAPI Response', response)
+  console.log('Buy Gumball TransactionAPI transaction/status Response', response)
 
   // fetch component address from gateway api and set componentAddress variable 
   let commitReceipt = await transactionApi.transactionCommittedDetails({
     transactionCommittedDetailsRequest: {
       transaction_identifier: {
-        type: 'payload_hash',
-        value_hex: response.known_payloads[0].payload_hash_hex
+        type: 'intent_hash',
+        value_hex: result.value.transactionIntentHash
       }
     }
   })
