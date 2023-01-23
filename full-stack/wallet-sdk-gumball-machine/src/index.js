@@ -22,9 +22,9 @@ const statusApi = new StatusApi();
 const streamApi = new StreamApi();
 
 // Global states
-let accountAddress: string // User account address
-let componentAddress: string  // GumballMachine component address
-let resourceAddress: string // GUM resource address
+let accountAddress //: string // User account address
+let componentAddress //: string  // GumballMachine component address
+let resourceAddress //: string // GUM resource address
 // You can use this packageAddress to skip the dashboard publishing step package_tdx_b_1qx5a2htahyjygp974tap7d0x7pn8lxl00muz7wjtdhxqe90wfd
 // xrdAddress resource_tdx_b_1qzkcyv5dwq3r6kawy6pxpvcythx8rh8ntum6ws62p95s9hhz9x
 
@@ -49,7 +49,7 @@ document.getElementById('fetchAccountAddress').onclick = async function () {
   accountAddress = oneTimeAccounts[0].address
 }
 
-// Instantiate component
+// ************ Instantiate component and fetch component and resource addresses *************
 document.getElementById('instantiateComponent').onclick = async function () {
   let packageAddress = document.getElementById("packageAddress").value;
   let flavor = document.getElementById("flavor").value;
