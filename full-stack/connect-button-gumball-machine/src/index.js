@@ -1,19 +1,35 @@
-import WalletSdk, {
+import {
+  configure,
   requestBuilder,
   requestItem,
   ManifestBuilder,
-  ResourceAddress,
-  Bucket,
-  Expression,
   Decimal,
-} from '@radixdlt/wallet-sdk';
+  Bucket,
+  Expression
+} from '@radixdlt/connect-button'
+
+// Configure the connect button
+const connectBtn = configure({
+  dAppId: 'Gumball',
+  networkId: 0x0b,
+  onConnect: ({ setState, getWalletData }) => {
+    getWalletData(
+      requestBuilder(requestItem.oneTimeAccounts.withoutProofOfOwnership(1))
+    ).map(({ oneTimeAccounts }) => {
+      setState({ connected: true, loading: false })
+      document.getElementById('accountAddress').innerText = oneTimeAccounts[0].address
+      accountAddress = oneTimeAccounts[0].address
+    })
+  },
+  onDisconnect: ({ setState }) => {
+    setState({ connected: false })
+  },
+})
+console.log("connectBtn: ", connectBtn)
+
 // There are four classes exported in the Gateway-SDK These serve as a thin wrapper around the gateway API
 // API docs are available @ https://betanet-gateway.redoc.ly/
 import { TransactionApi, StateApi, StatusApi, StreamApi } from "@radixdlt/babylon-gateway-api-sdk";
-
-// Instantiate Wallet SDK
-const walletSdk = WalletSdk({ dAppId: 'Gumball', networkId: 0x0b })
-console.log("walletSdk: ", walletSdk)
 
 // Instantiate Gateway SDK
 const transactionApi = new TransactionApi();
@@ -22,34 +38,14 @@ const statusApi = new StatusApi();
 const streamApi = new StreamApi();
 
 // Global states
-let accountAddress: string // User account address
-let componentAddress: string  // GumballMachine component address
-let resourceAddress: string // GUM resource address
+let accountAddress //: string // User account address
+let componentAddress //: string  // GumballMachine component address
+let resourceAddress //: string // GUM resource address
 // You can use this packageAddress to skip the dashboard publishing step package_tdx_b_1qx5a2htahyjygp974tap7d0x7pn8lxl00muz7wjtdhxqe90wfd
 // xrdAddress resource_tdx_b_1qzkcyv5dwq3r6kawy6pxpvcythx8rh8ntum6ws62p95s9hhz9x
 
-// Fetch list of account Addresses on button click
-document.getElementById('fetchAccountAddress').onclick = async function () {
-  // Retrieve extension user account addresses
-  console.log('getting account info')
-  const result = await walletSdk.request(
-    // the number passed as arg is the max number of addresses you wish to fetch
-    requestBuilder(requestItem.oneTimeAccounts.withoutProofOfOwnership(1))
-  )
 
-  if (result.isErr()) {
-    throw result.error
-  }
-
-  const { oneTimeAccounts } = result.value
-  console.log("requestItem.oneTimeAccounts.withoutProofOfOwnership(1) ", result)
-  if (!oneTimeAccounts) return
-
-  document.getElementById('accountAddress').innerText = oneTimeAccounts[0].address
-  accountAddress = oneTimeAccounts[0].address
-}
-
-// Instantiate component
+// ************ Instantiate component and fetch component and resource addresses *************
 document.getElementById('instantiateComponent').onclick = async function () {
   let packageAddress = document.getElementById("packageAddress").value;
   let flavor = document.getElementById("flavor").value;
@@ -60,7 +56,7 @@ document.getElementById('instantiateComponent').onclick = async function () {
     .toString();
   console.log("Instantiate Manifest: ", manifest)
   // Send manifest to extension for signing
-  const result = await walletSdk
+  const result = await connectBtn
     .sendTransaction({
       transactionManifest: manifest,
       version: 1,
@@ -70,7 +66,7 @@ document.getElementById('instantiateComponent').onclick = async function () {
 
   console.log("Intantiate WalletSDK Result: ", result.value)
 
-  // Fetch the transaction status from the Gateway API
+  // ************ Fetch the transaction status from the Gateway API ************
   let status = await transactionApi.transactionStatus({
     transactionStatusRequest: {
       intent_hash_hex: result.value.transactionIntentHash
@@ -78,7 +74,7 @@ document.getElementById('instantiateComponent').onclick = async function () {
   });
   console.log('Instantiate TransactionApi transaction/status:', status)
 
-  // fetch component address from gateway api and set componentAddress variable 
+  // ************* fetch component address from gateway api and set componentAddress variable **************
   let commitReceipt = await transactionApi.transactionCommittedDetails({
     transactionCommittedDetailsRequest: {
       transaction_identifier: {
@@ -89,7 +85,7 @@ document.getElementById('instantiateComponent').onclick = async function () {
   })
   console.log('Instantiate Committed Details Receipt', commitReceipt)
 
-  //  set componentAddress and resourceAddress variables with gateway api commitReciept payload
+  // ****** set componentAddress and resourceAddress variables with gateway api commitReciept payload ******
   // componentAddress = commitReceipt.details.receipt.state_updates.new_global_entities[0].global_address <- long way -- shorter way below ->
   componentAddress = commitReceipt.details.referenced_global_entities[0]
   document.getElementById('componentAddress').innerText = componentAddress;
@@ -111,7 +107,7 @@ document.getElementById('buyGumball').onclick = async function () {
   console.log('buy_gumball manifest: ', manifest)
 
   // Send manifest to extension for signing
-  const result = await walletSdk
+  const result = await connectBtn
     .sendTransaction({
       transactionManifest: manifest,
       version: 1,
@@ -119,7 +115,7 @@ document.getElementById('buyGumball').onclick = async function () {
 
   if (result.isErr()) throw result.error
 
-  console.log("Buy Gumball WalletSDK Result: ", result)
+  console.log("Buy Gumball getMethods Result: ", result)
 
   // Fetch the transaction status from the Gateway SDK
   let status = await transactionApi.transactionStatus({
