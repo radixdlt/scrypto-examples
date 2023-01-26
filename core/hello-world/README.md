@@ -83,7 +83,7 @@ resim new-simple-badge
 
 2. Publish the package, and save the package address
 ```
-resim publish . <simple_badge_NFAddress>
+resim publish . --owner-badge <simple_badge_NFAddress>
 ```
 3. Call the `instantiate_hello` function to instantiate a component, and save the component address
 ```
