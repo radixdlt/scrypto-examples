@@ -1,6 +1,7 @@
 use scrypto::prelude::*;
 
-blueprint! {
+#[blueprint]
+mod bootstrap {
     /// This is a bootstrap struct which creates all of the resources which we need to use to test the NFT marketplace.
     struct Bootstrap {}
 

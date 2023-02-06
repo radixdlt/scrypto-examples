@@ -1,6 +1,7 @@
 use scrypto::prelude::*;
 
-blueprint! {
+#[blueprint]
+mod price_oracle {
     struct PriceOracle {
         /// Last price of each resource pair
         prices: KeyValueStore<(ResourceAddress, ResourceAddress), Decimal>,

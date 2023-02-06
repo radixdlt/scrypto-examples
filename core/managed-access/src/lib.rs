@@ -14,7 +14,8 @@ external_component! {
     }
 }
 
-blueprint! {
+#[blueprint]
+mod managed_access {
     struct ManagedAccess {
         admin_badge: ResourceAddress,
         flat_admin_controller: ComponentAddress,

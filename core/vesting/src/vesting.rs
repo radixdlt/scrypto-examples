@@ -2,7 +2,8 @@ use crate::beneficiary::*;
 use scrypto::prelude::*;
 use scrypto::resource::ProofValidationMode;
 
-blueprint! {
+#[blueprint]
+mod vesting {
     /// The vesting blueprint allows for a vesting schedule to be setup whereby "beneficiaries" are given tokens over a
     /// period of time with a specific cliff and vesting period. The vesting blueprint follows a linear graph to vesting
     /// whereby no tokens are vested between the enrollment and the cliff epoch. Then, from the cliff epoch all the way

@@ -62,7 +62,8 @@ external_component! {
       }
 }
 
-blueprint! {
+#[blueprint]
+mod mutual_farm {
     struct MutualFarm {
         /// Badge for interacting with other components.
         identity_badge: Vault,

@@ -1,6 +1,7 @@
 use scrypto::prelude::*;
 
-blueprint! {
+#[blueprint]
+mod gumball_machine {
     struct GumballMachine {
         gumballs: Vault,
         collected_xrd: Vault,

@@ -1,6 +1,7 @@
 use scrypto::prelude::*;
 
-blueprint! {
+#[blueprint]
+mod dutch_auction {
     /// This blueprint defines the state and logic involved in a dutch auction non-fungible token sale. People who
     /// instantiate components from this blueprint, signify their intent at selling their NFT(s) at a price which
     /// reduces over time.

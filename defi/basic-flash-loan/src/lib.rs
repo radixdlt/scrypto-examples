@@ -5,7 +5,8 @@ pub struct LoanDue {
     pub amount_due: Decimal,
 }
 
-blueprint! {
+#[blueprint]
+mod basic_flash_loan {
     struct BasicFlashLoan {
         loan_vault: Vault,
         auth_vault: Vault,

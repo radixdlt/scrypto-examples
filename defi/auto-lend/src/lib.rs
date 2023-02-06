@@ -12,7 +12,8 @@ use std::ops::Deref;
 // * Interest dynamic adjustment strategy
 // * Upgradability
 
-blueprint! {
+#[blueprint]
+mod auto_lend {
     struct AutoLend {
         /// The liquidity pool
         liquidity_pool: Vault,

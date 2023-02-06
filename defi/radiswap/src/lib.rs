@@ -1,6 +1,7 @@
 use scrypto::prelude::*;
 
-blueprint! {
+#[blueprint]
+mod radiswap {
     struct Radiswap {
         /// The resource address of LP token.
         lp_resource_address: ResourceAddress,

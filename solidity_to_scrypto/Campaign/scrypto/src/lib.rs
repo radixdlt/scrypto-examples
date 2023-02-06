@@ -31,7 +31,8 @@ struct Request {
     approvals: BTreeSet<NonFungibleId>  
 }
 
-blueprint! {
+#[blueprint]
+mod campaign {
     struct Campaign {
         // This vault will contain the badge allowed to mint more member NFTs
         // ** What is a badge: https://docs.radixdlt.com/main/scrypto/scrypto-lang/access-control/access-introduction.html#_what_is_a_badge

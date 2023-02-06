@@ -1,7 +1,8 @@
 use sbor::*;
 use scrypto::prelude::*;
 
-blueprint! {
+#[blueprint]
+mod clearing_house {
     struct ClearingHouse {
         /// All traders' positions
         trader_positions: KeyValueStore<ResourceAddress, Vec<Position>>,

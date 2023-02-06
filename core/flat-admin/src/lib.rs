@@ -1,6 +1,7 @@
 use scrypto::prelude::*;
 
-blueprint! {
+#[blueprint]
+mod flat_admin {
     struct FlatAdmin {
         admin_mint_badge: Vault,
         admin_badge: ResourceAddress,

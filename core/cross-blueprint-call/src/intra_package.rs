@@ -1,7 +1,8 @@
 use crate::airdrop::*;
 use scrypto::prelude::*;
 
-blueprint! {
+#[blueprint]
+mod proxy2 {
     struct Proxy2 {
         airdrop: AirdropComponent,
     }

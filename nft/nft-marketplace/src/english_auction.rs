@@ -1,6 +1,7 @@
 use scrypto::prelude::*;
 
-blueprint! {
+#[blueprint]
+mod english_auction {
     /// This blueprint defines the state and logic involved in a english auction non-fungible token sale. People who
     /// instantiate components from this blueprint, signify their intent at selling their NFT(s) to the highest bidder
     /// within a specific time period.

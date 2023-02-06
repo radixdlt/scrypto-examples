@@ -1,6 +1,7 @@
 use scrypto::prelude::*;
 
-blueprint! {
+#[blueprint]
+mod fixed_price_sale {
     /// This blueprint defines the state and logic involved in a fixed-price non-fungible token sale. People who
     /// instantiate components from this blueprint, signify their intent at selling their NFT(s) at a fixed price of
     /// their choosing and for a token of their choosing.

@@ -6,7 +6,8 @@ use scrypto::prelude::*;
 // Blueprint + Core Logic
 // =======================
 
-blueprint! {
+#[blueprint]
+mod limited_withdraw_vault {
     /// This struct defines the fields of a store of funds which can be controlled by one or more entities which allows
     /// other entities (called withdraw authorities in this context) to withdraw funds from the component within their
     /// allowable limits which may be finite or infinite.
@@ -319,7 +320,6 @@ blueprint! {
         ///
         /// * `Bucket` - A bucket of the withdrawn tokens.
         pub fn withdraw(&mut self, withdraw_amount: Decimal, proofs: Vec<Proof>) -> Bucket {
-            
             // Getting the limits which are valid for the proofs that we currently have
             let valid_limits: HashMap<AccessRule, (WithdrawLimit, Decimal)> = self
                 .withdraw_information

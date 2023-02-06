@@ -1,6 +1,7 @@
 use scrypto::prelude::*;
 
-blueprint! {
+#[blueprint]
+mod resource_creation {
     struct ResourceCreation {
         vaults: KeyValueStore<ResourceAddress, Vault>,
         all_auth_resources: Vec<ResourceAddress>,

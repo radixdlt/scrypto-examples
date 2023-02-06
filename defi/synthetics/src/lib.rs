@@ -13,7 +13,8 @@ external_component! {
 // - Liquidation
 // - Authorization through badge
 
-blueprint! {
+#[blueprint]
+mod synthetic_pool {
     struct SyntheticPool {
         /// The price oracle
         oracle_address: ComponentAddress,

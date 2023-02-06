@@ -4,7 +4,8 @@ use scrypto::prelude::*;
 // hold 1000 FreeToken within a vault. When the `free_token` method is called, 1 FreeToken will be
 // taken from the vault and returned to the caller.
 
-blueprint! {
+#[blueprint]
+mod airdrop {
     struct Airdrop {
         tokens: Vault,
     }

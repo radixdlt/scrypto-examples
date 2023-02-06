@@ -12,7 +12,8 @@ external_component! {
     }
 }
 
-blueprint! {
+#[blueprint]
+mod proxy1 {
     struct Proxy1 {
         airdrop: ComponentAddress,
     }

@@ -26,7 +26,8 @@ pub struct MagicCard {
     level: u8,
 }
 
-blueprint! {
+#[blueprint]
+mod hello_nft {
     struct HelloNft {
         /// A vault that holds all our special cards
         special_cards: Vault,

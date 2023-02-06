@@ -6,7 +6,8 @@ pub struct Ticket {
     pub column: u32,
 }
 
-blueprint! {
+#[blueprint]
+mod hello_nft {
     struct HelloNft {
         /// A vault that holds all available tickets.
         available_tickets: Vault,

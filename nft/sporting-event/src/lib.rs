@@ -24,7 +24,8 @@ pub struct Ticket {
     prediction: Team,
 }
 
-blueprint! {
+#[blueprint]
+mod sporting_event {
     struct SportingEvent {
         tickets: Vault,
         collected_xrd: Vault,

@@ -1,6 +1,7 @@
 use scrypto::prelude::*;
 
-blueprint! {
+#[blueprint]
+mod regulated_token {
     struct RegulatedToken {
         token_supply: Vault,
         internal_authority: Vault,
