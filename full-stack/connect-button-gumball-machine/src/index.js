@@ -1,31 +1,51 @@
-import {
-  configure,
-  requestBuilder,
-  requestItem,
-  ManifestBuilder,
-  Decimal,
-  Bucket,
-  Expression
-} from '@radixdlt/connect-button'
-
-// Configure the connect button
-const connectBtn = configure({
-  dAppId: 'Gumball',
-  networkId: 0x0b,
-  onConnect: ({ setState, getWalletData }) => {
-    getWalletData(
-      requestBuilder(requestItem.oneTimeAccounts.withoutProofOfOwnership(1))
-    ).map(({ oneTimeAccounts }) => {
-      setState({ connected: true, loading: false })
-      document.getElementById('accountAddress').innerText = oneTimeAccounts[0].address
-      accountAddress = oneTimeAccounts[0].address
+// import {
+//   configure,
+//   requestBuilder,
+//   requestItem,
+//   ManifestBuilder,
+//   Decimal,
+//   Bucket,
+//   Expression
+// } from '@radixdlt/connect-button'
+import { RadixDappToolkit } from '@radixdlt/radix-dapp-toolkit'
+const dAppId = 'radixdlt.dashboard.com'
+const rdt = RadixDappToolkit(
+  { dAppDefinitionAddress: dAppId, dAppName: 'GumballMachine' },
+  // 'radixdlt.dashboard.com',
+  (requestData) => {
+    console.log('requesting account data')
+    requestData({
+      accounts: { quantifier: 'atLeast', quantity: 1 },
+    }).map(({ data: { accounts } }) => {
+      // add accounts to dApp application state
+      console.log("account data: ", accounts)
+      // setState({ connected: true, loading: false })
+      // document.getElementById('accountAddress').innerText = data.accounts
+      // accountAddress = data.accounts
     })
   },
-  onDisconnect: ({ setState }) => {
-    setState({ connected: false })
-  },
-})
-console.log("connectBtn: ", connectBtn)
+  { networkId: 34 }
+)
+console.log("dApp Toolkit: ", rdt)
+
+// // Configure the connect button
+// const connectBtn = configure({
+//   dAppId: 'Gumball',
+//   networkId: 0x0b,
+//   onConnect: ({ setState, getWalletData }) => {
+//     getWalletData(
+//       requestBuilder(requestItem.oneTimeAccounts.withoutProofOfOwnership(1))
+//     ).map(({ oneTimeAccounts }) => {
+//       setState({ connected: true, loading: false })
+//       document.getElementById('accountAddress').innerText = oneTimeAccounts[0].address
+//       accountAddress = oneTimeAccounts[0].address
+//     })
+//   },
+//   onDisconnect: ({ setState }) => {
+//     setState({ connected: false })
+//   },
+// })
+// console.log("connectBtn: ", connectBtn)
 
 // There are four classes exported in the Gateway-SDK These serve as a thin wrapper around the gateway API
 // API docs are available @ https://betanet-gateway.redoc.ly/
@@ -56,7 +76,7 @@ document.getElementById('instantiateComponent').onclick = async function () {
     .toString();
   console.log("Instantiate Manifest: ", manifest)
   // Send manifest to extension for signing
-  const result = await connectBtn
+  const result = await rdt
     .sendTransaction({
       transactionManifest: manifest,
       version: 1,
@@ -107,7 +127,7 @@ document.getElementById('buyGumball').onclick = async function () {
   console.log('buy_gumball manifest: ', manifest)
 
   // Send manifest to extension for signing
-  const result = await connectBtn
+  const result = await rdt
     .sendTransaction({
       transactionManifest: manifest,
       version: 1,
