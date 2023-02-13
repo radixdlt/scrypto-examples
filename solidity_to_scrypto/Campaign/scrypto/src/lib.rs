@@ -19,10 +19,10 @@ struct MemberData {
 }
 
 // Define the structure of the requests.
-// The `scrypto(TypeId, Encode, Decode, Describe)` makes this structure
+// The `scrypto(TypeId, ScryptoEncode, ScryptoDecode, LegacyDescribe)` makes this structure
 // compatible with the Radix network so that we can store instantiations 
 // of it in the component's state
-#[scrypto(TypeId, Encode, Decode, Describe)]
+#[scrypto(TypeId, ScryptoEncode, ScryptoDecode, LegacyDescribe)]
 struct Request {
     description: String,
     amount: Decimal,
@@ -55,22 +55,22 @@ mod campaign {
             // This will be stored in the component's `member_minting_authority` vault.
             let member_badge_minter_authority = ResourceBuilder::new_fungible()
                 .divisibility(DIVISIBILITY_NONE)
-                .initial_supply(1);
+                .mint_initial_supply(1);
             
             // Define the ID of the manager NFT
-            let manager_member_id = NonFungibleId::random();
+            let manager_member_id = NonFungibleLocalId::random();
 
             // Create the resource used to authenticate members.
             // The resource is set as mintable and it is initialized with an initial supply
             // for the manager.
             // For more information please read the "user badge pattern" page: https://docs.radixdlt.com/main/scrypto/design-patterns/user-badge-pattern.html
-            let manager_member_badge = ResourceBuilder::new_non_fungible(NonFungibleIdType::UUID)
+            let manager_member_badge = ResourceBuilder::new_uuid_non_fungible()
                 .metadata("name", "Campaign Member Badge")
                 .metadata("symbol", "CMB")
                 // Read this documentation page to learn more about the resource access control flags:
                 // https://docs.radixdlt.com/main/scrypto/scrypto-lang/access-control/access-resources.html
                 .mintable(rule!(require(member_badge_minter_authority.resource_address())), LOCKED)
-                .initial_supply(vec![
+                .mint_initial_supply(vec![
                     (manager_member_id.clone(), MemberData{ })
                 ]);
             
@@ -110,7 +110,7 @@ mod campaign {
             // That's why we do `.authorize()` here.
             self.member_minting_authority.authorize(|| {
                 borrow_resource_manager!(self.member_badge_address)
-                    .mint_non_fungible(&NonFungibleId::random(), MemberData{ })
+                    .mint_non_fungible(&NonFungibleLocalId::random(), MemberData{ })
             })
         }
 
@@ -139,7 +139,7 @@ mod campaign {
             let member_proof = member_proof.validate_proof(self.member_badge_address).expect("Wrong member badge provided!");
             // Find out the ID of the NFT that the caller sent a proof of
             let non_fungible: NonFungible<MemberData> = member_proof.non_fungible::<MemberData>();
-            let caller_id = non_fungible.id();
+            let caller_id = non_fungible.local_id();
 
             let request = self.requests.get_mut(index).expect("Request not found!");
             assert!(!request.approvals.contains(&caller_id), "You already voted for this proposal!");
@@ -151,7 +151,7 @@ mod campaign {
             // Make sure the caller is the manager
             let member_proof = member_proof.validate_proof(self.member_badge_address).expect("Wrong member badge provided!");
             let non_fungible: NonFungible<MemberData> = member_proof.non_fungible::<MemberData>();
-            let caller_id = non_fungible.id();
+            let caller_id = non_fungible.local_id();
             assert_eq!(*caller_id, self.manager_id, "You are not the manager!");
 
             let mut request = self.requests.get_mut(index).expect("Request not found!");

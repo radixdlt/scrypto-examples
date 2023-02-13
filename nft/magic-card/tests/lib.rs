@@ -1,6 +1,3 @@
-use radix_engine::ledger::*;
-use radix_engine_interface::core::NetworkDefinition;
-use radix_engine_interface::model::FromPublicKey;
 use scrypto::prelude::*;
 use scrypto_unit::*;
 use transaction::builder::ManifestBuilder;
@@ -8,8 +5,7 @@ use transaction::builder::ManifestBuilder;
 #[test]
 fn test_magic_card() {
     // Set up environment.
-    let mut store = TypedInMemorySubstateStore::with_bootstrap();
-    let mut test_runner = TestRunner::new(true, &mut store);
+    let mut test_runner = TestRunner::builder().build();
 
     // Create an account
     let (public_key, _private_key, account_component) = test_runner.new_allocated_account();
@@ -18,7 +14,7 @@ fn test_magic_card() {
     let package_address = test_runner.compile_and_publish(this_package!());
 
     // Test the `instantiate_component` function.
-    let transaction1 = ManifestBuilder::new(&NetworkDefinition::simulator())
+    let transaction1 = ManifestBuilder::new()
         .call_function(
             package_address,
             "HelloNft",
@@ -26,7 +22,7 @@ fn test_magic_card() {
             args!(),
         )
         .build();
-    let receipt1 = test_runner.execute_manifest_ignoring_fee(transaction1, vec![NonFungibleAddress::from_public_key(&public_key)]);
+    let receipt1 = test_runner.execute_manifest_ignoring_fee(transaction1, vec![NonFungibleGlobalId::from_public_key(&public_key)]);
     println!("{:?}\n", receipt1);
     receipt1.expect_commit_success();
 
@@ -35,25 +31,25 @@ fn test_magic_card() {
         .expect_commit()
         .entity_changes
         .new_component_addresses[0];
-    let transaction2 = ManifestBuilder::new(&NetworkDefinition::simulator())
+    let transaction2 = ManifestBuilder::new()
         .withdraw_from_account_by_amount(account_component, dec!("666"), RADIX_TOKEN)
-        .take_from_worktop(RADIX_TOKEN, |builder, bucket_id| {
+        .take_from_worktop(RADIX_TOKEN, |builder, bucket| {
             builder.call_method(
                 component,
                 "buy_special_card",
                 args!(
-                    NonFungibleId::U64(2u64),
-                    Bucket(bucket_id)
+                    NonFungibleLocalId::integer(2u64),
+                    bucket
                 ),
             )
         })
         .call_method(
             account_component,
             "deposit_batch",
-            args!(Expression::entire_worktop()),
+            args!(ManifestExpression::EntireWorktop),
         )
         .build();
-    let receipt2 = test_runner.execute_manifest_ignoring_fee(transaction2, vec![NonFungibleAddress::from_public_key(&public_key)]);
+    let receipt2 = test_runner.execute_manifest_ignoring_fee(transaction2, vec![NonFungibleGlobalId::from_public_key(&public_key)]);
     println!("{:?}\n", receipt2);
     receipt2.expect_commit_success();
 
@@ -62,22 +58,22 @@ fn test_magic_card() {
         .expect_commit()
         .entity_changes
         .new_component_addresses[0];
-    let transaction3 = ManifestBuilder::new(&NetworkDefinition::simulator())
+    let transaction3 = ManifestBuilder::new()
         .withdraw_from_account_by_amount(account_component, dec!("500"), RADIX_TOKEN)
-        .take_from_worktop(RADIX_TOKEN, |builder, bucket_id| {
+        .take_from_worktop(RADIX_TOKEN, |builder, bucket| {
             builder.call_method(
                 component,
                 "buy_random_card",
-                args!(Bucket(bucket_id)),
+                args!(bucket),
             )
         })
         .call_method(
             account_component,
             "deposit_batch",
-            args!(Expression::entire_worktop()),
+            args!(ManifestExpression::EntireWorktop),
         )
         .build();
-    let receipt3 = test_runner.execute_manifest_ignoring_fee(transaction3, vec![NonFungibleAddress::from_public_key(&public_key)]);
+    let receipt3 = test_runner.execute_manifest_ignoring_fee(transaction3, vec![NonFungibleGlobalId::from_public_key(&public_key)]);
     println!("{:?}\n", receipt3);
     receipt3.expect_commit_success();
 }

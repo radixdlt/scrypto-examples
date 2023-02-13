@@ -193,8 +193,7 @@ mod auto_lend {
     }
 }
 
-#[derive(Clone)]
-#[scrypto(Debug, TypeId, Encode, Decode, Describe, PartialEq, Eq)]
+#[derive(Debug, ScryptoCategorize, ScryptoEncode, ScryptoDecode, PartialEq, Eq, Clone, LegacyDescribe)]
 pub struct User {
     /// The user's deposit balance
     pub deposit_balance: Decimal,

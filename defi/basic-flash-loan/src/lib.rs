@@ -27,7 +27,7 @@ mod basic_flash_loan {
                 .initial_supply(1);
 
             // Define a "transient" resource which can never be deposited once created, only burned
-            let address = ResourceBuilder::new_non_fungible(NonFungibleIdType::UUID)
+            let address = ResourceBuilder::new_uuid_non_fungible()
                 .metadata(
                     "name",
                     "Promise token for BasicFlashLoan - must be returned to be burned!",
@@ -72,7 +72,7 @@ mod basic_flash_loan {
             // burn the NFT and allow the TX to complete.
             let loan_terms = self.auth_vault.authorize(|| {
                 borrow_resource_manager!(self.transient_resource_address).mint_non_fungible(
-                    &NonFungibleId::random(),
+                    &NonFungibleLocalId::random(),
                     LoanDue {
                         amount_due: amount_due,
                     },

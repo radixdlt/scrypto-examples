@@ -325,6 +325,7 @@ mod limited_withdraw_vault {
                 .withdraw_information
                 .clone()
                 .into_iter()
+                // NOTE: the `.check()` method do not exist anymore
                 .filter(|(access_rule, _)| access_rule.check(&proofs[..]))
                 .collect::<HashMap<AccessRule, (WithdrawLimit, Decimal)>>();
             info!(
@@ -407,8 +408,7 @@ mod limited_withdraw_vault {
 
 /// An enum which defines the amount of funds that can be withdrawn, typically in relation to some access rule. The
 /// limit can be finite or infinite.
-#[derive(Describe, Debug, Clone, Copy, PartialEq, PartialOrd, Ord, Eq)]
-#[scrypto(TypeId, Encode, Decode)]
+#[derive(ScryptoCategorize, ScryptoEncode, ScryptoDecode, LegacyDescribe, Debug, Clone, Copy, PartialEq, PartialOrd, Ord, Eq)]
 pub enum WithdrawLimit {
     /// A variant which defines a finite withdrawal limit with a given amount of tokens that can be withdrawn.
     Finite(Decimal),

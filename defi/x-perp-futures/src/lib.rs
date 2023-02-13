@@ -138,14 +138,13 @@ mod clearing_house {
     }
 }
 
-#[derive(Debug, Clone, TypeId, Encode, Decode, Describe, PartialEq, Eq)]
+#[derive(Debug, Clone, ScryptoCategorize, ScryptoEncode, ScryptoDecode, LegacyDescribe, PartialEq, Eq)]
 pub enum PositionType {
     Long,
     Short,
 }
 
-#[derive(Debug, Clone, Describe, PartialEq, Eq)]
-#[scrypto(TypeId, Encode, Decode)]
+#[derive(Debug, Clone, LegacyDescribe, PartialEq, Eq, ScryptoEncode, ScryptoDecode, ScryptoCategorize)]
 pub struct Position {
     /// The position type, either long or short
     pub position_type: PositionType,
@@ -157,8 +156,7 @@ pub struct Position {
     pub position_in_base: Decimal,
 }
 
-#[derive(Describe)]
-#[scrypto(TypeId, Encode, Decode)]
+#[derive(LegacyDescribe, ScryptoCategorize, ScryptoEncode, ScryptoDecode)]
 struct AMM {
     /// Supply of base asset
     base_supply: Decimal,

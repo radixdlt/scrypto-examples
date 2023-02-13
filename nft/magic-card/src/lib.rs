@@ -1,7 +1,6 @@
-use sbor::*;
 use scrypto::prelude::*;
 
-#[derive(TypeId, Encode, Decode, Describe)]
+#[derive(ScryptoCategorize, ScryptoEncode, ScryptoDecode, LegacyDescribe)]
 pub enum Color {
     White,
     Blue,
@@ -10,7 +9,7 @@ pub enum Color {
     Green,
 }
 
-#[derive(TypeId, Encode, Decode, Describe)]
+#[derive(ScryptoCategorize, ScryptoEncode, ScryptoDecode, LegacyDescribe)]
 pub enum Rarity {
     Common,
     Uncommon,
@@ -22,7 +21,7 @@ pub enum Rarity {
 pub struct MagicCard {
     color: Color,
     rarity: Rarity,
-    #[scrypto(mutable)]
+    #[mutable]
     level: u8,
 }
 
@@ -32,7 +31,7 @@ mod hello_nft {
         /// A vault that holds all our special cards
         special_cards: Vault,
         /// The price for each special card
-        special_card_prices: HashMap<NonFungibleId, Decimal>,
+        special_card_prices: HashMap<NonFungibleLocalId, Decimal>,
         /// A vault that holds the mint badge
         random_card_mint_badge: Vault,
         /// The resource address of all random cards
@@ -48,11 +47,11 @@ mod hello_nft {
     impl HelloNft {
         pub fn instantiate_component() -> ComponentAddress {
             // Creates a fixed set of NFTs
-            let special_cards_bucket = ResourceBuilder::new_non_fungible(NonFungibleIdType::U64)
+            let special_cards_bucket = ResourceBuilder::new_integer_non_fungible()
                 .metadata("name", "Russ' Magic Card Collection")
                 .initial_supply([
                     (
-                        NonFungibleId::U64(1u64),
+                        IntegerNonFungibleLocalId::new(1u64),
                         MagicCard {
                             color: Color::Black,
                             rarity: Rarity::MythicRare,
@@ -60,7 +59,7 @@ mod hello_nft {
                         },
                     ),
                     (
-                        NonFungibleId::U64(2u64),
+                        IntegerNonFungibleLocalId::new(2u64),
                         MagicCard {
                             color: Color::Green,
                             rarity: Rarity::Rare,
@@ -68,7 +67,7 @@ mod hello_nft {
                         },
                     ),
                     (
-                        NonFungibleId::U64(3u64),
+                        IntegerNonFungibleLocalId::new(3u64),
                         MagicCard {
                             color: Color::Red,
                             rarity: Rarity::Uncommon,
@@ -83,7 +82,7 @@ mod hello_nft {
                 .metadata("name", "Random Cards Mint Badge")
                 .initial_supply(1);
 
-            let random_card_resource_address = ResourceBuilder::new_non_fungible(NonFungibleIdType::U64)
+            let random_card_resource_address = ResourceBuilder::new_integer_non_fungible()
                 .metadata("name", "Random Cards")
                 .mintable(
                     rule!(require(random_card_mint_badge.resource_address())),
@@ -103,9 +102,9 @@ mod hello_nft {
             Self {
                 special_cards: Vault::with_bucket(special_cards_bucket),
                 special_card_prices: HashMap::from([
-                    (NonFungibleId::U64(1u64), 100.into()),
-                    (NonFungibleId::U64(2u64), 200.into()),
-                    (NonFungibleId::U64(3u64), 123.into()),
+                    (NonFungibleLocalId::Integer(1u64.into()), 100.into()),
+                    (NonFungibleLocalId::Integer(2u64.into()), 200.into()),
+                    (NonFungibleLocalId::Integer(3u64.into()), 123.into()),
                 ]),
                 random_card_mint_badge: Vault::with_bucket(random_card_mint_badge),
                 random_card_resource_address,
@@ -119,7 +118,7 @@ mod hello_nft {
 
         pub fn buy_special_card(
             &mut self,
-            key: NonFungibleId,
+            key: NonFungibleLocalId,
             mut payment: Bucket,
         ) -> (Bucket, Bucket) {
             // Take our price out of the payment bucket
@@ -146,7 +145,7 @@ mod hello_nft {
             };
             let nft_bucket = self.random_card_mint_badge.authorize(|| {
                 borrow_resource_manager!(self.random_card_resource_address).mint_non_fungible(
-                    &NonFungibleId::U64(self.random_card_id_counter),
+                    &NonFungibleLocalId::Integer(self.random_card_id_counter.into()),
                     new_card,
                 )
             });
@@ -195,7 +194,7 @@ mod hello_nft {
             // Mint a new one.
             let new_non_fungible_bucket = self.random_card_mint_badge.authorize(|| {
                 borrow_resource_manager!(self.random_card_resource_address).mint_non_fungible(
-                    &NonFungibleId::U64(self.random_card_id_counter),
+                    &NonFungibleLocalId::Integer(self.random_card_id_counter.into()),
                     new_card,
                 )
             });

@@ -3,13 +3,13 @@ use sha2::{Digest, Sha256};
 
 #[derive(NonFungibleData)]
 struct DomainName {
-    #[scrypto(mutable)]
+    #[mutable]
     address: ComponentAddress,
 
-    #[scrypto(mutable)]
+    #[mutable]
     last_valid_epoch: u64,
 
-    #[scrypto(mutable)]
+    #[mutable]
     deposit_amount: Decimal,
 }
 
@@ -46,7 +46,7 @@ mod radix_name_service {
                 .divisibility(DIVISIBILITY_NONE)
                 .initial_supply(dec!("1"));
 
-            let name_resource = ResourceBuilder::new_non_fungible(NonFungibleIdType::Bytes)
+            let name_resource = ResourceBuilder::new_bytes_non_fungible()
                 .metadata("name", "DomainName")
                 .mintable(rule!(require(minter.resource_address())), LOCKED)
                 .burnable(rule!(require(minter.resource_address())), LOCKED)
@@ -90,7 +90,7 @@ mod radix_name_service {
 
             let resource_manager = borrow_resource_manager!(self.name_resource);
             let name_data: DomainName = resource_manager
-                .get_non_fungible_data(&NonFungibleId::Bytes(hash.to_be_bytes().to_vec()));
+                .get_non_fungible_data(&NonFungibleLocalId::Bytes(BytesNonFungibleLocalId::new(hash.to_be_bytes().to_vec()).unwrap()));
 
             name_data.address.to_hex()
         }
@@ -137,7 +137,7 @@ mod radix_name_service {
             let name_nft = self.minter.authorize(|| {
                 let resource_manager = borrow_resource_manager!(self.name_resource);
                 resource_manager.mint_non_fungible(
-                    &NonFungibleId::Bytes(hash.to_be_bytes().to_vec()),
+                    &NonFungibleLocalId::Bytes(BytesNonFungibleLocalId::new(hash.to_be_bytes().to_vec()).unwrap()),
                     name_data,
                 )
             });
@@ -200,7 +200,7 @@ mod radix_name_service {
                 borrow_resource_manager!(self.name_resource);
 
             let non_fungible: NonFungible<DomainName> = name_nft.non_fungible();
-            let id = non_fungible.id();
+            let id = non_fungible.local_id();
 
             let old_name_data = resource_manager.get_non_fungible_data::<DomainName>(&id);
             let new_name_data = DomainName {
@@ -247,7 +247,7 @@ mod radix_name_service {
                 borrow_resource_manager!(self.name_resource);
 
             let non_fungible: NonFungible<DomainName> = name_nft.non_fungible();
-            let id = non_fungible.id();
+            let id = non_fungible.local_id();
 
             let mut name_data = resource_manager.get_non_fungible_data::<DomainName>(&id);
             name_data.last_valid_epoch =

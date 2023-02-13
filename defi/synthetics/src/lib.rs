@@ -270,8 +270,7 @@ mod synthetic_pool {
     }
 }
 
-#[derive(Debug, Clone, Describe, PartialEq, Eq)]
-#[scrypto(TypeId, Encode, Decode)]
+#[derive(Debug, ScryptoCategorize, ScryptoEncode, ScryptoDecode, Clone, LegacyDescribe, PartialEq, Eq)]
 pub struct SyntheticToken {
     /// The symbol of the asset
     asset_symbol: String,
@@ -295,8 +294,7 @@ impl SyntheticToken {
     }
 }
 
-#[derive(Debug, Describe)]
-#[scrypto(TypeId, Encode, Decode)]
+#[derive(Debug, ScryptoCategorize, LegacyDescribe, ScryptoEncode, ScryptoDecode)]
 pub struct User {
     snx: Vault,
     global_debt_share: Vault,

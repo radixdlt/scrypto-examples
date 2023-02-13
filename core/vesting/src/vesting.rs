@@ -1,6 +1,5 @@
-use crate::beneficiary::*;
 use scrypto::prelude::*;
-use scrypto::resource::ProofValidationMode;
+use crate::beneficiary::BeneficiaryVestingSchedule;
 
 #[blueprint]
 mod vesting {
@@ -32,7 +31,7 @@ mod vesting {
     struct Vesting {
         /// A HashMap which maps the non-fungible ids of beneficiaries and the vaults associated with them. Meaning that
         /// each beneficiary has their own vault where their un-vested funds are stored.
-        funds: HashMap<NonFungibleId, Vault>,
+        funds: HashMap<NonFungibleLocalId, Vault>,
 
         /// The beneficiary is given a badge to be able to authenticate them later on and to keep track of the amount of
         /// funds owed to them by the component at a given epoch. The badge given to beneficiaries is a vesting schedule
@@ -104,7 +103,7 @@ mod vesting {
                 .initial_supply(dec!("1"));
 
             // Creating the beneficiary's badge which is used to keep track of their vesting schedule.
-            let beneficiary_vesting_badge: ResourceAddress = ResourceBuilder::new_non_fungible(NonFungibleIdType::U64)
+            let beneficiary_vesting_badge: ResourceAddress = ResourceBuilder::new_integer_non_fungible()
                 .metadata("name", "Beneficiary Badge")
                 .metadata(
                     "description",
@@ -114,7 +113,6 @@ mod vesting {
                     rule!(require(internal_admin_badge.resource_address())),
                     Mutability::LOCKED,
                 )
-                .id_type(NonFungibleIdType::U64)
                 .no_initial_supply();
 
             // Setting up the auth for the vesting component. With v0.4.0 of Scrypto we can now make the authentication
@@ -214,8 +212,8 @@ mod vesting {
 
             // At this point we know that the beneficiary may be added to the vesting component, so we go ahead and mint
             // them a non-fungible token with their vesting schedule
-            let beneficiary_id: NonFungibleId =
-                NonFungibleId::U64((self.funds.len() + self.dead_vaults.len()) as u64 + 1u64);
+            let beneficiary_id: NonFungibleLocalId =
+                NonFungibleLocalId::Integer(((self.funds.len() + self.dead_vaults.len()) as u64 + 1u64).into());
             let beneficiary_badge: Bucket = self.internal_admin_badge.authorize(|| {
                 borrow_resource_manager!(self.beneficiary_vesting_badge).mint_non_fungible(
                     &beneficiary_id,
@@ -250,7 +248,7 @@ mod vesting {
         ///
         /// * `beneficiary_id` (NonFungibleId) - A non-fungible id of the beneficiary's vesting schedule we would like
         /// to terminate.
-        pub fn terminate_beneficiary(&mut self, beneficiary_id: NonFungibleId) -> Bucket {
+        pub fn terminate_beneficiary(&mut self, beneficiary_id: NonFungibleLocalId) -> Bucket {
             // Checking that the given beneficiary id belongs to a valid beneficiary
             assert!(
                 self.funds.contains_key(&beneficiary_id),
@@ -338,11 +336,12 @@ mod vesting {
                 ))
                 .expect("[Withdraw Funds]: Invalid badge resource address or amount");
 
-            let beneficiary_ids: Vec<NonFungibleId> = beneficiary_badge
-                .non_fungible_ids()
+            let beneficiary_ids: Vec<NonFungibleLocalId> = beneficiary_badge
+                .non_fungible_local_ids()
                 .into_iter()
-                .collect::<Vec<NonFungibleId>>();
-            let beneficiary_id: NonFungibleId = beneficiary_ids[0].clone();
+                .collect::<Vec<NonFungibleLocalId>>();
+
+            let beneficiary_id: NonFungibleLocalId = beneficiary_ids[0].clone();
 
             assert!(
                 self.funds.contains_key(&beneficiary_id),

@@ -102,7 +102,7 @@ mod fixed_price_sale {
                     "An ownership badge used to authenticate the owner of the NFT(s).",
                 )
                 .metadata("symbol", "OWNER")
-                .initial_supply(1);
+                .mint_initial_supply(1);
 
             // Setting up the access rules for the component methods such that only the owner of the ownership badge can
             // make calls to the protected methods.
@@ -305,9 +305,9 @@ mod fixed_price_sale {
         /// # Returns:
         ///
         /// * `bool` - A HashMap of the non-fungible-ids of the tokens being sold.
-        pub fn non_fungible_ids(&self) -> HashMap<ResourceAddress, Vec<NonFungibleId>> {
+        pub fn non_fungible_ids(&self) -> HashMap<ResourceAddress, Vec<NonFungibleLocalId>> {
             // Creating the hashmap which we will use to store the resource addresses and the non-fungible-ids.
-            let mut mapping: HashMap<ResourceAddress, Vec<NonFungibleId>> = HashMap::new();
+            let mut mapping: HashMap<ResourceAddress, Vec<NonFungibleLocalId>> = HashMap::new();
 
             // Adding the entires to the mapping
             let resource_addresses: Vec<ResourceAddress> =
@@ -318,9 +318,9 @@ mod fixed_price_sale {
                     self.nft_vaults
                         .get(&resource_address)
                         .unwrap()
-                        .non_fungible_ids()
+                        .non_fungible_local_ids()
                         .into_iter()
-                        .collect::<Vec<NonFungibleId>>(),
+                        .collect::<Vec<NonFungibleLocalId>>(),
                 );
             }
 
@@ -332,9 +332,9 @@ mod fixed_price_sale {
         /// # Returns:
         ///
         /// * `Vec<NonFungibleAddress>` - A Vector of `NonFungibleAddress`es of the NFTs being sold.
-        pub fn non_fungible_addresses(&self) -> Vec<NonFungibleAddress> {
+        pub fn non_fungible_addresses(&self) -> Vec<NonFungibleGlobalId> {
             // Creating the vector which will contain the NonFungibleAddresses of the tokens
-            let mut vec: Vec<NonFungibleAddress> = Vec::new();
+            let mut vec: Vec<NonFungibleGlobalId> = Vec::new();
 
             // Iterate over the items in the hashmap of non-fungible-ids and create the `NonFungibleAddress`es through
             // them
@@ -342,8 +342,8 @@ mod fixed_price_sale {
                 vec.append(
                     &mut non_fungible_ids
                         .iter()
-                        .map(|x| NonFungibleAddress::new(resource_address.clone(), x.clone()))
-                        .collect::<Vec<NonFungibleAddress>>(),
+                        .map(|x| NonFungibleGlobalId::new(resource_address.clone(), x.clone()))
+                        .collect::<Vec<NonFungibleGlobalId>>(),
                 )
             }
 
