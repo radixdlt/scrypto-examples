@@ -14,7 +14,7 @@ use scrypto::prelude::*;
 external_blueprint! {
   PriceOraclePackageTarget {
     fn instantiate_oracle(num_of_admins: u32) -> (Bucket, ComponentAddress);
-    
+
   }
 }
 
@@ -145,15 +145,16 @@ mod mutual_farm {
             let synth_address = synth.resource_address();
 
             debug!("Set up sTESLA/XRD swap pool");
-            let (radiswap_comp, lp_tokens) = RadiswapPackageTarget::at(radiswap_package_address, "Radiswap").instantiate_pool(
-                synth,
-                initial_xrd,
-                dec!("1000000"),
-                "LP".to_owned(),
-                "LP Token".to_owned(),
-                "https://example.com/".to_owned(),
-                "0.003".parse().unwrap(),
-            );
+            let (radiswap_comp, lp_tokens) =
+                RadiswapPackageTarget::at(radiswap_package_address, "Radiswap").instantiate_pool(
+                    synth,
+                    initial_xrd,
+                    dec!("1000000"),
+                    "LP".to_owned(),
+                    "LP Token".to_owned(),
+                    "https://example.com/".to_owned(),
+                    "0.003".parse().unwrap(),
+                );
 
             debug!("Mint initial shares");
             let mutual_farm_share_resource_address = ResourceBuilder::new_fungible()

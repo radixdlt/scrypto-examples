@@ -160,22 +160,21 @@ mod payment_splitter {
             // Creating the shareholder NFT which we will be using as a badge to authenticate shareholders and setting
             // the auth of the shareholder badge such that it can be moved around but can only be minted and burned by
             // the internal admin badge.
-            let shareholder_badge: ResourceAddress =
-                ResourceBuilder::new_uuid_non_fungible()
-                    .metadata("name", "Shareholder Badge")
-                    .metadata(
-                        "description",
-                        "A non-fungible-token used to authenticate shareholders.",
-                    )
-                    .mintable(
-                        rule!(require(internal_admin_badge.resource_address())),
-                        Mutability::LOCKED,
-                    )
-                    .burnable(
-                        rule!(require(internal_admin_badge.resource_address())),
-                        Mutability::LOCKED,
-                    )
-                    .create_with_no_initial_supply();
+            let shareholder_badge: ResourceAddress = ResourceBuilder::new_uuid_non_fungible()
+                .metadata("name", "Shareholder Badge")
+                .metadata(
+                    "description",
+                    "A non-fungible-token used to authenticate shareholders.",
+                )
+                .mintable(
+                    rule!(require(internal_admin_badge.resource_address())),
+                    Mutability::LOCKED,
+                )
+                .burnable(
+                    rule!(require(internal_admin_badge.resource_address())),
+                    Mutability::LOCKED,
+                )
+                .create_with_no_initial_supply();
 
             // Creating the PaymentSplitter component and setting the auth on the methods
             let access_rules: AccessRules = AccessRules::new()

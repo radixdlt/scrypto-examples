@@ -82,15 +82,17 @@ mod dutch_auction {
         ) -> (ComponentAddress, Bucket) {
             // Performing checks to ensure that the creation of the component can go through
             assert!(
-                !non_fungible_tokens
-                    .iter()
-                    .any(
-                        |x| !matches!(borrow_resource_manager!(x.resource_address()).resource_type(), ResourceType::NonFungible{ id_type: _ })
-                    ),
+                !non_fungible_tokens.iter().any(|x| !matches!(
+                    borrow_resource_manager!(x.resource_address()).resource_type(),
+                    ResourceType::NonFungible { id_type: _ }
+                )),
                 "[Instantiation]: Can not perform a sale for fungible tokens."
             );
             assert!(
-                !matches!(borrow_resource_manager!(accepted_payment_token).resource_type(), ResourceType::NonFungible{ id_type: _ }),
+                !matches!(
+                    borrow_resource_manager!(accepted_payment_token).resource_type(),
+                    ResourceType::NonFungible { id_type: _ }
+                ),
                 "[Instantiation]: Only payments of fungible resources are accepted."
             );
             assert!(

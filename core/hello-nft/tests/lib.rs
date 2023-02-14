@@ -27,7 +27,10 @@ fn test_create_additional_admin() {
             args!(ManifestExpression::EntireWorktop),
         )
         .build();
-    let receipt1 = test_runner.execute_manifest_ignoring_fee(manifest1, vec![NonFungibleGlobalId::from_public_key(&public_key)]);
+    let receipt1 = test_runner.execute_manifest_ignoring_fee(
+        manifest1,
+        vec![NonFungibleGlobalId::from_public_key(&public_key)],
+    );
     println!("{:?}\n", receipt1);
     receipt1.expect_commit_success();
 
@@ -39,11 +42,7 @@ fn test_create_additional_admin() {
     let manifest2 = ManifestBuilder::new()
         .withdraw_from_account_by_amount(account_component, dec!("10"), RADIX_TOKEN)
         .take_from_worktop(RADIX_TOKEN, |builder, bucket| {
-            builder.call_method(
-                component,
-                "buy_ticket",
-                args!(bucket),
-            )
+            builder.call_method(component, "buy_ticket", args!(bucket))
         })
         .call_method(
             account_component,
@@ -51,7 +50,10 @@ fn test_create_additional_admin() {
             args!(ManifestExpression::EntireWorktop),
         )
         .build();
-    let receipt2 = test_runner.execute_manifest_ignoring_fee(manifest2, vec![NonFungibleGlobalId::from_public_key(&public_key)]);
+    let receipt2 = test_runner.execute_manifest_ignoring_fee(
+        manifest2,
+        vec![NonFungibleGlobalId::from_public_key(&public_key)],
+    );
     println!("{:?}\n", receipt2);
     receipt2.expect_commit_success();
 }

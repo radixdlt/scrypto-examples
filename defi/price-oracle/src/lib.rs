@@ -20,7 +20,11 @@ mod price_oracle {
                 .mint_initial_supply(num_of_admins);
 
             let rules = AccessRules::new()
-                .method("update_price", rule!(require(badges.resource_address())), AccessRule::DenyAll)
+                .method(
+                    "update_price",
+                    rule!(require(badges.resource_address())),
+                    AccessRule::DenyAll,
+                )
                 .default(rule!(allow_all), AccessRule::DenyAll);
 
             let mut component = Self {

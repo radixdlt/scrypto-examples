@@ -23,13 +23,19 @@ mod managed_access {
     }
 
     impl ManagedAccess {
-        pub fn instantiate_managed_access(flat_admin_package_address: PackageAddress) -> (ComponentAddress, Bucket) {
+        pub fn instantiate_managed_access(
+            flat_admin_package_address: PackageAddress,
+        ) -> (ComponentAddress, Bucket) {
             let (flat_admin_component, admin_badge) =
                 FlatAdminPackageTarget::at(flat_admin_package_address, "FlatAdmin")
-                                        .instantiate_flat_admin("My Managed Access Badge".into());
+                    .instantiate_flat_admin("My Managed Access Badge".into());
 
             let rules = AccessRules::new()
-                .method("withdraw_all", rule!(require(admin_badge.resource_address())), AccessRule::DenyAll)
+                .method(
+                    "withdraw_all",
+                    rule!(require(admin_badge.resource_address())),
+                    AccessRule::DenyAll,
+                )
                 .default(rule!(allow_all), AccessRule::DenyAll);
 
             let mut component = Self {

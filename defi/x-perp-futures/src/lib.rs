@@ -138,13 +138,17 @@ mod clearing_house {
     }
 }
 
-#[derive(Debug, Clone, ScryptoCategorize, ScryptoEncode, ScryptoDecode, LegacyDescribe, PartialEq, Eq)]
+#[derive(
+    Debug, Clone, ScryptoCategorize, ScryptoEncode, ScryptoDecode, LegacyDescribe, PartialEq, Eq,
+)]
 pub enum PositionType {
     Long,
     Short,
 }
 
-#[derive(Debug, Clone, LegacyDescribe, PartialEq, Eq, ScryptoEncode, ScryptoDecode, ScryptoCategorize)]
+#[derive(
+    Debug, Clone, LegacyDescribe, PartialEq, Eq, ScryptoEncode, ScryptoDecode, ScryptoCategorize,
+)]
 pub struct Position {
     /// The position type, either long or short
     pub position_type: PositionType,

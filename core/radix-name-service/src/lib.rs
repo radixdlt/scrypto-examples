@@ -57,12 +57,12 @@ mod radix_name_service {
                 .method(
                     "burn_expired_names",
                     rule!(require(admin_badge.resource_address())),
-                    LOCKED
+                    LOCKED,
                 )
                 .method(
                     "withdraw_fees",
                     rule!(require(admin_badge.resource_address())),
-                    LOCKED
+                    LOCKED,
                 )
                 .default(rule!(allow_all), AccessRule::DenyAll);
 
@@ -89,8 +89,10 @@ mod radix_name_service {
             let hash = Self::hash_name(name);
 
             let resource_manager = borrow_resource_manager!(self.name_resource);
-            let name_data: DomainName = resource_manager
-                .get_non_fungible_data(&NonFungibleLocalId::Bytes(BytesNonFungibleLocalId::new(hash.to_be_bytes().to_vec()).unwrap()));
+            let name_data: DomainName =
+                resource_manager.get_non_fungible_data(&NonFungibleLocalId::Bytes(
+                    BytesNonFungibleLocalId::new(hash.to_be_bytes().to_vec()).unwrap(),
+                ));
 
             name_data.address.to_hex()
         }
@@ -137,7 +139,9 @@ mod radix_name_service {
             let name_nft = self.minter.authorize(|| {
                 let resource_manager = borrow_resource_manager!(self.name_resource);
                 resource_manager.mint_non_fungible(
-                    &NonFungibleLocalId::Bytes(BytesNonFungibleLocalId::new(hash.to_be_bytes().to_vec()).unwrap()),
+                    &NonFungibleLocalId::Bytes(
+                        BytesNonFungibleLocalId::new(hash.to_be_bytes().to_vec()).unwrap(),
+                    ),
                     name_data,
                 )
             });

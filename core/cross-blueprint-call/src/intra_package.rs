@@ -10,7 +10,7 @@ mod proxy2 {
     impl Proxy2 {
         pub fn instantiate_proxy() -> ComponentAddress {
             Self {
-                airdrop: AirdropComponent::instantiate_airdrop_local()
+                airdrop: AirdropComponent::instantiate_airdrop_local(),
             }
             .instantiate()
             .globalize()

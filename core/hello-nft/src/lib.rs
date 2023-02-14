@@ -23,7 +23,10 @@ mod hello_nft {
             let mut tickets: Vec<(StringNonFungibleLocalId, Ticket)> = Vec::new();
             for row in 1..5 {
                 for column in 1..5 {
-                    tickets.push((StringNonFungibleLocalId::new(format!("ticket_{}{}", row, column)).unwrap(), Ticket { row, column }));
+                    tickets.push((
+                        StringNonFungibleLocalId::new(format!("ticket_{}{}", row, column)).unwrap(),
+                        Ticket { row, column },
+                    ));
                 }
             }
 
@@ -60,7 +63,9 @@ mod hello_nft {
             // Take the specific ticket
             let ticket = self
                 .available_tickets
-                .take_non_fungible(&NonFungibleLocalId::UUID(UUIDNonFungibleLocalId::new(id).unwrap()));
+                .take_non_fungible(&NonFungibleLocalId::UUID(
+                    UUIDNonFungibleLocalId::new(id).unwrap(),
+                ));
 
             // Return the ticket and change
             (ticket, payment)

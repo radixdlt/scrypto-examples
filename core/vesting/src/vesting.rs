@@ -1,5 +1,5 @@
-use scrypto::prelude::*;
 use crate::beneficiary::BeneficiaryVestingSchedule;
+use scrypto::prelude::*;
 
 #[blueprint]
 mod vesting {
@@ -123,7 +123,7 @@ mod vesting {
                 .method(
                     "add_beneficiary",
                     rule!(require(admin_badge.resource_address())),
-                    AccessRule::DenyAll
+                    AccessRule::DenyAll,
                 )
                 // Only transactions where a minimum of `min_admins_required_for_multi_admin` admin badges are present
                 // in the auth zone are allowed to make calls to these methods. This makes these methods dynamic as this
@@ -134,7 +134,7 @@ mod vesting {
                         "min_admins_required_for_multi_admin",
                         admin_badge.resource_address()
                     )),
-                    AccessRule::DenyAll
+                    AccessRule::DenyAll,
                 )
                 .method(
                     "add_admin",
@@ -142,7 +142,7 @@ mod vesting {
                         "min_admins_required_for_multi_admin",
                         admin_badge.resource_address()
                     )),
-                    AccessRule::DenyAll
+                    AccessRule::DenyAll,
                 )
                 .method(
                     "disable_termination",
@@ -150,7 +150,7 @@ mod vesting {
                         "min_admins_required_for_multi_admin",
                         admin_badge.resource_address()
                     )),
-                    AccessRule::DenyAll
+                    AccessRule::DenyAll,
                 )
                 // We do not want to handle the authentication of other methods through the auth zone. Instead, we would
                 // like to handle them all on our own.
@@ -202,7 +202,9 @@ mod vesting {
         ) -> Bucket {
             // Performing checks to ensure that the beneficiary may be added.
             match borrow_resource_manager!(funds.resource_address()).resource_type() {
-                ResourceType::NonFungible { id_type: _ } => { panic!("[Add Beneficiary]: Can't vest non-fungible tokens for the beneficiary.") },
+                ResourceType::NonFungible { id_type: _ } => {
+                    panic!("[Add Beneficiary]: Can't vest non-fungible tokens for the beneficiary.")
+                }
                 _ => {}
             }
             assert!(
@@ -212,8 +214,9 @@ mod vesting {
 
             // At this point we know that the beneficiary may be added to the vesting component, so we go ahead and mint
             // them a non-fungible token with their vesting schedule
-            let beneficiary_id: NonFungibleLocalId =
-                NonFungibleLocalId::Integer(((self.funds.len() + self.dead_vaults.len()) as u64 + 1u64).into());
+            let beneficiary_id: NonFungibleLocalId = NonFungibleLocalId::Integer(
+                ((self.funds.len() + self.dead_vaults.len()) as u64 + 1u64).into(),
+            );
             let beneficiary_badge: Bucket = self.internal_admin_badge.authorize(|| {
                 borrow_resource_manager!(self.beneficiary_vesting_badge).mint_non_fungible(
                     &beneficiary_id,

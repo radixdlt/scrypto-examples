@@ -270,7 +270,9 @@ mod synthetic_pool {
     }
 }
 
-#[derive(Debug, ScryptoCategorize, ScryptoEncode, ScryptoDecode, Clone, LegacyDescribe, PartialEq, Eq)]
+#[derive(
+    Debug, ScryptoCategorize, ScryptoEncode, ScryptoDecode, Clone, LegacyDescribe, PartialEq, Eq,
+)]
 pub struct SyntheticToken {
     /// The symbol of the asset
     asset_symbol: String,

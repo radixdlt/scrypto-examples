@@ -13,8 +13,7 @@ mod airdrop {
     impl Airdrop {
         pub fn instantiate_airdrop() -> ComponentAddress {
             // .globalize makes the component accessible globally through a public component address
-            Self::instantiate_airdrop_local()
-                .globalize()
+            Self::instantiate_airdrop_local().globalize()
         }
 
         pub fn instantiate_airdrop_local() -> AirdropComponent {

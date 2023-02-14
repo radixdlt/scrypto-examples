@@ -97,7 +97,10 @@ mod resource_creation {
                     "name",
                     "Mutable supply, mintable by 2-of-3 admins, can not be burned",
                 )
-                .mintable(rule!(require_n_of(2, self.all_auth_resources.clone())), LOCKED)
+                .mintable(
+                    rule!(require_n_of(2, self.all_auth_resources.clone())),
+                    LOCKED,
+                )
                 .mint_initial_supply(105);
             let resource_address_5 = bucket_5.resource_address();
             let vault_5 = Vault::with_bucket(bucket_5);
@@ -108,7 +111,10 @@ mod resource_creation {
         pub fn create_and_mint_as_separate_actions(&mut self) {
             let resource_address = ResourceBuilder::new_fungible()
                 .metadata("name", "Mintable token, any admin able to mint")
-                .mintable(rule!(require_any_of(self.all_auth_resources.clone())), LOCKED)
+                .mintable(
+                    rule!(require_any_of(self.all_auth_resources.clone())),
+                    LOCKED,
+                )
                 .create_with_no_initial_supply();
 
             let resource_manager: &mut ResourceManager = borrow_resource_manager!(resource_address);
@@ -160,7 +166,8 @@ mod resource_creation {
             let resource_manager: &mut ResourceManager = borrow_resource_manager!(resource_address);
             self.auth_vault_alpha.authorize(|| {
                 resource_manager.set_metadata("name".to_owned(), "An even better name".to_owned());
-                resource_manager.set_metadata("some new key".to_owned(), "Interesting value".to_owned());
+                resource_manager
+                    .set_metadata("some new key".to_owned(), "Interesting value".to_owned());
             });
         }
 

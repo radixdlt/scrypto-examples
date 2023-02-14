@@ -12,7 +12,7 @@ mod flat_admin {
             // Create a badge for internal use which will hold mint/burn authority for the admin badge we will soon create
             let admin_mint_badge = ResourceBuilder::new_fungible()
                 .divisibility(DIVISIBILITY_NONE)
-                .initial_supply(1);
+                .mint_initial_supply(1);
 
             // Create the ResourceManager for a mutable supply admin badge
             let first_admin_badge = ResourceBuilder::new_fungible()
@@ -20,14 +20,18 @@ mod flat_admin {
                 .metadata("name", badge_name)
                 .mintable(rule!(require(admin_mint_badge.resource_address())), LOCKED)
                 .burnable(rule!(require(admin_mint_badge.resource_address())), LOCKED)
-                .initial_supply(1);
+                .mint_initial_supply(1);
 
             // Setting uo the access rules of the component
             let rules: AccessRules = AccessRules::new()
                 // The third parameter here specifies the authority allowed to update the rule.
-                .method("create_additional_admin", rule!(require(first_admin_badge.resource_address())), LOCKED)
+                .method(
+                    "create_additional_admin",
+                    rule!(require(first_admin_badge.resource_address())),
+                    LOCKED,
+                )
                 // The second parameter here specifies the authority allowed to update the rule.
-                .default(AccessRule::AllowAll, AccessRule::DenyAll); 
+                .default(AccessRule::AllowAll, AccessRule::DenyAll);
 
             // Initialize our component, placing the minting authority badge within its vault, where it will remain forever
             let mut component = Self {

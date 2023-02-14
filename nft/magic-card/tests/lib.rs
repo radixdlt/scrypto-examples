@@ -22,7 +22,10 @@ fn test_magic_card() {
             args!(),
         )
         .build();
-    let receipt1 = test_runner.execute_manifest_ignoring_fee(transaction1, vec![NonFungibleGlobalId::from_public_key(&public_key)]);
+    let receipt1 = test_runner.execute_manifest_ignoring_fee(
+        transaction1,
+        vec![NonFungibleGlobalId::from_public_key(&public_key)],
+    );
     println!("{:?}\n", receipt1);
     receipt1.expect_commit_success();
 
@@ -37,10 +40,7 @@ fn test_magic_card() {
             builder.call_method(
                 component,
                 "buy_special_card",
-                args!(
-                    NonFungibleLocalId::integer(2u64),
-                    bucket
-                ),
+                args!(NonFungibleLocalId::integer(2u64), bucket),
             )
         })
         .call_method(
@@ -49,7 +49,10 @@ fn test_magic_card() {
             args!(ManifestExpression::EntireWorktop),
         )
         .build();
-    let receipt2 = test_runner.execute_manifest_ignoring_fee(transaction2, vec![NonFungibleGlobalId::from_public_key(&public_key)]);
+    let receipt2 = test_runner.execute_manifest_ignoring_fee(
+        transaction2,
+        vec![NonFungibleGlobalId::from_public_key(&public_key)],
+    );
     println!("{:?}\n", receipt2);
     receipt2.expect_commit_success();
 
@@ -61,11 +64,7 @@ fn test_magic_card() {
     let transaction3 = ManifestBuilder::new()
         .withdraw_from_account_by_amount(account_component, dec!("500"), RADIX_TOKEN)
         .take_from_worktop(RADIX_TOKEN, |builder, bucket| {
-            builder.call_method(
-                component,
-                "buy_random_card",
-                args!(bucket),
-            )
+            builder.call_method(component, "buy_random_card", args!(bucket))
         })
         .call_method(
             account_component,
@@ -73,7 +72,10 @@ fn test_magic_card() {
             args!(ManifestExpression::EntireWorktop),
         )
         .build();
-    let receipt3 = test_runner.execute_manifest_ignoring_fee(transaction3, vec![NonFungibleGlobalId::from_public_key(&public_key)]);
+    let receipt3 = test_runner.execute_manifest_ignoring_fee(
+        transaction3,
+        vec![NonFungibleGlobalId::from_public_key(&public_key)],
+    );
     println!("{:?}\n", receipt3);
     receipt3.expect_commit_success();
 }

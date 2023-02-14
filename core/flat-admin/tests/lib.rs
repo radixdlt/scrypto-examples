@@ -2,7 +2,6 @@ use scrypto::prelude::*;
 use scrypto_unit::*;
 use transaction::builder::ManifestBuilder;
 
-
 #[test]
 fn test_create_additional_admin() {
     // Set up environment.
@@ -28,7 +27,10 @@ fn test_create_additional_admin() {
             args!(ManifestExpression::EntireWorktop),
         )
         .build();
-    let receipt1 = test_runner.execute_manifest_ignoring_fee(manifest1, vec![NonFungibleGlobalId::from_public_key(&public_key)]);
+    let receipt1 = test_runner.execute_manifest_ignoring_fee(
+        manifest1,
+        vec![NonFungibleGlobalId::from_public_key(&public_key)],
+    );
     println!("{:?}\n", receipt1);
     receipt1.expect_commit_success();
 
@@ -50,7 +52,10 @@ fn test_create_additional_admin() {
             args!(ManifestExpression::EntireWorktop),
         )
         .build();
-    let receipt2 = test_runner.execute_manifest_ignoring_fee(manifest2, vec![NonFungibleGlobalId::from_public_key(&public_key)]);
+    let receipt2 = test_runner.execute_manifest_ignoring_fee(
+        manifest2,
+        vec![NonFungibleGlobalId::from_public_key(&public_key)],
+    );
     println!("{:?}\n", receipt2);
     receipt2.expect_commit_success();
 }
