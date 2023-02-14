@@ -5,7 +5,8 @@ pub struct LoanDue {
     pub amount_due: Decimal,
 }
 
-blueprint! {
+#[blueprint]
+mod basic_flash_loan {
     struct BasicFlashLoan {
         loan_vault: Vault,
         auth_vault: Vault,
@@ -23,10 +24,10 @@ blueprint! {
             let auth_token = ResourceBuilder::new_fungible()
                 .divisibility(DIVISIBILITY_NONE)
                 .metadata("name", "Admin authority for BasicFlashLoan")
-                .initial_supply(1);
+                .mint_initial_supply(1);
 
             // Define a "transient" resource which can never be deposited once created, only burned
-            let address = ResourceBuilder::new_non_fungible(NonFungibleIdType::UUID)
+            let address = ResourceBuilder::new_uuid_non_fungible()
                 .metadata(
                     "name",
                     "Promise token for BasicFlashLoan - must be returned to be burned!",
@@ -34,7 +35,7 @@ blueprint! {
                 .mintable(rule!(require(auth_token.resource_address())), LOCKED)
                 .burnable(rule!(require(auth_token.resource_address())), LOCKED)
                 .restrict_deposit(rule!(deny_all), LOCKED)
-                .no_initial_supply();
+                .create_with_no_initial_supply();
 
             Self {
                 loan_vault: Vault::with_bucket(initial_liquidity),
@@ -71,7 +72,7 @@ blueprint! {
             // burn the NFT and allow the TX to complete.
             let loan_terms = self.auth_vault.authorize(|| {
                 borrow_resource_manager!(self.transient_resource_address).mint_non_fungible(
-                    &NonFungibleId::random(),
+                    &NonFungibleLocalId::random(),
                     LoanDue {
                         amount_due: amount_due,
                     },

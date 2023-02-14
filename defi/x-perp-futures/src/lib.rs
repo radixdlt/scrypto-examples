@@ -1,7 +1,7 @@
-use sbor::*;
 use scrypto::prelude::*;
 
-blueprint! {
+#[blueprint]
+mod clearing_house {
     struct ClearingHouse {
         /// All traders' positions
         trader_positions: KeyValueStore<ResourceAddress, Vec<Position>>,
@@ -109,7 +109,7 @@ blueprint! {
             ResourceBuilder::new_fungible()
                 .divisibility(DIVISIBILITY_NONE)
                 .metadata("name", "xPerpFutures User Badge")
-                .initial_supply(1)
+                .mint_initial_supply(1)
         }
 
         /// Parse user id from proof.
@@ -137,14 +137,17 @@ blueprint! {
     }
 }
 
-#[derive(Debug, Clone, TypeId, Encode, Decode, Describe, PartialEq, Eq)]
+#[derive(
+    Debug, Clone, ScryptoCategorize, ScryptoEncode, ScryptoDecode, LegacyDescribe, PartialEq, Eq,
+)]
 pub enum PositionType {
     Long,
     Short,
 }
 
-#[derive(Debug, Clone, Describe, PartialEq, Eq)]
-#[scrypto(TypeId, Encode, Decode)]
+#[derive(
+    Debug, Clone, LegacyDescribe, PartialEq, Eq, ScryptoEncode, ScryptoDecode, ScryptoCategorize,
+)]
 pub struct Position {
     /// The position type, either long or short
     pub position_type: PositionType,
@@ -156,8 +159,7 @@ pub struct Position {
     pub position_in_base: Decimal,
 }
 
-#[derive(Describe)]
-#[scrypto(TypeId, Encode, Decode)]
+#[derive(LegacyDescribe, ScryptoCategorize, ScryptoEncode, ScryptoDecode)]
 struct AMM {
     /// Supply of base asset
     base_supply: Decimal,

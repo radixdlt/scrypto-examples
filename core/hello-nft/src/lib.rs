@@ -6,7 +6,8 @@ pub struct Ticket {
     pub column: u32,
 }
 
-blueprint! {
+#[blueprint]
+mod hello_nft {
     struct HelloNft {
         /// A vault that holds all available tickets.
         available_tickets: Vault,
@@ -19,17 +20,20 @@ blueprint! {
     impl HelloNft {
         pub fn instantiate_hello_nft(price: Decimal) -> ComponentAddress {
             // Prepare ticket NFT data
-            let mut tickets = Vec::new();
+            let mut tickets: Vec<(StringNonFungibleLocalId, Ticket)> = Vec::new();
             for row in 1..5 {
                 for column in 1..5 {
-                    tickets.push((NonFungibleId::random(), Ticket { row, column }));
+                    tickets.push((
+                        StringNonFungibleLocalId::new(format!("ticket_{}{}", row, column)).unwrap(),
+                        Ticket { row, column },
+                    ));
                 }
             }
 
             // Creates a fixed supply of NFTs.
-            let ticket_bucket = ResourceBuilder::new_non_fungible(NonFungibleIdType::UUID)
+            let ticket_bucket = ResourceBuilder::new_string_non_fungible()
                 .metadata("name", "Ticket")
-                .initial_supply(tickets);
+                .mint_initial_supply(tickets);
 
             // Instantiate our component
             Self {
@@ -59,14 +63,16 @@ blueprint! {
             // Take the specific ticket
             let ticket = self
                 .available_tickets
-                .take_non_fungible(&NonFungibleId::UUID(id));
+                .take_non_fungible(&NonFungibleLocalId::UUID(
+                    UUIDNonFungibleLocalId::new(id).unwrap(),
+                ));
 
             // Return the ticket and change
             (ticket, payment)
         }
 
-        pub fn available_ticket_ids(&self) -> BTreeSet<NonFungibleId> {
-            self.available_tickets.non_fungible_ids()
+        pub fn available_ticket_ids(&self) -> BTreeSet<NonFungibleLocalId> {
+            self.available_tickets.non_fungible_local_ids()
         }
     }
 }

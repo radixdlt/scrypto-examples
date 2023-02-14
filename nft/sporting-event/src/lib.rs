@@ -1,13 +1,12 @@
-use sbor::*;
 use scrypto::prelude::*;
 
-#[derive(TypeId, Encode, Decode, Describe, Eq, PartialEq)]
+#[derive(ScryptoSbor, LegacyDescribe, Eq, PartialEq)]
 pub enum Section {
     Field,
     Luxury,
 }
 
-#[derive(TypeId, Encode, Decode, Describe)]
+#[derive(ScryptoSbor, LegacyDescribe)]
 pub enum Team {
     Home,
     Away,
@@ -20,11 +19,12 @@ pub struct Ticket {
     /// If the ticket is for the Luxury section, it will have a specific seat
     seat: Option<String>,
     /// Which team did the buyer predict would win
-    #[scrypto(mutable)]
+    #[mutable]
     prediction: Team,
 }
 
-blueprint! {
+#[blueprint]
+mod sporting_event {
     struct SportingEvent {
         tickets: Vault,
         collected_xrd: Vault,
@@ -40,18 +40,18 @@ blueprint! {
             // We'll start by creating our admin badge which is able to create and modify our NFT
             let my_admin = ResourceBuilder::new_fungible()
                 .divisibility(DIVISIBILITY_NONE)
-                .initial_supply(1);
+                .mint_initial_supply(1);
 
             // Putting the admin badge in the component auth zone as it will be used throughout this function multiple
             // times. After we're done using it, we will take it back and drop the proof
             ComponentAuthZone::push(my_admin.create_proof());
 
             // Create our NFT
-            let my_non_fungible_address = ResourceBuilder::new_non_fungible(NonFungibleIdType::U64)
+            let my_non_fungible_address = ResourceBuilder::new_integer_non_fungible()
                 .metadata("name", "Ticket to the big game")
                 .mintable(rule!(require(my_admin.resource_address())), LOCKED)
                 .updateable_non_fungible_data(rule!(require(my_admin.resource_address())), LOCKED)
-                .no_initial_supply();
+                .create_with_no_initial_supply();
 
             // Currently, Scrypto requires manual assignment of NFT IDs
             let mut ticket_bucket = Bucket::new(my_non_fungible_address);
@@ -70,7 +70,7 @@ blueprint! {
                     };
                     ticket_bucket.put(
                         ticket_resource_manager
-                            .mint_non_fungible(&NonFungibleId::U64(manual_id), ticket),
+                            .mint_non_fungible(&NonFungibleLocalId::integer(manual_id), ticket),
                     );
                     manual_id += 1;
                 }
@@ -86,7 +86,7 @@ blueprint! {
                 };
                 ticket_bucket.put(
                     ticket_resource_manager
-                        .mint_non_fungible(&NonFungibleId::U64(manual_id), ticket),
+                        .mint_non_fungible(&NonFungibleLocalId::integer(manual_id), ticket),
                 );
             }
 
@@ -115,7 +115,7 @@ blueprint! {
             for nft in &nfts {
                 let ticket: Ticket = nft.data();
                 if ticket.section == section && ticket.seat == seat {
-                    return self.tickets.take_non_fungible(&nft.id());
+                    return self.tickets.take_non_fungible(&nft.local_id());
                 }
             }
 

@@ -1,4 +1,3 @@
-use sbor::*;
 use scrypto::prelude::*;
 use std::ops::Deref;
 
@@ -12,7 +11,8 @@ use std::ops::Deref;
 // * Interest dynamic adjustment strategy
 // * Upgradability
 
-blueprint! {
+#[blueprint]
+mod auto_lend {
     struct AutoLend {
         /// The liquidity pool
         liquidity_pool: Vault,
@@ -54,7 +54,7 @@ blueprint! {
             ResourceBuilder::new_fungible()
                 .divisibility(DIVISIBILITY_NONE)
                 .metadata("name", "AutoLend User Badge")
-                .initial_supply(1)
+                .mint_initial_supply(1)
         }
 
         /// Deposits into the liquidity pool and start earning interest.
@@ -192,8 +192,9 @@ blueprint! {
     }
 }
 
-#[derive(Clone)]
-#[scrypto(Debug, TypeId, Encode, Decode, Describe, PartialEq, Eq)]
+#[derive(
+    Debug, ScryptoCategorize, ScryptoEncode, ScryptoDecode, PartialEq, Eq, Clone, LegacyDescribe,
+)]
 pub struct User {
     /// The user's deposit balance
     pub deposit_balance: Decimal,

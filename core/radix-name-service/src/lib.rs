@@ -3,13 +3,13 @@ use sha2::{Digest, Sha256};
 
 #[derive(NonFungibleData)]
 struct DomainName {
-    #[scrypto(mutable)]
+    #[mutable]
     address: ComponentAddress,
 
-    #[scrypto(mutable)]
+    #[mutable]
     last_valid_epoch: u64,
 
-    #[scrypto(mutable)]
+    #[mutable]
     deposit_amount: Decimal,
 }
 
@@ -17,7 +17,8 @@ struct DomainName {
 // This is a very rough estimate, of course
 const EPOCHS_PER_YEAR: u64 = 15_000;
 
-blueprint! {
+#[blueprint]
+mod radix_name_service {
 
     struct RadixNameService {
         admin_badge: ResourceAddress,
@@ -39,29 +40,29 @@ blueprint! {
         ) -> (ComponentAddress, Bucket) {
             let admin_badge = ResourceBuilder::new_fungible()
                 .divisibility(DIVISIBILITY_NONE)
-                .initial_supply(dec!("1"));
+                .mint_initial_supply(dec!("1"));
 
             let minter = ResourceBuilder::new_fungible()
                 .divisibility(DIVISIBILITY_NONE)
-                .initial_supply(dec!("1"));
+                .mint_initial_supply(dec!("1"));
 
-            let name_resource = ResourceBuilder::new_non_fungible(NonFungibleIdType::Bytes)
+            let name_resource = ResourceBuilder::new_bytes_non_fungible()
                 .metadata("name", "DomainName")
                 .mintable(rule!(require(minter.resource_address())), LOCKED)
                 .burnable(rule!(require(minter.resource_address())), LOCKED)
                 .updateable_non_fungible_data(rule!(require(minter.resource_address())), LOCKED)
-                .no_initial_supply();
+                .create_with_no_initial_supply();
 
             let rules = AccessRules::new()
                 .method(
                     "burn_expired_names",
                     rule!(require(admin_badge.resource_address())),
-                    LOCKED
+                    LOCKED,
                 )
                 .method(
                     "withdraw_fees",
                     rule!(require(admin_badge.resource_address())),
-                    LOCKED
+                    LOCKED,
                 )
                 .default(rule!(allow_all), AccessRule::DenyAll);
 
@@ -88,8 +89,10 @@ blueprint! {
             let hash = Self::hash_name(name);
 
             let resource_manager = borrow_resource_manager!(self.name_resource);
-            let name_data: DomainName = resource_manager
-                .get_non_fungible_data(&NonFungibleId::Bytes(hash.to_be_bytes().to_vec()));
+            let name_data: DomainName =
+                resource_manager.get_non_fungible_data(&NonFungibleLocalId::Bytes(
+                    BytesNonFungibleLocalId::new(hash.to_be_bytes().to_vec()).unwrap(),
+                ));
 
             name_data.address.to_hex()
         }
@@ -136,7 +139,9 @@ blueprint! {
             let name_nft = self.minter.authorize(|| {
                 let resource_manager = borrow_resource_manager!(self.name_resource);
                 resource_manager.mint_non_fungible(
-                    &NonFungibleId::Bytes(hash.to_be_bytes().to_vec()),
+                    &NonFungibleLocalId::Bytes(
+                        BytesNonFungibleLocalId::new(hash.to_be_bytes().to_vec()).unwrap(),
+                    ),
                     name_data,
                 )
             });
@@ -199,7 +204,7 @@ blueprint! {
                 borrow_resource_manager!(self.name_resource);
 
             let non_fungible: NonFungible<DomainName> = name_nft.non_fungible();
-            let id = non_fungible.id();
+            let id = non_fungible.local_id();
 
             let old_name_data = resource_manager.get_non_fungible_data::<DomainName>(&id);
             let new_name_data = DomainName {
@@ -246,7 +251,7 @@ blueprint! {
                 borrow_resource_manager!(self.name_resource);
 
             let non_fungible: NonFungible<DomainName> = name_nft.non_fungible();
-            let id = non_fungible.id();
+            let id = non_fungible.local_id();
 
             let mut name_data = resource_manager.get_non_fungible_data::<DomainName>(&id);
             name_data.last_valid_epoch =

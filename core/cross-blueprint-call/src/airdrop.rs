@@ -4,7 +4,8 @@ use scrypto::prelude::*;
 // hold 1000 FreeToken within a vault. When the `free_token` method is called, 1 FreeToken will be
 // taken from the vault and returned to the caller.
 
-blueprint! {
+#[blueprint]
+mod airdrop {
     struct Airdrop {
         tokens: Vault,
     }
@@ -12,8 +13,7 @@ blueprint! {
     impl Airdrop {
         pub fn instantiate_airdrop() -> ComponentAddress {
             // .globalize makes the component accessible globally through a public component address
-            Self::instantiate_airdrop_local()
-                .globalize()
+            Self::instantiate_airdrop_local().globalize()
         }
 
         pub fn instantiate_airdrop_local() -> AirdropComponent {
@@ -26,7 +26,7 @@ blueprint! {
                     ResourceBuilder::new_fungible()
                         .divisibility(DIVISIBILITY_MAXIMUM)
                         .metadata("name", "FreeToken")
-                        .initial_supply(1000),
+                        .mint_initial_supply(1000),
                 ),
             }
             .instantiate()
