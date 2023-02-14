@@ -1,4 +1,3 @@
-use sbor::*;
 use scrypto::prelude::*;
 
 external_component! {

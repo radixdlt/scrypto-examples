@@ -1,4 +1,3 @@
-use sbor::*;
 use scrypto::prelude::*;
 
 #[derive(ScryptoSbor, LegacyDescribe, Eq, PartialEq)]

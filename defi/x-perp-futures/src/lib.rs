@@ -1,4 +1,3 @@
-use sbor::*;
 use scrypto::prelude::*;
 
 #[blueprint]

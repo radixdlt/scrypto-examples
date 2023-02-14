@@ -124,21 +124,21 @@ resim call-function <PACKAGE_ADDRESS> HelloNft instantiate_component
 ```
 4. Call the `buy_random_card` method of the component we just instantiated
 ```
-resim call-method <COMPONENT_ADDRESS> buy_random_card "1000,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag"
+resim call-method <COMPONENT_ADDRESS> buy_random_card "1000,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqz8qety"
 ```
-4. Call the `buy_random_card` method again
+5. Call the `buy_random_card` method again
 ```
-resim call-method <COMPONENT_ADDRESS> buy_random_card "1000,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag"
+resim call-method <COMPONENT_ADDRESS> buy_random_card "1000,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqz8qety"
 ```
-5. Check out our balance
+6. Check out our balance
 ```
 resim show <ACCOUNT_ADDRESS>
 ```
-6. Fuse our random cards
+7. Fuse our random cards
 ```
 resim call-method <COMPONENT_ADDRESS> fuse_my_cards "#0000000000000000,#0000000000000001,<CARDS_RESOURCE_ADDRESS>"
 ```
-7. Check out our balance again and we should see a upgraded card
+8. Check out our balance again and we should see a upgraded card
 ```
 resim show <ACCOUNT_ADDRESS>
 ```
