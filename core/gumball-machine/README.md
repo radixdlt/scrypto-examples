@@ -29,7 +29,7 @@ let bucket_of_gumballs = ResourceBuilder::new_fungible()
   .metadata("name", "Gumball")
   .metadata("symbol", "GUM")
   .metadata("description", "A delicious gumball")
-  .initial_supply(100);
+  .mint_initial_supply(100);
 ```
 
 All that's left is to populate our `GumballMachine` struct with our supply of gumballs, the user-specified price, and an empty Vault which we will force to contain XRD.  Then we'll instantiate it, which returns the address, and we'll return that to the caller.

@@ -40,18 +40,18 @@ mod radix_name_service {
         ) -> (ComponentAddress, Bucket) {
             let admin_badge = ResourceBuilder::new_fungible()
                 .divisibility(DIVISIBILITY_NONE)
-                .initial_supply(dec!("1"));
+                .mint_initial_supply(dec!("1"));
 
             let minter = ResourceBuilder::new_fungible()
                 .divisibility(DIVISIBILITY_NONE)
-                .initial_supply(dec!("1"));
+                .mint_initial_supply(dec!("1"));
 
             let name_resource = ResourceBuilder::new_bytes_non_fungible()
                 .metadata("name", "DomainName")
                 .mintable(rule!(require(minter.resource_address())), LOCKED)
                 .burnable(rule!(require(minter.resource_address())), LOCKED)
                 .updateable_non_fungible_data(rule!(require(minter.resource_address())), LOCKED)
-                .no_initial_supply();
+                .create_with_no_initial_supply();
 
             let rules = AccessRules::new()
                 .method(

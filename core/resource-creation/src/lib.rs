@@ -39,7 +39,7 @@ mod resource_creation {
             ResourceBuilder::new_fungible()
                 .metadata("name", format!("{} authority token", name))
                 .divisibility(DIVISIBILITY_NONE)
-                .initial_supply(1)
+                .mint_initial_supply(1)
         }
 
         /// Examples of creating very basic fungibles
@@ -49,7 +49,7 @@ mod resource_creation {
 
             let bucket_1 = ResourceBuilder::new_fungible()
                 .metadata("name", "Fixed supply")
-                .initial_supply(101);
+                .mint_initial_supply(101);
             let resource_address_1 = bucket_1.resource_address();
             let vault_1 = Vault::with_bucket(bucket_1);
             self.vaults.insert(resource_address_1, vault_1);
@@ -57,7 +57,7 @@ mod resource_creation {
             let bucket_2 = ResourceBuilder::new_fungible()
                 .metadata("name", "Fixed supply, indivisible")
                 .divisibility(DIVISIBILITY_NONE)
-                .initial_supply(102);
+                .mint_initial_supply(102);
             let resource_address_2 = bucket_2.resource_address();
             let vault_2 = Vault::with_bucket(bucket_2);
             self.vaults.insert(resource_address_2, vault_2);
@@ -72,7 +72,7 @@ mod resource_creation {
                     rule!(require(self.auth_vault_alpha.resource_address())),
                     LOCKED,
                 )
-                .initial_supply(103);
+                .mint_initial_supply(103);
             let resource_address_3 = bucket_3.resource_address();
             let vault_3 = Vault::with_bucket(bucket_3);
             self.vaults.insert(resource_address_3, vault_3);
@@ -87,7 +87,7 @@ mod resource_creation {
                     LOCKED,
                 )
                 .burnable(rule!(allow_all), LOCKED)
-                .initial_supply(104);
+                .mint_initial_supply(104);
             let resource_address_4 = bucket_4.resource_address();
             let vault_4 = Vault::with_bucket(bucket_4);
             self.vaults.insert(resource_address_4, vault_4);
@@ -98,7 +98,7 @@ mod resource_creation {
                     "Mutable supply, mintable by 2-of-3 admins, can not be burned",
                 )
                 .mintable(rule!(require_n_of(2, self.all_auth_resources.clone())), LOCKED)
-                .initial_supply(105);
+                .mint_initial_supply(105);
             let resource_address_5 = bucket_5.resource_address();
             let vault_5 = Vault::with_bucket(bucket_5);
             self.vaults.insert(resource_address_5, vault_5);
@@ -109,7 +109,7 @@ mod resource_creation {
             let resource_address = ResourceBuilder::new_fungible()
                 .metadata("name", "Mintable token, any admin able to mint")
                 .mintable(rule!(require_any_of(self.all_auth_resources.clone())), LOCKED)
-                .no_initial_supply();
+                .create_with_no_initial_supply();
 
             let resource_manager: &mut ResourceManager = borrow_resource_manager!(resource_address);
 
@@ -139,7 +139,7 @@ mod resource_creation {
                     "Token which can not be withdrawn from a vault once stored",
                 )
                 .restrict_withdraw(rule!(deny_all), LOCKED)
-                .initial_supply(1)
+                .mint_initial_supply(1)
         }
 
         /// Create a token with updateable metadata
@@ -150,7 +150,7 @@ mod resource_creation {
                     rule!(require(self.auth_vault_alpha.resource_address())),
                     LOCKED,
                 )
-                .initial_supply(100);
+                .mint_initial_supply(100);
             let resource_address = bucket.resource_address();
             let vault = Vault::with_bucket(bucket);
             self.vaults.insert(resource_address, vault);
@@ -177,7 +177,7 @@ mod resource_creation {
                     rule!(allow_all),
                     MUTABLE(rule!(require(self.auth_vault_alpha.resource_address()))),
                 )
-                .initial_supply(100);
+                .mint_initial_supply(100);
             let resource_address = bucket.resource_address();
             let vault = Vault::with_bucket(bucket);
             self.vaults.insert(resource_address.clone(), vault);

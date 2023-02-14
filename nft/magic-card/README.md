@@ -20,11 +20,11 @@ pub struct MagicCard {
 and pass an array of instances to resource builder:
 
 ```rust
-let special_cards_bucket = ResourceBuilder::new_non_fungible(NonFungibleIdType::U64)
+let special_cards_bucket = ResourceBuilder::new_integer_non_fungible()
     .metadata("name", "Russ' Magic Card Collection")
-    .initial_supply([
+    .mint_initial_supply([
         (
-            NonFungibleId::from_u64(1u64), // The ID of the first NFT, you can also use `Uuid::generate()` to create a random ID
+            NonFungibleLocalId::integer(1u64), // The ID of the first NFT, you can also use `Uuid::generate()` to create a random ID
             MagicCard {
                 color: Color::Black,
                 rarity: Rarity::MythicRare,
@@ -48,14 +48,14 @@ To create NFTs with mutable supply,
 let random_card_mint_badge = ResourceBuilder::new_fungible()
     .divisibility(DIVISIBILITY_NONE)
     .metadata("name", "Random Cards Mint Badge")
-    .initial_supply(1);
+    .mint_initial_supply(1);
 
 let random_card_resource_address = ResourceBuilder::new_non_fungible(NonFungibleIdType::U64)
     .metadata("name", "Random Cards")
     .mintable(rule!(require(random_card_mint_badge.resource_address())), LOCKED)
     .burnable(rule!(require(random_card_mint_badge.resource_address())), LOCKED)
     .updateable_non_fungible_data(rule!(require(random_card_mint_badge.resource_address())), LOCKED)
-    .no_initial_supply();
+    .create_with_no_initial_supply();
 ```
 
 Once the resource is created, we can mint NFTs with the `mint_non_fungible` method:

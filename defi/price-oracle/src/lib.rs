@@ -17,7 +17,7 @@ mod price_oracle {
             let badges = ResourceBuilder::new_fungible()
                 .divisibility(DIVISIBILITY_NONE)
                 .metadata("name", "Price Oracle Admin Badge")
-                .initial_supply(num_of_admins);
+                .mint_initial_supply(num_of_admins);
 
             let rules = AccessRules::new()
                 .method("update_price", rule!(require(badges.resource_address())), AccessRule::DenyAll)

@@ -110,7 +110,7 @@ mod clearing_house {
             ResourceBuilder::new_fungible()
                 .divisibility(DIVISIBILITY_NONE)
                 .metadata("name", "xPerpFutures User Badge")
-                .initial_supply(1)
+                .mint_initial_supply(1)
         }
 
         /// Parse user id from proof.

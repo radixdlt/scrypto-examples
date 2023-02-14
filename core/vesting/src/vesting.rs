@@ -85,7 +85,7 @@ mod vesting {
                     "description",
                     "A badge used by vesting components to ensure mint and burn other badges.",
                 )
-                .initial_supply(dec!("1"));
+                .mint_initial_supply(dec!("1"));
 
             // Creating the admin badge and setting its auth. The admin badge may be burned by the internal admin badge
             // in the caste of the admin giving up their termination rights
@@ -100,7 +100,7 @@ mod vesting {
                     rule!(require(internal_admin_badge.resource_address())),
                     Mutability::LOCKED,
                 )
-                .initial_supply(dec!("1"));
+                .mint_initial_supply(dec!("1"));
 
             // Creating the beneficiary's badge which is used to keep track of their vesting schedule.
             let beneficiary_vesting_badge: ResourceAddress = ResourceBuilder::new_integer_non_fungible()
@@ -113,7 +113,7 @@ mod vesting {
                     rule!(require(internal_admin_badge.resource_address())),
                     Mutability::LOCKED,
                 )
-                .no_initial_supply();
+                .create_with_no_initial_supply();
 
             // Setting up the auth for the vesting component. With v0.4.0 of Scrypto we can now make the authentication
             // and authorization to happen automatically without us needing to care about them. We can use this to

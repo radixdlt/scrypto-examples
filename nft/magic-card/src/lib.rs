@@ -49,7 +49,7 @@ mod hello_nft {
             // Creates a fixed set of NFTs
             let special_cards_bucket = ResourceBuilder::new_integer_non_fungible()
                 .metadata("name", "Russ' Magic Card Collection")
-                .initial_supply([
+                .mint_initial_supply([
                     (
                         IntegerNonFungibleLocalId::new(1u64),
                         MagicCard {
@@ -80,7 +80,7 @@ mod hello_nft {
             let random_card_mint_badge = ResourceBuilder::new_fungible()
                 .divisibility(DIVISIBILITY_NONE)
                 .metadata("name", "Random Cards Mint Badge")
-                .initial_supply(1);
+                .mint_initial_supply(1);
 
             let random_card_resource_address = ResourceBuilder::new_integer_non_fungible()
                 .metadata("name", "Random Cards")
@@ -96,7 +96,7 @@ mod hello_nft {
                     rule!(require(random_card_mint_badge.resource_address())),
                     LOCKED,
                 )
-                .no_initial_supply();
+                .create_with_no_initial_supply();
 
             // Instantiate our component
             Self {

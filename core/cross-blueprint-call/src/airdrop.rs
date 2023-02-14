@@ -27,7 +27,7 @@ mod airdrop {
                     ResourceBuilder::new_fungible()
                         .divisibility(DIVISIBILITY_MAXIMUM)
                         .metadata("name", "FreeToken")
-                        .initial_supply(1000),
+                        .mint_initial_supply(1000),
                 ),
             }
             .instantiate()

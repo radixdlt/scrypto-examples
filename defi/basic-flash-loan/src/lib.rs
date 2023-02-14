@@ -24,7 +24,7 @@ mod basic_flash_loan {
             let auth_token = ResourceBuilder::new_fungible()
                 .divisibility(DIVISIBILITY_NONE)
                 .metadata("name", "Admin authority for BasicFlashLoan")
-                .initial_supply(1);
+                .mint_initial_supply(1);
 
             // Define a "transient" resource which can never be deposited once created, only burned
             let address = ResourceBuilder::new_uuid_non_fungible()
@@ -35,7 +35,7 @@ mod basic_flash_loan {
                 .mintable(rule!(require(auth_token.resource_address())), LOCKED)
                 .burnable(rule!(require(auth_token.resource_address())), LOCKED)
                 .restrict_deposit(rule!(deny_all), LOCKED)
-                .no_initial_supply();
+                .create_with_no_initial_supply();
 
             Self {
                 loan_vault: Vault::with_bucket(initial_liquidity),

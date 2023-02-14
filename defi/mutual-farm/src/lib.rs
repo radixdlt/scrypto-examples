@@ -113,7 +113,7 @@ mod mutual_farm {
             let identity_badge = ResourceBuilder::new_fungible()
                 .divisibility(DIVISIBILITY_NONE)
                 .metadata("name", "ID")
-                .initial_supply(1);
+                .mint_initial_supply(1);
             let identity_badge_address = identity_badge.resource_address();
 
             debug!("Fetch price info from oracle");
@@ -161,7 +161,7 @@ mod mutual_farm {
                 .metadata("name", "MutualFarm share")
                 .mintable(rule!(require(identity_badge_address)), LOCKED)
                 .burnable(rule!(require(identity_badge_address)), LOCKED)
-                .no_initial_supply();
+                .create_with_no_initial_supply();
             let shares = identity_badge.authorize(|| {
                 borrow_resource_manager!(mutual_farm_share_resource_address).mint(initial_shares)
             });

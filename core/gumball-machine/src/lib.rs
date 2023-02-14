@@ -16,7 +16,7 @@ mod gumball_machine {
                 .metadata("name", "Gumball")
                 .metadata("symbol", "GUM")
                 .metadata("description", "A delicious gumball")
-                .initial_supply(100);
+                .mint_initial_supply(100);
 
             // populate a GumballMachine struct and instantiate a new component
             Self {

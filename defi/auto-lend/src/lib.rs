@@ -55,7 +55,7 @@ mod auto_lend {
             ResourceBuilder::new_fungible()
                 .divisibility(DIVISIBILITY_NONE)
                 .metadata("name", "AutoLend User Badge")
-                .initial_supply(1)
+                .mint_initial_supply(1)
         }
 
         /// Deposits into the liquidity pool and start earning interest.

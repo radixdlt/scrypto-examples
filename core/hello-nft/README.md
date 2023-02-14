@@ -43,7 +43,7 @@ Then, the whole vector of NFT data is passed to `ResourceBuilder` as the initial
 ```rust
 let ticket_bucket = ResourceBuilder::new_non_fungible(NonFungibleIdType::UUID)
     .metadata("name", "Ticket")
-    .initial_supply(tickets);
+    .mint_initial_supply(tickets);
 ```
 
 After that, we get a bucket of NFT units stored in `ticket_bucket`.

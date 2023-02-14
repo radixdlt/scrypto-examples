@@ -93,7 +93,7 @@ mod payment_splitter {
                     "description",
                     "This is a PaymentSplitter admin badge used to authenticate the admin.",
                 )
-                .initial_supply(dec!("1"));
+                .mint_initial_supply(dec!("1"));
 
             // Creating the component itself through the `instantiate_custom_access_payment_splitter` function on the
             // blueprint which allows for the creation of payment-splitters which have custom access rules on them
@@ -155,7 +155,7 @@ mod payment_splitter {
                 .divisibility(DIVISIBILITY_NONE)
                 .metadata("name", "Internal Admin Badge")
                 .metadata("description", "An internal admin badge used for internal functionality of the PaymentSplitter.")
-                .initial_supply(dec!("1"));
+                .mint_initial_supply(1);
 
             // Creating the shareholder NFT which we will be using as a badge to authenticate shareholders and setting
             // the auth of the shareholder badge such that it can be moved around but can only be minted and burned by
@@ -175,7 +175,7 @@ mod payment_splitter {
                         rule!(require(internal_admin_badge.resource_address())),
                         Mutability::LOCKED,
                     )
-                    .no_initial_supply();
+                    .create_with_no_initial_supply();
 
             // Creating the PaymentSplitter component and setting the auth on the methods
             let access_rules: AccessRules = AccessRules::new()

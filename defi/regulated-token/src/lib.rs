@@ -18,20 +18,20 @@ mod regulated_token {
                 .divisibility(DIVISIBILITY_NONE)
                 .metadata("name", "RegulatedToken general admin badge")
                 .burnable(rule!(allow_all), LOCKED)
-                .initial_supply(1);
+                .mint_initial_supply(1);
 
             let freeze_admin: Bucket = ResourceBuilder::new_fungible()
                 .divisibility(DIVISIBILITY_NONE)
                 .metadata("name", "RegulatedToken freeze-only badge")
                 .burnable(rule!(allow_all), LOCKED)
-                .initial_supply(1);
+                .mint_initial_supply(1);
 
             // Next we will create a badge we'll hang on to for minting & transfer authority
             let internal_admin: Bucket = ResourceBuilder::new_fungible()
                 .divisibility(DIVISIBILITY_NONE)
                 .metadata("name", "RegulatedToken internal authority badge")
                 .burnable(rule!(allow_all), LOCKED)
-                .initial_supply(1);
+                .mint_initial_supply(1);
 
             // Next we will create our regulated token with an initial fixed supply of 100 and the appropriate permissions
             let access_rule: AccessRule = rule!(
@@ -49,7 +49,7 @@ mod regulated_token {
                 .updateable_metadata(access_rule.clone(), access_rule.clone())
                 .restrict_withdraw(access_rule.clone(), access_rule.clone())
                 .mintable(access_rule.clone(), access_rule.clone())
-                .initial_supply(100);
+                .mint_initial_supply(100);
 
             // Next we need to setup the access rules for the methods of the component
             let access_rules: AccessRules = AccessRules::new()

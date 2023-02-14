@@ -92,7 +92,7 @@ mod limited_withdraw_vault {
                 .metadata("name", "Admin Badge")
                 .metadata("description", "An admin badge which comes as part of the limited withdraw vault and is used for admin operations")
                 .metadata("symbol", "ADMIN")
-                .initial_supply(1);
+                .mint_initial_supply(1);
 
             return (
                 Self::instantiate_custom_limited_withdraw_vault(
