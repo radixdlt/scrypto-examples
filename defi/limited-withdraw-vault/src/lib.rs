@@ -6,7 +6,8 @@ use scrypto::prelude::*;
 // Blueprint + Core Logic
 // =======================
 
-blueprint! {
+#[blueprint]
+mod limited_withdraw_vault {
     /// This struct defines the fields of a store of funds which can be controlled by one or more entities which allows
     /// other entities (called withdraw authorities in this context) to withdraw funds from the component within their
     /// allowable limits which may be finite or infinite.
@@ -91,7 +92,7 @@ blueprint! {
                 .metadata("name", "Admin Badge")
                 .metadata("description", "An admin badge which comes as part of the limited withdraw vault and is used for admin operations")
                 .metadata("symbol", "ADMIN")
-                .initial_supply(1);
+                .mint_initial_supply(1);
 
             return (
                 Self::instantiate_custom_limited_withdraw_vault(
@@ -319,12 +320,12 @@ blueprint! {
         ///
         /// * `Bucket` - A bucket of the withdrawn tokens.
         pub fn withdraw(&mut self, withdraw_amount: Decimal, proofs: Vec<Proof>) -> Bucket {
-            
             // Getting the limits which are valid for the proofs that we currently have
             let valid_limits: HashMap<AccessRule, (WithdrawLimit, Decimal)> = self
                 .withdraw_information
                 .clone()
                 .into_iter()
+                // NOTE: the `.check()` method do not exist anymore
                 .filter(|(access_rule, _)| access_rule.check(&proofs[..]))
                 .collect::<HashMap<AccessRule, (WithdrawLimit, Decimal)>>();
             info!(
@@ -407,8 +408,7 @@ blueprint! {
 
 /// An enum which defines the amount of funds that can be withdrawn, typically in relation to some access rule. The
 /// limit can be finite or infinite.
-#[derive(Describe, Debug, Clone, Copy, PartialEq, PartialOrd, Ord, Eq)]
-#[scrypto(TypeId, Encode, Decode)]
+#[derive(ScryptoCategorize, ScryptoEncode, ScryptoDecode, LegacyDescribe, Debug, Clone, Copy, PartialEq, PartialOrd, Ord, Eq)]
 pub enum WithdrawLimit {
     /// A variant which defines a finite withdrawal limit with a given amount of tokens that can be withdrawn.
     Finite(Decimal),

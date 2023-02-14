@@ -14,7 +14,7 @@ use scrypto::prelude::*;
 external_blueprint! {
   PriceOraclePackageTarget {
     fn instantiate_oracle(num_of_admins: u32) -> (Bucket, ComponentAddress);
-    
+
   }
 }
 
@@ -62,7 +62,8 @@ external_component! {
       }
 }
 
-blueprint! {
+#[blueprint]
+mod mutual_farm {
     struct MutualFarm {
         /// Badge for interacting with other components.
         identity_badge: Vault,
@@ -112,7 +113,7 @@ blueprint! {
             let identity_badge = ResourceBuilder::new_fungible()
                 .divisibility(DIVISIBILITY_NONE)
                 .metadata("name", "ID")
-                .initial_supply(1);
+                .mint_initial_supply(1);
             let identity_badge_address = identity_badge.resource_address();
 
             debug!("Fetch price info from oracle");
@@ -144,15 +145,16 @@ blueprint! {
             let synth_address = synth.resource_address();
 
             debug!("Set up sTESLA/XRD swap pool");
-            let (radiswap_comp, lp_tokens) = RadiswapPackageTarget::at(radiswap_package_address, "Radiswap").instantiate_pool(
-                synth,
-                initial_xrd,
-                dec!("1000000"),
-                "LP".to_owned(),
-                "LP Token".to_owned(),
-                "https://example.com/".to_owned(),
-                "0.003".parse().unwrap(),
-            );
+            let (radiswap_comp, lp_tokens) =
+                RadiswapPackageTarget::at(radiswap_package_address, "Radiswap").instantiate_pool(
+                    synth,
+                    initial_xrd,
+                    dec!("1000000"),
+                    "LP".to_owned(),
+                    "LP Token".to_owned(),
+                    "https://example.com/".to_owned(),
+                    "0.003".parse().unwrap(),
+                );
 
             debug!("Mint initial shares");
             let mutual_farm_share_resource_address = ResourceBuilder::new_fungible()
@@ -160,7 +162,7 @@ blueprint! {
                 .metadata("name", "MutualFarm share")
                 .mintable(rule!(require(identity_badge_address)), LOCKED)
                 .burnable(rule!(require(identity_badge_address)), LOCKED)
-                .no_initial_supply();
+                .create_with_no_initial_supply();
             let shares = identity_badge.authorize(|| {
                 borrow_resource_manager!(mutual_farm_share_resource_address).mint(initial_shares)
             });

@@ -1,8 +1,8 @@
-use crate::beneficiary::*;
+use crate::beneficiary::BeneficiaryVestingSchedule;
 use scrypto::prelude::*;
-use scrypto::resource::ProofValidationMode;
 
-blueprint! {
+#[blueprint]
+mod vesting {
     /// The vesting blueprint allows for a vesting schedule to be setup whereby "beneficiaries" are given tokens over a
     /// period of time with a specific cliff and vesting period. The vesting blueprint follows a linear graph to vesting
     /// whereby no tokens are vested between the enrollment and the cliff epoch. Then, from the cliff epoch all the way
@@ -31,7 +31,7 @@ blueprint! {
     struct Vesting {
         /// A HashMap which maps the non-fungible ids of beneficiaries and the vaults associated with them. Meaning that
         /// each beneficiary has their own vault where their un-vested funds are stored.
-        funds: HashMap<NonFungibleId, Vault>,
+        funds: HashMap<NonFungibleLocalId, Vault>,
 
         /// The beneficiary is given a badge to be able to authenticate them later on and to keep track of the amount of
         /// funds owed to them by the component at a given epoch. The badge given to beneficiaries is a vesting schedule
@@ -85,7 +85,7 @@ blueprint! {
                     "description",
                     "A badge used by vesting components to ensure mint and burn other badges.",
                 )
-                .initial_supply(dec!("1"));
+                .mint_initial_supply(dec!("1"));
 
             // Creating the admin badge and setting its auth. The admin badge may be burned by the internal admin badge
             // in the caste of the admin giving up their termination rights
@@ -100,10 +100,10 @@ blueprint! {
                     rule!(require(internal_admin_badge.resource_address())),
                     Mutability::LOCKED,
                 )
-                .initial_supply(dec!("1"));
+                .mint_initial_supply(dec!("1"));
 
             // Creating the beneficiary's badge which is used to keep track of their vesting schedule.
-            let beneficiary_vesting_badge: ResourceAddress = ResourceBuilder::new_non_fungible(NonFungibleIdType::U64)
+            let beneficiary_vesting_badge: ResourceAddress = ResourceBuilder::new_integer_non_fungible()
                 .metadata("name", "Beneficiary Badge")
                 .metadata(
                     "description",
@@ -113,8 +113,7 @@ blueprint! {
                     rule!(require(internal_admin_badge.resource_address())),
                     Mutability::LOCKED,
                 )
-                .id_type(NonFungibleIdType::U64)
-                .no_initial_supply();
+                .create_with_no_initial_supply();
 
             // Setting up the auth for the vesting component. With v0.4.0 of Scrypto we can now make the authentication
             // and authorization to happen automatically without us needing to care about them. We can use this to
@@ -124,7 +123,7 @@ blueprint! {
                 .method(
                     "add_beneficiary",
                     rule!(require(admin_badge.resource_address())),
-                    AccessRule::DenyAll
+                    AccessRule::DenyAll,
                 )
                 // Only transactions where a minimum of `min_admins_required_for_multi_admin` admin badges are present
                 // in the auth zone are allowed to make calls to these methods. This makes these methods dynamic as this
@@ -135,7 +134,7 @@ blueprint! {
                         "min_admins_required_for_multi_admin",
                         admin_badge.resource_address()
                     )),
-                    AccessRule::DenyAll
+                    AccessRule::DenyAll,
                 )
                 .method(
                     "add_admin",
@@ -143,7 +142,7 @@ blueprint! {
                         "min_admins_required_for_multi_admin",
                         admin_badge.resource_address()
                     )),
-                    AccessRule::DenyAll
+                    AccessRule::DenyAll,
                 )
                 .method(
                     "disable_termination",
@@ -151,7 +150,7 @@ blueprint! {
                         "min_admins_required_for_multi_admin",
                         admin_badge.resource_address()
                     )),
-                    AccessRule::DenyAll
+                    AccessRule::DenyAll,
                 )
                 // We do not want to handle the authentication of other methods through the auth zone. Instead, we would
                 // like to handle them all on our own.
@@ -203,7 +202,9 @@ blueprint! {
         ) -> Bucket {
             // Performing checks to ensure that the beneficiary may be added.
             match borrow_resource_manager!(funds.resource_address()).resource_type() {
-                ResourceType::NonFungible { id_type: _ } => { panic!("[Add Beneficiary]: Can't vest non-fungible tokens for the beneficiary.") },
+                ResourceType::NonFungible { id_type: _ } => {
+                    panic!("[Add Beneficiary]: Can't vest non-fungible tokens for the beneficiary.")
+                }
                 _ => {}
             }
             assert!(
@@ -213,8 +214,9 @@ blueprint! {
 
             // At this point we know that the beneficiary may be added to the vesting component, so we go ahead and mint
             // them a non-fungible token with their vesting schedule
-            let beneficiary_id: NonFungibleId =
-                NonFungibleId::U64((self.funds.len() + self.dead_vaults.len()) as u64 + 1u64);
+            let beneficiary_id: NonFungibleLocalId = NonFungibleLocalId::Integer(
+                ((self.funds.len() + self.dead_vaults.len()) as u64 + 1u64).into(),
+            );
             let beneficiary_badge: Bucket = self.internal_admin_badge.authorize(|| {
                 borrow_resource_manager!(self.beneficiary_vesting_badge).mint_non_fungible(
                     &beneficiary_id,
@@ -249,7 +251,7 @@ blueprint! {
         ///
         /// * `beneficiary_id` (NonFungibleId) - A non-fungible id of the beneficiary's vesting schedule we would like
         /// to terminate.
-        pub fn terminate_beneficiary(&mut self, beneficiary_id: NonFungibleId) -> Bucket {
+        pub fn terminate_beneficiary(&mut self, beneficiary_id: NonFungibleLocalId) -> Bucket {
             // Checking that the given beneficiary id belongs to a valid beneficiary
             assert!(
                 self.funds.contains_key(&beneficiary_id),
@@ -337,11 +339,12 @@ blueprint! {
                 ))
                 .expect("[Withdraw Funds]: Invalid badge resource address or amount");
 
-            let beneficiary_ids: Vec<NonFungibleId> = beneficiary_badge
-                .non_fungible_ids()
+            let beneficiary_ids: Vec<NonFungibleLocalId> = beneficiary_badge
+                .non_fungible_local_ids()
                 .into_iter()
-                .collect::<Vec<NonFungibleId>>();
-            let beneficiary_id: NonFungibleId = beneficiary_ids[0].clone();
+                .collect::<Vec<NonFungibleLocalId>>();
+
+            let beneficiary_id: NonFungibleLocalId = beneficiary_ids[0].clone();
 
             assert!(
                 self.funds.contains_key(&beneficiary_id),

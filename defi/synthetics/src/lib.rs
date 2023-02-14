@@ -1,4 +1,3 @@
-use sbor::*;
 use scrypto::prelude::*;
 
 external_component! {
@@ -13,7 +12,8 @@ external_component! {
 // - Liquidation
 // - Authorization through badge
 
-blueprint! {
+#[blueprint]
+mod synthetic_pool {
     struct SyntheticPool {
         /// The price oracle
         oracle_address: ComponentAddress,
@@ -44,7 +44,7 @@ blueprint! {
             let synthetics_mint_badge = ResourceBuilder::new_fungible()
                 .divisibility(DIVISIBILITY_NONE)
                 .metadata("name", "Synthetics Mint Badge")
-                .initial_supply(dec!("1"));
+                .mint_initial_supply(1);
             let synthetics_global_debt_share_resource_address = ResourceBuilder::new_fungible()
                 .divisibility(DIVISIBILITY_MAXIMUM)
                 .metadata("name", "Synthetics Global Debt")
@@ -56,7 +56,7 @@ blueprint! {
                     rule!(require(synthetics_mint_badge.resource_address())),
                     LOCKED,
                 )
-                .no_initial_supply();
+                .create_with_no_initial_supply();
 
             Self {
                 oracle_address,
@@ -95,7 +95,7 @@ blueprint! {
                     rule!(require(self.synthetics_mint_badge.resource_address())),
                     LOCKED,
                 )
-                .no_initial_supply();
+                .create_with_no_initial_supply();
 
             self.synthetics.insert(
                 asset_symbol.clone(),
@@ -237,7 +237,7 @@ blueprint! {
             ResourceBuilder::new_fungible()
                 .divisibility(DIVISIBILITY_NONE)
                 .metadata("name", "Synthetic Pool User Badge")
-                .initial_supply(1)
+                .mint_initial_supply(1)
         }
 
         /// Parse user id from proof.
@@ -269,8 +269,9 @@ blueprint! {
     }
 }
 
-#[derive(Debug, Clone, Describe, PartialEq, Eq)]
-#[scrypto(TypeId, Encode, Decode)]
+#[derive(
+    Debug, ScryptoCategorize, ScryptoEncode, ScryptoDecode, Clone, LegacyDescribe, PartialEq, Eq,
+)]
 pub struct SyntheticToken {
     /// The symbol of the asset
     asset_symbol: String,
@@ -294,8 +295,7 @@ impl SyntheticToken {
     }
 }
 
-#[derive(Debug, Describe)]
-#[scrypto(TypeId, Encode, Decode)]
+#[derive(Debug, ScryptoCategorize, LegacyDescribe, ScryptoEncode, ScryptoDecode)]
 pub struct User {
     snx: Vault,
     global_debt_share: Vault,

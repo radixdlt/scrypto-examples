@@ -1,6 +1,7 @@
 use scrypto::prelude::*;
 
-blueprint! {
+#[blueprint]
+mod dutch_auction {
     /// This blueprint defines the state and logic involved in a dutch auction non-fungible token sale. People who
     /// instantiate components from this blueprint, signify their intent at selling their NFT(s) at a price which
     /// reduces over time.
@@ -81,15 +82,17 @@ blueprint! {
         ) -> (ComponentAddress, Bucket) {
             // Performing checks to ensure that the creation of the component can go through
             assert!(
-                !non_fungible_tokens
-                    .iter()
-                    .any(
-                        |x| !matches!(borrow_resource_manager!(x.resource_address()).resource_type(), ResourceType::NonFungible{ id_type: _ })
-                    ),
+                !non_fungible_tokens.iter().any(|x| !matches!(
+                    borrow_resource_manager!(x.resource_address()).resource_type(),
+                    ResourceType::NonFungible { id_type: _ }
+                )),
                 "[Instantiation]: Can not perform a sale for fungible tokens."
             );
             assert!(
-                !matches!(borrow_resource_manager!(accepted_payment_token).resource_type(), ResourceType::NonFungible{ id_type: _ }),
+                !matches!(
+                    borrow_resource_manager!(accepted_payment_token).resource_type(),
+                    ResourceType::NonFungible { id_type: _ }
+                ),
                 "[Instantiation]: Only payments of fungible resources are accepted."
             );
             assert!(
@@ -129,7 +132,7 @@ blueprint! {
                     "An ownership badge used to authenticate the owner of the NFT(s).",
                 )
                 .metadata("symbol", "OWNER")
-                .initial_supply(1);
+                .mint_initial_supply(1);
 
             // Setting up the access rules for the component methods such that only the owner of the ownership badge can
             // make calls to the protected methods.
@@ -322,9 +325,9 @@ blueprint! {
         /// # Returns:
         ///
         /// * `bool` - A HashMap of the non-fungible-ids of the tokens being sold.
-        pub fn non_fungible_ids(&self) -> HashMap<ResourceAddress, Vec<NonFungibleId>> {
+        pub fn non_fungible_ids(&self) -> HashMap<ResourceAddress, Vec<NonFungibleLocalId>> {
             // Creating the hashmap which we will use to store the resource addresses and the non-fungible-ids.
-            let mut mapping: HashMap<ResourceAddress, Vec<NonFungibleId>> = HashMap::new();
+            let mut mapping: HashMap<ResourceAddress, Vec<NonFungibleLocalId>> = HashMap::new();
 
             // Adding the entires to the mapping
             let resource_addresses: Vec<ResourceAddress> =
@@ -335,32 +338,32 @@ blueprint! {
                     self.nft_vaults
                         .get(&resource_address)
                         .unwrap()
-                        .non_fungible_ids()
+                        .non_fungible_local_ids()
                         .into_iter()
-                        .collect::<Vec<NonFungibleId>>(),
+                        .collect::<Vec<NonFungibleLocalId>>(),
                 );
             }
 
             return mapping;
         }
 
-        /// Returns a `NonFungibleAddress` vector of the NFTs being sold.
+        /// Returns a `NonFungibleGlobalId` vector of the NFTs being sold.
         ///
         /// # Returns:
         ///
-        /// * `Vec<NonFungibleAddress>` - A Vector of `NonFungibleAddress`es of the NFTs being sold.
-        pub fn non_fungible_addresses(&self) -> Vec<NonFungibleAddress> {
+        /// * `Vec<NonFungibleGlobalId>` - A Vector of `NonFungibleGlobalId`es of the NFTs being sold.
+        pub fn non_fungible_addresses(&self) -> Vec<NonFungibleGlobalId> {
             // Creating the vector which will contain the NonFungibleAddresses of the tokens
-            let mut vec: Vec<NonFungibleAddress> = Vec::new();
+            let mut vec: Vec<NonFungibleGlobalId> = Vec::new();
 
-            // Iterate over the items in the hashmap of non-fungible-ids and create the `NonFungibleAddress`es through
+            // Iterate over the items in the hashmap of non-fungible-ids and create the `NonFungibleGlobalId`es through
             // them
             for (resource_address, non_fungible_ids) in self.non_fungible_ids().iter() {
                 vec.append(
                     &mut non_fungible_ids
                         .iter()
-                        .map(|x| NonFungibleAddress::new(resource_address.clone(), x.clone()))
-                        .collect::<Vec<NonFungibleAddress>>(),
+                        .map(|x| NonFungibleGlobalId::new(resource_address.clone(), x.clone()))
+                        .collect::<Vec<NonFungibleGlobalId>>(),
                 )
             }
 

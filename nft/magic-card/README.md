@@ -20,11 +20,11 @@ pub struct MagicCard {
 and pass an array of instances to resource builder:
 
 ```rust
-let special_cards_bucket = ResourceBuilder::new_non_fungible(NonFungibleIdType::U64)
+let special_cards_bucket = ResourceBuilder::new_integer_non_fungible()
     .metadata("name", "Russ' Magic Card Collection")
-    .initial_supply([
+    .mint_initial_supply([
         (
-            NonFungibleId::from_u64(1u64), // The ID of the first NFT, you can also use `Uuid::generate()` to create a random ID
+            NonFungibleLocalId::integer(1u64), // The ID of the first NFT, you can also use `Uuid::generate()` to create a random ID
             MagicCard {
                 color: Color::Black,
                 rarity: Rarity::MythicRare,
@@ -48,14 +48,14 @@ To create NFTs with mutable supply,
 let random_card_mint_badge = ResourceBuilder::new_fungible()
     .divisibility(DIVISIBILITY_NONE)
     .metadata("name", "Random Cards Mint Badge")
-    .initial_supply(1);
+    .mint_initial_supply(1);
 
 let random_card_resource_address = ResourceBuilder::new_non_fungible(NonFungibleIdType::U64)
     .metadata("name", "Random Cards")
     .mintable(rule!(require(random_card_mint_badge.resource_address())), LOCKED)
     .burnable(rule!(require(random_card_mint_badge.resource_address())), LOCKED)
     .updateable_non_fungible_data(rule!(require(random_card_mint_badge.resource_address())), LOCKED)
-    .no_initial_supply();
+    .create_with_no_initial_supply();
 ```
 
 Once the resource is created, we can mint NFTs with the `mint_non_fungible` method:
@@ -124,21 +124,21 @@ resim call-function <PACKAGE_ADDRESS> HelloNft instantiate_component
 ```
 4. Call the `buy_random_card` method of the component we just instantiated
 ```
-resim call-method <COMPONENT_ADDRESS> buy_random_card "1000,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag"
+resim call-method <COMPONENT_ADDRESS> buy_random_card "1000,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqz8qety"
 ```
-4. Call the `buy_random_card` method again
+5. Call the `buy_random_card` method again
 ```
-resim call-method <COMPONENT_ADDRESS> buy_random_card "1000,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag"
+resim call-method <COMPONENT_ADDRESS> buy_random_card "1000,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqz8qety"
 ```
-5. Check out our balance
+6. Check out our balance
 ```
 resim show <ACCOUNT_ADDRESS>
 ```
-6. Fuse our random cards
+7. Fuse our random cards
 ```
 resim call-method <COMPONENT_ADDRESS> fuse_my_cards "#0000000000000000,#0000000000000001,<CARDS_RESOURCE_ADDRESS>"
 ```
-7. Check out our balance again and we should see a upgraded card
+8. Check out our balance again and we should see a upgraded card
 ```
 resim show <ACCOUNT_ADDRESS>
 ```

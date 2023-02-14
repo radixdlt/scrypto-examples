@@ -12,7 +12,8 @@ external_component! {
     }
 }
 
-blueprint! {
+#[blueprint]
+mod proxy1 {
     struct Proxy1 {
         airdrop: ComponentAddress,
     }
@@ -22,7 +23,8 @@ blueprint! {
             Self {
                 // The instantiate_airdrop() function returns a generic ComponentAddress which we store to make calls
                 // to the component at a later point.
-                airdrop: AirdropPackageTarget::at(airdrop_package_address, "Airdrop").instantiate_airdrop(),
+                airdrop: AirdropPackageTarget::at(airdrop_package_address, "Airdrop")
+                    .instantiate_airdrop(),
             }
             .instantiate()
             .globalize()

@@ -28,7 +28,7 @@ We'll want our supply of admin badges to be mutable.  Mutable supply resources c
 // Create a badge for internal use which will hold mint/burn authority for the admin badge we will soon create
 let admin_mint_badge = ResourceBuilder::new_fungible()
     .divisibility(DIVISIBILITY_NONE)
-    .initial_supply(1);
+    .mint_initial_supply(1);
 
 // Create the ResourceManager for a mutable supply admin badge.
 let first_admin_badge = ResourceBuilder::new_fungible()
@@ -36,7 +36,7 @@ let first_admin_badge = ResourceBuilder::new_fungible()
     .metadata("name", badge_name)
     .mintable(rule!(require(admin_mint_badge.resource_address())), LOCKED)
     .burnable(rule!(require(admin_mint_badge.resource_address())), LOCKED)
-    .initial_supply(1);
+    .mint_initial_supply(1);
 ```
 
 With that out of the way, we can set the access rules for the component methods and create our component.  We'll tuck our sole minting authority badge safely away within its vault.  Then we'll return the new component and the admin badge.

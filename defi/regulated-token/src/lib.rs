@@ -1,6 +1,7 @@
 use scrypto::prelude::*;
 
-blueprint! {
+#[blueprint]
+mod regulated_token {
     struct RegulatedToken {
         token_supply: Vault,
         internal_authority: Vault,
@@ -17,20 +18,20 @@ blueprint! {
                 .divisibility(DIVISIBILITY_NONE)
                 .metadata("name", "RegulatedToken general admin badge")
                 .burnable(rule!(allow_all), LOCKED)
-                .initial_supply(1);
+                .mint_initial_supply(1);
 
             let freeze_admin: Bucket = ResourceBuilder::new_fungible()
                 .divisibility(DIVISIBILITY_NONE)
                 .metadata("name", "RegulatedToken freeze-only badge")
                 .burnable(rule!(allow_all), LOCKED)
-                .initial_supply(1);
+                .mint_initial_supply(1);
 
             // Next we will create a badge we'll hang on to for minting & transfer authority
             let internal_admin: Bucket = ResourceBuilder::new_fungible()
                 .divisibility(DIVISIBILITY_NONE)
                 .metadata("name", "RegulatedToken internal authority badge")
                 .burnable(rule!(allow_all), LOCKED)
-                .initial_supply(1);
+                .mint_initial_supply(1);
 
             // Next we will create our regulated token with an initial fixed supply of 100 and the appropriate permissions
             let access_rule: AccessRule = rule!(
@@ -48,7 +49,7 @@ blueprint! {
                 .updateable_metadata(access_rule.clone(), access_rule.clone())
                 .restrict_withdraw(access_rule.clone(), access_rule.clone())
                 .mintable(access_rule.clone(), access_rule.clone())
-                .initial_supply(100);
+                .mint_initial_supply(100);
 
             // Next we need to setup the access rules for the methods of the component
             let access_rules: AccessRules = AccessRules::new()
@@ -57,15 +58,18 @@ blueprint! {
                     rule!(
                         require(general_admin.resource_address())
                             || require(freeze_admin.resource_address())
-                    ), AccessRule::DenyAll
+                    ),
+                    AccessRule::DenyAll,
                 )
                 .method(
                     "collect_payments",
-                    rule!(require(general_admin.resource_address())), AccessRule::DenyAll,
+                    rule!(require(general_admin.resource_address())),
+                    AccessRule::DenyAll,
                 )
                 .method(
                     "advance_stage",
-                    rule!(require(general_admin.resource_address())), AccessRule::DenyAll
+                    rule!(require(general_admin.resource_address())),
+                    AccessRule::DenyAll,
                 )
                 .default(rule!(allow_all), AccessRule::DenyAll);
 
@@ -127,7 +131,10 @@ blueprint! {
                 self.current_stage = 2;
 
                 // Update token's metadata to reflect the current stage
-                token_resource_manager.set_metadata("stage".into(), "Stage 2 - Unlimited supply, may be restricted transfer".into());
+                token_resource_manager.set_metadata(
+                    "stage".into(),
+                    "Stage 2 - Unlimited supply, may be restricted transfer".into(),
+                );
 
                 // Enable minting for the token
                 token_resource_manager
@@ -142,9 +149,11 @@ blueprint! {
                 // Restricted transfer will be permanently turned off, supply will be made permanently immutable
                 self.current_stage = 3;
 
-
                 // Update token's metadata to reflect the final stage
-                token_resource_manager.set_metadata("stage".into(), "Stage 3 - Unregulated token, fixed supply".into());
+                token_resource_manager.set_metadata(
+                    "stage".into(),
+                    "Stage 3 - Unregulated token, fixed supply".into(),
+                );
 
                 // Set our behavior appropriately now that the regulated period has ended
                 token_resource_manager.set_mintable(rule!(deny_all));
