@@ -1,10 +1,10 @@
-# The Gumball Machine on Betanet
-This example is meant to guide you through building, deploying and using the [Gumball Machine Scrypto example](https://github.com/radixdlt/scrypto-examples/tree/main/full-stack/wallet-sdk-gumball-machine) using the [Betanet Wallet SDK](https://github.com/radixdlt/wallet-sdk#readme).
+# The Gumball Machine on Betanet V2
+This example is meant to guide you through building, deploying and using the [Gumball Machine Scrypto example](https://github.com/radixdlt/scrypto-examples/tree/main/full-stack/wallet-sdk-gumball-machine) using the [Radix dApp Toolkit](https://github.com/radixdlt/radix-dapp-toolkit#readme)
 
 ## Pre-requisites
 1. Node >= 12.17.0
 2. The Betanet wallet & Radix-connector browser extenstion installed. Instructions [here](https://docs-babylon.radixdlt.com/main/getting-started-developers/wallet-and-connector.html)
-3. Scrypto v0.7.0. Instructions to install [here](https://docs-babylon.radixdlt.com/main/getting-started-developers/first-component/install-scrypto.html) and update [here](https://docs-babylon.radixdlt.com/main/getting-started-developers/first-component/updating-scrypto.html)
+3. Scrypto v0.8.0. Instructions to install [here](https://docs-babylon.radixdlt.com/main/getting-started-developers/first-component/install-scrypto.html) and update [here](https://docs-babylon.radixdlt.com/main/getting-started-developers/first-component/updating-scrypto.html)
 
 ## Building the Scrypto code
 1. Enter the scrypto directory in a terminal: `cd scrypto`
@@ -14,15 +14,15 @@ This example is meant to guide you through building, deploying and using the [Gu
 ## Deploy the package to Betanet
 1. Go to the [Betanet Dashboard Website](https://betanet-dashboard.radixdlt.com/)
 2. Connect the Wallet Via the Connect Button
-3. Choose an account and badge or have one created for you if you don't have one yet using the button below.
+3. Navigate to Deploy Package & choose an account and badge or have one created for you if you don't have one yet using the link below. (Which appears once you have selected an account)
 4. Upload both `gumball_machine.abi` and `gumball_machine.wasm`
 5. Click on "publish package"
-6. The wallet should open up and ask you to submit the transaction
+6. The wallet should open up and ask you to approve the transaction
 7. On the wallet click on "sign transaction"
 8. The deployed package address should get displayed. **You will need it for the next step**.
 
 ## Interacting with our package
-1. In a terminal go back to the root of this project (connect-button-gumball-machine)
+1. In a terminal go back to the root of this project (dapp-toolkit-gumball-machine)
 2. Install the npm dependencies: `npm install`
 3. Start the local server with `npm start`
 4. Open up your browser at the provided url if it doesn't open automatically.

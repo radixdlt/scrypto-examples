@@ -5,18 +5,21 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css">
-  <title>Betanet Wallet SDK Example</title>
+  <title>Betanet-V2 dApp Toolkit Example</title>
 </head>
 
 <body>
   <noscript>You need to enable JavaScript to run this app.</noscript>
   <script type="module" src="/dist/index.js"></script>
-
+  <div class="connectBtn">
+    <radix-connect-button />
+  </div>
   <h1>Gumball Machine</h1>
 
-  <h2>1. Fetch User Account Address</h2>
-  <p><button id="fetchAccountAddress">Connect Wallet</button></p>
   <div class="container">
+    <p>Account Name:
+    <pre id="accountName"></pre>
+    </p>
     <p>Account Address:
     <pre id="accountAddress"></pre>
     </p>

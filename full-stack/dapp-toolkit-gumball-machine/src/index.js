@@ -1,31 +1,30 @@
 import {
-  configure,
-  requestBuilder,
-  requestItem,
+  RadixDappToolkit,
   ManifestBuilder,
   Decimal,
   Bucket,
-  Expression
-} from '@radixdlt/connect-button'
+  Expression,
+  ResourceAddress
+} from '@radixdlt/radix-dapp-toolkit'
+const dAppId = 'account_tdx_22_1prd6gfrqj0avlyxwldgyza09fp7gn4vjmga7clhe9p2qv0qt58'
 
-// Configure the connect button
-const connectBtn = configure({
-  dAppId: 'Gumball',
-  networkId: 0x0b,
-  onConnect: ({ setState, getWalletData }) => {
-    getWalletData(
-      requestBuilder(requestItem.oneTimeAccounts.withoutProofOfOwnership(1))
-    ).map(({ oneTimeAccounts }) => {
-      setState({ connected: true, loading: false })
-      document.getElementById('accountAddress').innerText = oneTimeAccounts[0].address
-      accountAddress = oneTimeAccounts[0].address
+const rdt = RadixDappToolkit(
+  { dAppDefinitionAddress: dAppId, dAppName: 'GumballMachine' },
+  (requestData) => {
+    requestData({
+      accounts: { quantifier: 'atLeast', quantity: 1 },
+    }).map(({ data: { accounts } }) => {
+      // add accounts to dApp application state
+      console.log("account data: ", accounts)
+      document.getElementById('accountName').innerText = accounts[0].label
+      document.getElementById('accountAddress').innerText = accounts[0].address
+      accountAddress = accounts[0].address
     })
   },
-  onDisconnect: ({ setState }) => {
-    setState({ connected: false })
-  },
-})
-console.log("connectBtn: ", connectBtn)
+  { networkId: 11 }
+)
+console.log("dApp Toolkit: ", rdt)
+
 
 // There are four classes exported in the Gateway-SDK These serve as a thin wrapper around the gateway API
 // API docs are available @ https://betanet-gateway.redoc.ly/
@@ -41,9 +40,8 @@ const streamApi = new StreamApi();
 let accountAddress //: string // User account address
 let componentAddress //: string  // GumballMachine component address
 let resourceAddress //: string // GUM resource address
-// You can use this packageAddress to skip the dashboard publishing step package_tdx_b_1qx5a2htahyjygp974tap7d0x7pn8lxl00muz7wjtdhxqe90wfd
-// xrdAddress resource_tdx_b_1qzkcyv5dwq3r6kawy6pxpvcythx8rh8ntum6ws62p95s9hhz9x
-
+// You can use this packageAddress to skip the dashboard publishing step package_tdx_b_1qxtzcuyh8jmcp9khn72k0gs4fp8gjqaz9a8jsmcwmh9qhax345
+let xrdAddress = "resource_tdx_b_1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq8z96qp"
 
 // ************ Instantiate component and fetch component and resource addresses *************
 document.getElementById('instantiateComponent').onclick = async function () {
@@ -51,12 +49,13 @@ document.getElementById('instantiateComponent').onclick = async function () {
   let flavor = document.getElementById("flavor").value;
 
   let manifest = new ManifestBuilder()
+    .callMethod(accountAddress, "create_proof", [ResourceAddress("resource_tdx_b_1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq8z96qp")])
     .callFunction(packageAddress, "GumballMachine", "instantiate_gumball_machine", [Decimal("10"), `"${flavor}"`])
     .build()
     .toString();
   console.log("Instantiate Manifest: ", manifest)
   // Send manifest to extension for signing
-  const result = await connectBtn
+  const result = await rdt
     .sendTransaction({
       transactionManifest: manifest,
       version: 1,
@@ -97,8 +96,8 @@ document.getElementById('instantiateComponent').onclick = async function () {
 document.getElementById('buyGumball').onclick = async function () {
 
   let manifest = new ManifestBuilder()
-    .withdrawFromAccountByAmount(accountAddress, 10, "resource_tdx_b_1qzkcyv5dwq3r6kawy6pxpvcythx8rh8ntum6ws62p95s9hhz9x")
-    .takeFromWorktopByAmount(10, "resource_tdx_b_1qzkcyv5dwq3r6kawy6pxpvcythx8rh8ntum6ws62p95s9hhz9x", "xrd_bucket")
+    .withdrawFromAccountByAmount(accountAddress, 10, "resource_tdx_b_1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq8z96qp")
+    .takeFromWorktopByAmount(10, "resource_tdx_b_1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq8z96qp", "xrd_bucket")
     .callMethod(componentAddress, "buy_gumball", [Bucket("xrd_bucket")])
     .callMethod(accountAddress, "deposit_batch", [Expression("ENTIRE_WORKTOP")])
     .build()
@@ -107,7 +106,7 @@ document.getElementById('buyGumball').onclick = async function () {
   console.log('buy_gumball manifest: ', manifest)
 
   // Send manifest to extension for signing
-  const result = await connectBtn
+  const result = await rdt
     .sendTransaction({
       transactionManifest: manifest,
       version: 1,
