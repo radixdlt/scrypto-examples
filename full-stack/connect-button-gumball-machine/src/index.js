@@ -3,7 +3,8 @@ import {
   ManifestBuilder,
   Decimal,
   Bucket,
-  Expression
+  Expression,
+  ResourceAddress
 } from '@radixdlt/radix-dapp-toolkit'
 const dAppId = 'account_tdx_22_1prd6gfrqj0avlyxwldgyza09fp7gn4vjmga7clhe9p2qv0qt58'
 
@@ -40,8 +41,7 @@ let accountAddress //: string // User account address
 let componentAddress //: string  // GumballMachine component address
 let resourceAddress //: string // GUM resource address
 // You can use this packageAddress to skip the dashboard publishing step package_tdx_b_1qxtzcuyh8jmcp9khn72k0gs4fp8gjqaz9a8jsmcwmh9qhax345
-// xrdAddress resource_tdx_b_1qzkcyv5dwq3r6kawy6pxpvcythx8rh8ntum6ws62p95s9hhz9x
-
+let xrdAddress = "resource_tdx_b_1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq8z96qp"
 
 // ************ Instantiate component and fetch component and resource addresses *************
 document.getElementById('instantiateComponent').onclick = async function () {
@@ -49,6 +49,7 @@ document.getElementById('instantiateComponent').onclick = async function () {
   let flavor = document.getElementById("flavor").value;
 
   let manifest = new ManifestBuilder()
+    .callMethod(accountAddress, "create_proof", [ResourceAddress("resource_tdx_b_1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq8z96qp")])
     .callFunction(packageAddress, "GumballMachine", "instantiate_gumball_machine", [Decimal("10"), `"${flavor}"`])
     .build()
     .toString();
@@ -95,8 +96,8 @@ document.getElementById('instantiateComponent').onclick = async function () {
 document.getElementById('buyGumball').onclick = async function () {
 
   let manifest = new ManifestBuilder()
-    .withdrawFromAccountByAmount(accountAddress, 10, "resource_tdx_b_1qzkcyv5dwq3r6kawy6pxpvcythx8rh8ntum6ws62p95s9hhz9x")
-    .takeFromWorktopByAmount(10, "resource_tdx_b_1qzkcyv5dwq3r6kawy6pxpvcythx8rh8ntum6ws62p95s9hhz9x", "xrd_bucket")
+    .withdrawFromAccountByAmount(accountAddress, 10, "resource_tdx_b_1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq8z96qp")
+    .takeFromWorktopByAmount(10, "resource_tdx_b_1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq8z96qp", "xrd_bucket")
     .callMethod(componentAddress, "buy_gumball", [Bucket("xrd_bucket")])
     .callMethod(accountAddress, "deposit_batch", [Expression("ENTIRE_WORKTOP")])
     .build()
