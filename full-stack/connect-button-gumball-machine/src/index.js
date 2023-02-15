@@ -1,51 +1,29 @@
-// import {
-//   configure,
-//   requestBuilder,
-//   requestItem,
-//   ManifestBuilder,
-//   Decimal,
-//   Bucket,
-//   Expression
-// } from '@radixdlt/connect-button'
-import { RadixDappToolkit } from '@radixdlt/radix-dapp-toolkit'
-const dAppId = 'radixdlt.dashboard.com'
+import {
+  RadixDappToolkit,
+  ManifestBuilder,
+  Decimal,
+  Bucket,
+  Expression
+} from '@radixdlt/radix-dapp-toolkit'
+const dAppId = 'account_tdx_22_1prd6gfrqj0avlyxwldgyza09fp7gn4vjmga7clhe9p2qv0qt58'
+
 const rdt = RadixDappToolkit(
   { dAppDefinitionAddress: dAppId, dAppName: 'GumballMachine' },
-  // 'radixdlt.dashboard.com',
   (requestData) => {
-    console.log('requesting account data')
     requestData({
       accounts: { quantifier: 'atLeast', quantity: 1 },
     }).map(({ data: { accounts } }) => {
       // add accounts to dApp application state
       console.log("account data: ", accounts)
-      // setState({ connected: true, loading: false })
-      // document.getElementById('accountAddress').innerText = data.accounts
-      // accountAddress = data.accounts
+      document.getElementById('accountName').innerText = accounts[0].label
+      document.getElementById('accountAddress').innerText = accounts[0].address
+      accountAddress = accounts[0].address
     })
   },
-  { networkId: 34 }
+  { networkId: 11 }
 )
 console.log("dApp Toolkit: ", rdt)
 
-// // Configure the connect button
-// const connectBtn = configure({
-//   dAppId: 'Gumball',
-//   networkId: 0x0b,
-//   onConnect: ({ setState, getWalletData }) => {
-//     getWalletData(
-//       requestBuilder(requestItem.oneTimeAccounts.withoutProofOfOwnership(1))
-//     ).map(({ oneTimeAccounts }) => {
-//       setState({ connected: true, loading: false })
-//       document.getElementById('accountAddress').innerText = oneTimeAccounts[0].address
-//       accountAddress = oneTimeAccounts[0].address
-//     })
-//   },
-//   onDisconnect: ({ setState }) => {
-//     setState({ connected: false })
-//   },
-// })
-// console.log("connectBtn: ", connectBtn)
 
 // There are four classes exported in the Gateway-SDK These serve as a thin wrapper around the gateway API
 // API docs are available @ https://betanet-gateway.redoc.ly/
@@ -61,7 +39,7 @@ const streamApi = new StreamApi();
 let accountAddress //: string // User account address
 let componentAddress //: string  // GumballMachine component address
 let resourceAddress //: string // GUM resource address
-// You can use this packageAddress to skip the dashboard publishing step package_tdx_b_1qx5a2htahyjygp974tap7d0x7pn8lxl00muz7wjtdhxqe90wfd
+// You can use this packageAddress to skip the dashboard publishing step package_tdx_b_1qxtzcuyh8jmcp9khn72k0gs4fp8gjqaz9a8jsmcwmh9qhax345
 // xrdAddress resource_tdx_b_1qzkcyv5dwq3r6kawy6pxpvcythx8rh8ntum6ws62p95s9hhz9x
 
 
