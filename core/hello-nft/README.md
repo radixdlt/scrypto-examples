@@ -95,11 +95,11 @@ resim call-method <COMPONENT_ADDRESS> available_ticket_ids
 ```
 5. Call the `buy_ticket` method
 ```
-resim call-method <COMPONENT_ADDRESS> buy_ticket "100,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag"
+resim call-method <COMPONENT_ADDRESS> buy_ticket "100,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqz8qety"
 ```
 6. Call the `buy_ticket_by_id` method
 ```
-resim call-method <COMPONENT_ADDRESS> buy_ticket_by_id ticket_44 "100,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag"
+resim call-method <COMPONENT_ADDRESS> buy_ticket_by_id ticket_44 "100,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqz8qety"
 ```
 7. Check out our balance
 ```

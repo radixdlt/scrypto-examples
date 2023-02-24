@@ -10,7 +10,7 @@ addresses like e.g. `satoshi.xrd` instead of a cryptic and long ledger addresses
 `02b8dd9f4232ce3c00dcb3496956fb57096d5d50763b989ca56f3b`.
 
 # How to use RNS
-You can follow the steps below to instantiate a new RNS component and simulate some standard usage.  
+You can follow the steps below to instantiate a new RNS component and simulate some standard usage.
 
 Those steps can also be executed automatically by calling `revup -r rns.revup` in a terminal. Please note that in order
 for this to work you must have the [revup](https://github.com/RadGuild/revup) utility by @RockHoward installed!
@@ -29,15 +29,15 @@ resim new-account
 ```
 resim publish .
 ```
-4. Instantiate a new RNS component.  
+4. Instantiate a new RNS component.
 The component is instantiated with the following parameters:
-deposit_per_year=50, fee_address_update=10 and fee_renewal_per_year=25 (all values are in XRD).  
+deposit_per_year=50, fee_address_update=10 and fee_renewal_per_year=25 (all values are in XRD).
 Save the address of the admin badge to `$admin_badge` (first new entity), the address of the DomainName resource
 to `$name_resource` (third new entity) and the component address to `$component` (fourth new entity)
 ```
-resim call-function $package RadixNameService instantiate_rns 50 10 25 
+resim call-function $package RadixNameService instantiate_rns 50 10 25
 ```
-5. Simulate that a user comes along and uses the RNS component.  
+5. Simulate that a user comes along and uses the RNS component.
 Save the account address to `$user_account` and the private key to `$user_privkey`
 ```
 resim new-account
@@ -46,10 +46,10 @@ resim new-account
 ```
 resim set-default-account $user_account $user_privkey
 ```
-7. Simulate that the user registers the name "satoshi.xrd" to point to his account address.  
+7. Simulate that the user registers the name "satoshi.xrd" to point to his account address.
 The name is reserved for 10 years which requires a refundable deposit of $XRD 500
 ```
-resim call-method $component register_name satoshi.xrd $user_account 10 "500,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag"
+resim call-method $component register_name satoshi.xrd $user_account 10 "500,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqz8qety"
 ```
 8. Display the user's account
 ```
@@ -59,7 +59,7 @@ Taking a look at the account, please note that the user is now the owner of a Do
 ownership of the "satoshi.xrd" name:
 ```
 Resources:
-├─ { amount: 999500, resource address: resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag, name: "Radix", symbol: "XRD" }
+├─ { amount: 999500, resource address: resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqz8qety, name: "Radix", symbol: "XRD" }
 └─ { amount: 1, resource address: 03d8541671ab09116ae450d468f91e5488a9b22c705d70dcfe9e09, name: "DomainName" }
   └─ NFT { id: 339715316826500606461318410874891739268, immutable_data: Struct {  }, mutable_data: Struct { 02b8dd9f4232ce3c00dcb3496956fb57096d5d50763b989ca56f3b, 150000, 500 } }
 ```
@@ -70,46 +70,46 @@ Next, in the mutable_data part there are 3 values:
 - the amount of XRD that has been deposited when registering this name (500)
 
 9. Call the lookup_address method for "satoshi.xrd" and observer that the name maps to
-02b8dd9f4232ce3c00dcb3496956fb57096d5d50763b989ca56f3b, which is indeed the account address of the user.  
+02b8dd9f4232ce3c00dcb3496956fb57096d5d50763b989ca56f3b, which is indeed the account address of the user.
 You will find this address in the "Results" section of the transaction receipt.
 ```
 resim call-method $component lookup_address satoshi.xrd
 ```
-10. Now, simulate that the user creates another account to which future payments should be directed to.  
+10. Now, simulate that the user creates another account to which future payments should be directed to.
 Save the account address to `$new_user_account`
 ```
 resim new-account
 ```
-11. The name mapping can be changed by calling the update_address method on the RNS component.  
-The parameters to this method are:  
-1: A Proof with the DomainName NFT that demonstrates the user's ownership of the name and his right to change  
-the mapped address (#339715316826500606461318410874891739268,$name_resource)  
-2: The address of the newly created account ($new_user_account)  
+11. The name mapping can be changed by calling the update_address method on the RNS component.
+The parameters to this method are:
+1: A Proof with the DomainName NFT that demonstrates the user's ownership of the name and his right to change
+the mapped address (#339715316826500606461318410874891739268,$name_resource)
+2: The address of the newly created account ($new_user_account)
 3: A bucket that contains the fee for the name update (10,$tokenXRD)
 ```
-resim call-method $component update_address "#339715316826500606461318410874891739268,$name_resource" $new_user_account "10,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag"
+resim call-method $component update_address "#339715316826500606461318410874891739268,$name_resource" $new_user_account "10,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqz8qety"
 ```
 
 |**NOTE**| The above command uses `FF92CA45964EA42935A62DD2645F2084` which is the hexadecimal representation of the non-fungible id `339715316826500606461318410874891739268` as this is the format accepted by resim.|
 |----|-----|
 
-12. Call the lookup_address method one more time to see that the mapping has changed  
-and that the name "satoshi.xrd" now points to the user's new account  
+12. Call the lookup_address method one more time to see that the mapping has changed
+and that the name "satoshi.xrd" now points to the user's new account
 (02fbffedd2e0f3d0f3c5381b57b02c0f3b30bad1c57120f1c334bd).
 ```
 resim call-method $component lookup_address satoshi.xrd
 ```
-13. To simulate a renewal of the name mapping, call the renew_name method.  
-The method must be called with the following parameters:  
-1: A Proof with the DomainName NFT that demonstrates the user's ownership of the name and his right to change  
-the mapped address (#339715316826500606461318410874891739268,$name_resource)  
-2: The number of years for which the name should be renewed (10)  
-3: A bucket that contains the fee for the name renewal (250,$tokenXRD)  
+13. To simulate a renewal of the name mapping, call the renew_name method.
+The method must be called with the following parameters:
+1: A Proof with the DomainName NFT that demonstrates the user's ownership of the name and his right to change
+the mapped address (#339715316826500606461318410874891739268,$name_resource)
+2: The number of years for which the name should be renewed (10)
+3: A bucket that contains the fee for the name renewal (250,$tokenXRD)
 ```
-resim call-method $component renew_name "#FF92CA45964EA42935A62DD2645F2084,$name_resource" 10 "250,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag"
+resim call-method $component renew_name "#FF92CA45964EA42935A62DD2645F2084,$name_resource" 10 "250,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqz8qety"
 ```
 
-14. Again, display the user's account and note that the name is now reserved until epoch 300000.  
+14. Again, display the user's account and note that the name is now reserved until epoch 300000.
 Please also note that the DomainName NFT is still owned by the user's initial account even though the name
 mapping points to the address of the user's new account. Ownership of a DomainName NFT is decoupled from
 the actual address it maps to.
@@ -117,7 +117,7 @@ the actual address it maps to.
 resim show $user_account
 ```
 
-15. Finally, simulate that the user decides he now longer needs the domain name and wants to unregister it.  
+15. Finally, simulate that the user decides he now longer needs the domain name and wants to unregister it.
 This is done by calling the unregister_name method with a single argument.
 This argument has to be a Bucket (not Proof) containing the DomainName NFT that should be unregistered
 (#339715316826500606461318410874891739268,$name_resource).
@@ -127,7 +127,7 @@ All other fees are kept by the RNS component.
 resim call-method $component unregister_name "#339715316826500606461318410874891739268,$name_resource"
 ```
 
-16. Display the user's account one last time.  
+16. Display the user's account one last time.
 The NFT is gone and the users account holds exactly $XRD 999740. He initially deposited $XRD 500, which he got back,
 but he payed another $XRD 10 to change the address and $XRD 250 to renew the name for 10 years.
 ```
