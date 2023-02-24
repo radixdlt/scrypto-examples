@@ -33,7 +33,10 @@ First, we prepare the data for each NFT unit (every ticket is associated with a 
 let mut tickets = Vec::new();
 for row in 1..5 {
     for column in 1..5 {
-        tickets.push((NftKey::from(Uuid::generate()), Ticket { row, column }));
+        tickets.push((
+            StringNonFungibleLocalId::new(format!("ticket_{}{}", row, column)).unwrap(),
+            Ticket { row, column },
+        ));
     }
 }
 ```
@@ -41,7 +44,7 @@ for row in 1..5 {
 Then, the whole vector of NFT data is passed to `ResourceBuilder` as the initial supply.
 
 ```rust
-let ticket_bucket = ResourceBuilder::new_non_fungible(NonFungibleIdType::UUID)
+let ticket_bucket = ResourceBuilder::new_string_non_fungible()
     .metadata("name", "Ticket")
     .mint_initial_supply(tickets);
 ```
@@ -94,7 +97,11 @@ resim call-method <COMPONENT_ADDRESS> available_ticket_ids
 ```
 resim call-method <COMPONENT_ADDRESS> buy_ticket "100,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag"
 ```
-6. Check out our balance
+6. Call the `buy_ticket_by_id` method
+```
+resim call-method <COMPONENT_ADDRESS> buy_ticket_by_id ticket_44 "100,resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag"
+```
+7. Check out our balance
 ```
 resim show <ACCOUNT_ADDRESS>
 ```
