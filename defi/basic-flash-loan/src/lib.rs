@@ -34,6 +34,7 @@ mod basic_flash_loan {
                 )
                 .mintable(rule!(require(auth_token.resource_address())), LOCKED)
                 .burnable(rule!(require(auth_token.resource_address())), LOCKED)
+                .restrict_deposit(rule!(deny_all), LOCKED)
                 .create_with_no_initial_supply();
 
             Self {
