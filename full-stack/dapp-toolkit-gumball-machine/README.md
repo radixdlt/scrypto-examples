@@ -1,4 +1,4 @@
-# The Gumball Machine on Betanet V2
+# The Gumball Machine on RCNet
 This example is meant to guide you through building, deploying and using the [Gumball Machine Scrypto example](https://github.com/radixdlt/scrypto-examples/tree/main/full-stack/dapp-toolkit-gumball-machine) using the [Radix dApp Toolkit](https://github.com/radixdlt/radix-dapp-toolkit#readme)
 
 ## Pre-requisites

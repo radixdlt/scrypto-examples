@@ -21,7 +21,16 @@ const rdt = RadixDappToolkit(
       accountAddress = accounts[0].address
     })
   },
-  { networkId: 11 }
+  {
+    networkId: 11, // for betanet 01 for mainnet
+    onDisconnect: () => {
+      // clear your application state
+    },
+    onInit: ({ accounts }) => {
+      // set your initial application state
+      console.log("onInit accounts: ", accounts)
+    },
+  }
 )
 console.log("dApp Toolkit: ", rdt)
 
