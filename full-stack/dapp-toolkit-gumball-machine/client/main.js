@@ -22,7 +22,7 @@ const rdt = RadixDappToolkit(
     })
   },
   {
-    networkId: 11, // for betanet 01 for mainnet
+    networkId: 12, // for betanet 01 for mainnet
     onDisconnect: () => {
       // clear your application state
     },
