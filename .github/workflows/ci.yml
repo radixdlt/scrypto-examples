@@ -114,20 +114,24 @@ jobs:
       service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
       
   deploy-gumball-internal:
+    runs-on: ubuntu-22.04
     if:  github.ref == 'refs/heads/master'
     needs:
       - setup-tags
       - push-website
-    env:
-      EVENT_TYPE: "gumball_internal"
-    run: |
-      curl --silent --show-error --fail --location --request POST 'https://github-worker.radixdlt.com/repos/radixdlt/${{secrets.DISPATCH_REPO}}/dispatches' \
-        --header 'Accept: application/vnd.github.v3+json' \
-        --header 'Authorization: Basic ${{secrets.CF_GITHUB_WORKER_ENCODED_BASIC_AUTH}}' \
-        --header 'Content-Type: application/json' \
-        --data-raw '{
-            "event_type": "${{env.EVENT_TYPE}}",
-            "client_payload": {
-             "image_tag": "${{ fromJSON(needs.setup-tags.outputs.gumball-internal-website-json).labels['org.opencontainers.image.version'] }}"
-            }
-        }'
+    steps:
+      - uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b
+      - name: Trigger deployment event ${{ github.ref }}
+        env:
+          EVENT_TYPE: "gumball_internal"
+        run: |
+          curl --silent --show-error --fail --location --request POST 'https://github-worker.radixdlt.com/repos/radixdlt/${{secrets.DISPATCH_REPO}}/dispatches' \
+            --header 'Accept: application/vnd.github.v3+json' \
+            --header 'Authorization: Basic ${{secrets.CF_GITHUB_WORKER_ENCODED_BASIC_AUTH}}' \
+            --header 'Content-Type: application/json' \
+            --data-raw '{
+                "event_type": "${{env.EVENT_TYPE}}",
+                "client_payload": {
+                "image_tag": "${{ fromJSON(needs.setup-tags.outputs.gumball-internal-website-json).labels['org.opencontainers.image.version'] }}"
+                }
+            }'
