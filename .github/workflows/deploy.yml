@@ -113,7 +113,7 @@ jobs:
       workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDP }}
       service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
       
-  deploy-gumbell-internal:
+  deploy-gumball-internal:
     if:  github.ref == 'refs/heads/master'
     needs:
       - setup-tags
