@@ -6,6 +6,70 @@ import {
   Expression,
   Address
 } from '@radixdlt/radix-dapp-toolkit'
+
+
+const XRD = 'resource_tdx_b_1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq8z96qp'
+
+const examples = (accountA, accountB, accountC, componentAddress1, componentAddress2, gumballResourceAddress, adminBadge) => {
+  const example1 = new ManifestBuilder()
+    .withdrawFromAccountByAmount(accountA, 10, XRD)
+    .takeFromWorktopByAmount(10, XRD, 'xrd')
+    .callMethod(componentAddress1, 'buy_gumball', [Bucket('xrd')])
+    .takeFromWorktopByAmount(1, gumballResourceAddress, 'gumball')
+    .callMethod(accountA, 'deposit', [Bucket('gumball')])
+    .callMethod(accountB, 'deposit_batch', [Expression('ENTIRE_WORKTOP')]).build().toString()
+
+  const example2 = new ManifestBuilder()
+    .withdrawFromAccountByAmount(accountA, 0.5, XRD)
+    .withdrawFromAccountByAmount(accountB, 0.5, XRD)
+    .takeFromWorktopByAmount(1, XRD, 'xrd')
+    .callMethod(componentAddress1, 'buy_gumball', [Bucket('xrd')])
+    .callMethod(accountA, 'deposit_batch', [Expression('ENTIRE_WORKTOP')]).build().toString()
+
+  const example3 = new ManifestBuilder()
+    .withdrawFromAccountByAmount(accountA, 5, XRD)
+    .withdrawFromAccountByAmount(accountA, 3, XRD)
+    .takeFromWorktopByAmount(2, XRD, 'Delta')
+    .takeFromWorktopByAmount(2.5, XRD, 'Echo')
+    .takeFromWorktopByAmount(3.5, XRD, 'Foxtrot')
+    .callMethod(componentAddress1, 'buy_gumball', [Bucket('Delta')])
+    .takeFromWorktopByAmount(1, XRD, 'Golf')
+    .callMethod(accountA, 'deposit_batch', [Bucket('Echo'), Bucket('Foxtrot')])
+    .callMethod(accountC, 'deposit', [Bucket('Golf')])
+    .callMethod(accountA, 'deposit_batch', [Expression('ENTIRE_WORKTOP')]).build().toString()
+
+
+  const example4 = new ManifestBuilder()
+    .createProofFromAccount(accountA, adminBadge)
+    .callMethod(componentAddress1, 'withdraw_funds', [])
+    .callMethod(accountA, 'deposit_batch', [Expression('ENTIRE_WORKTOP')]).build().toString()
+
+  const example5 = new ManifestBuilder()
+    .withdrawFromAccountByAmount(accountB, 10, XRD)
+    .createProofFromAccount(accountA, adminBadge)
+    .takeFromWorktopByAmount(5, XRD, 'xrd')
+    .callMethod(componentAddress1, 'buy_gumball', [Bucket('xrd')])
+    .callMethod(componentAddress1, 'withdraw_funds', [])
+    .callMethod(accountA, 'deposit_batch', [Expression('ENTIRE_WORKTOP')]).build().toString()
+
+  const example6 = new ManifestBuilder()
+    .withdrawFromAccountByAmount(accountA, 2, XRD)
+    .takeFromWorktopByAmount(2, XRD, 'xrd')
+    .callMethod(componentAddress1, 'buy_gumball', [Bucket('xrd')])
+    .takeFromWorktop(XRD, 'restxrd')
+    .callMethod(componentAddress2, 'buy_gumball', [Bucket('restxrd')])
+    .callMethod(accountB, 'deposit_batch', [Expression('ENTIRE_WORKTOP')]).build().toString()
+
+  return {
+    example1,
+    example2,
+    example3,
+    example4,
+    example5,
+    example6
+  }
+}
+
 const dAppId = 'account_tdx_22_1prd6gfrqj0avlyxwldgyza09fp7gn4vjmga7clhe9p2qv0qt58'
 
 const rdt = RadixDappToolkit(
@@ -228,3 +292,25 @@ document.getElementById('setPrice').onclick = async function () {
   document.getElementById('price').innerText = JSON.stringify(commitReceipt.details.receipt.output[1].data_json.value);
 
 }
+
+const getExampleValues = () => [
+  document.getElementById('account-input-a').value,
+  document.getElementById('account-input-b').value,
+  document.getElementById('account-input-c').value,
+  document.getElementById('gumball-component-1').value,
+  document.getElementById('gumball-component-2').value,
+  document.getElementById('gumball-resource').value,
+  document.getElementById('admin-badge').value,
+]
+
+const sendExampleTx = (number) => rdt.sendTransaction({
+  transactionManifest: examples(...getExampleValues())[`example${number}`],
+  version: 1,
+})
+
+document.getElementById(`example-1`).onclick = () => sendExampleTx(1)
+document.getElementById(`example-2`).onclick = () => sendExampleTx(2)
+document.getElementById(`example-3`).onclick = () => sendExampleTx(3)
+document.getElementById(`example-4`).onclick = () => sendExampleTx(4)
+document.getElementById(`example-5`).onclick = () => sendExampleTx(5)
+document.getElementById(`example-6`).onclick = () => sendExampleTx(6)
