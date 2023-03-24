@@ -1,11 +1,17 @@
 use scrypto::prelude::*;
 
+#[derive(NonFungibleData, ScryptoSbor)]
+struct StaffBadge {
+    employee_name: String,
+}
+
 #[blueprint]
 mod gumball_machine {
     struct GumballMachine {
         gumballs: Vault,
         collected_xrd: Vault,
         price: Decimal,
+        staff_badge_address: ResourceAddress,
     }
 
     impl GumballMachine {
@@ -14,23 +20,34 @@ mod gumball_machine {
             price: Decimal,
             flavor: String,
         ) -> (ComponentAddress, Bucket) {
+            let admin_badge: Bucket = ResourceBuilder::new_fungible()
+                .metadata("name", "admin badge")
+                .divisibility(DIVISIBILITY_NONE)
+                .mint_initial_supply(1);
+
+            let staff_badge: ResourceAddress =
+                ResourceBuilder::new_uuid_non_fungible::<StaffBadge>()
+                    .metadata("name", "staff_badge")
+                    .mintable(rule!(require(admin_badge.resource_address())), LOCKED)
+                    .create_with_no_initial_supply();
+
             // create a new Gumball resource, with a fixed quantity of 100
             let bucket_of_gumballs = ResourceBuilder::new_fungible()
                 .metadata("name", "Gumball")
                 .metadata("symbol", flavor)
                 .metadata("description", "A delicious gumball")
+                .mintable(
+                    rule!(require(admin_badge.resource_address()) || require(staff_badge)),
+                    LOCKED,
+                )
                 .mint_initial_supply(100);
-
-            let admin_badge: Bucket = ResourceBuilder::new_fungible()
-                .metadata("name", "admin badge")
-                .divisibility(DIVISIBILITY_NONE)
-                .mint_initial_supply(1);
 
             // populate a GumballMachine struct and instantiate a new component
             let component = Self {
                 gumballs: Vault::with_bucket(bucket_of_gumballs),
                 collected_xrd: Vault::new(RADIX_TOKEN),
                 price: price,
+                staff_badge_address: staff_badge,
             }
             .instantiate();
 
@@ -59,6 +76,20 @@ mod gumball_machine {
 
         pub fn set_price(&mut self, price: Decimal) {
             self.price = price
+        }
+
+        pub fn mint_staff_badge(&mut self, employee_name: String) -> Bucket {
+            let staff_resourcemanager: ResourceManager =
+                borrow_resource_manager!(self.staff_badge_address);
+            let staff_badge_bucket: Bucket =
+                staff_resourcemanager.mint_uuid_non_fungible(StaffBadge {
+                    employee_name: employee_name,
+                });
+            staff_badge_bucket
+        }
+
+        pub fn refill_gumball_machine(&mut self) {
+            // mint some more gumball tokens requires an admin or staff badge
         }
 
         pub fn buy_gumball(&mut self, mut payment: Bucket) -> (Bucket, Bucket) {
