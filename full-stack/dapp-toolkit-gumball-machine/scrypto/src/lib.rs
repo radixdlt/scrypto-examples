@@ -6,12 +6,14 @@ mod gumball_machine {
         gumballs: Vault,
         collected_xrd: Vault,
         price: Decimal,
-        // flavor: String,
     }
 
     impl GumballMachine {
         // given a price in XRD, creates a ready-to-use gumball machine
-        pub fn instantiate_gumball_machine(price: Decimal, flavor: String) -> ComponentAddress {
+        pub fn instantiate_gumball_machine(
+            price: Decimal,
+            flavor: String,
+        ) -> (ComponentAddress, Bucket) {
             // create a new Gumball resource, with a fixed quantity of 100
             let bucket_of_gumballs = ResourceBuilder::new_fungible()
                 .metadata("name", "Gumball")
@@ -19,19 +21,39 @@ mod gumball_machine {
                 .metadata("description", "A delicious gumball")
                 .mint_initial_supply(100);
 
+            let admin_badge: Bucket = ResourceBuilder::new_fungible()
+                .metadata("name", "admin badge")
+                .divisibility(DIVISIBILITY_NONE)
+                .mint_initial_supply(1);
+
             // populate a GumballMachine struct and instantiate a new component
-            Self {
+            let component = Self {
                 gumballs: Vault::with_bucket(bucket_of_gumballs),
                 collected_xrd: Vault::new(RADIX_TOKEN),
                 price: price,
-                // flavor: flavor,
             }
-            .instantiate()
-            .globalize()
+            .instantiate();
+
+            let access_rules = AccessRulesConfig::new()
+                .method(
+                    "set_price",
+                    rule!(require(admin_badge.resource_address())),
+                    LOCKED,
+                )
+                .default(AccessRule::AllowAll, AccessRule::DenyAll);
+
+            (
+                component.globalize_with_access_rules(access_rules),
+                admin_badge,
+            )
         }
 
         pub fn get_price(&self) -> Decimal {
             self.price
+        }
+
+        pub fn set_price(&mut self, price: Decimal) {
+            self.price = price
         }
 
         pub fn buy_gumball(&mut self, mut payment: Bucket) -> (Bucket, Bucket) {
