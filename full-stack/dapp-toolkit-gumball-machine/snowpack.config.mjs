@@ -24,4 +24,10 @@ export default {
     buildOptions: {
       /* ... */
     },
+    optimize: {
+      bundle: true,
+      minify: true,
+      target: 'es2018',
+      entrypoints : ['src/index.js']
+    }
   };
