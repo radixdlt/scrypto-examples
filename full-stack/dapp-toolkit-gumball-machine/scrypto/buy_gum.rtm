@@ -1,15 +1,20 @@
+# WARNING!!! THIS MANIFEST FAILS ON WITHDRAW METHOD CURRENTLY
 CALL_METHOD
     Address("${account}")
     "lock_fee"
     Decimal("100");
-CALL_METHOD
+CALL_METHOD 
     Address("${account}")
-    "create_proof"
-    Address("${admin_badge}");
+    "withdraw"
+    Decimal("33")
+    Address("${xrd}");
+TAKE_FROM_WORKTOP
+    Address("${xrd}")
+    Bucket("xrd");
 CALL_METHOD
     Address("${component}")
-    "set_price"
-    Decimal("33");
+    "buy_gumball"
+    Bucket("xrd");
 CALL_METHOD
     Address("${account}")
     "deposit_batch"
