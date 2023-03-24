@@ -8,8 +8,7 @@ CALL_METHOD
     Address("resource_sim1q98tyexn5x6eksqtc7vtmjv5s92x6flr82ne8t4du0hs9k297v");
 CALL_METHOD
     Address("component_sim1q0zyeewyvujcwk64fl8j2yfa7u42kmkg4hwjjj3ugneqrd8j8t")
-    "set_price"
-    Decimal("33");
+    "withdraw_earnings";
 CALL_METHOD
     Address("account_sim1qssnx0eqruzamqd69j0wcx84kd64khxjhlt8m7f9rjxs6fztjn")
     "deposit_batch"

@@ -40,6 +40,11 @@ mod gumball_machine {
                     rule!(require(admin_badge.resource_address())),
                     LOCKED,
                 )
+                .method(
+                    "withdraw_earnings",
+                    rule!(require(admin_badge.resource_address())),
+                    LOCKED,
+                )
                 .default(AccessRule::AllowAll, AccessRule::DenyAll);
 
             (
@@ -68,6 +73,10 @@ mod gumball_machine {
             // return a tuple containing a gumball, plus whatever change is left on the input payment (if any)
             // if we're out of gumballs to give, we'll see a runtime error when we try to grab one
             (self.gumballs.take(1), payment)
+        }
+
+        pub fn withdraw_earnings(&mut self) -> Bucket {
+            self.collected_xrd.take_all()
         }
     }
 }

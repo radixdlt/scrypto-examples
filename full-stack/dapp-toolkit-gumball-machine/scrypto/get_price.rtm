@@ -3,7 +3,7 @@ CALL_METHOD
     "lock_fee"
     Decimal("100");
 CALL_METHOD
-    Address("component_sim1qvgjaumk6u4dtfardw26uxe8d3hxv49g2k6w0ap2hnvqejrfvf")
+    Address("component_sim1q0zyeewyvujcwk64fl8j2yfa7u42kmkg4hwjjj3ugneqrd8j8t")
     "get_price";
 CALL_METHOD
     Address("account_sim1qssnx0eqruzamqd69j0wcx84kd64khxjhlt8m7f9rjxs6fztjn")
