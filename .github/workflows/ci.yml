@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - develop
-      - master
+      - main
   pull_request:
   release:
     types: [published]
@@ -115,7 +115,7 @@ jobs:
       
   deploy-gumball-internal:
     runs-on: ubuntu-22.04
-    if:  github.ref == 'refs/heads/master'
+    if:  github.ref == 'refs/heads/main'
     needs:
       - setup-tags
       - push-website
