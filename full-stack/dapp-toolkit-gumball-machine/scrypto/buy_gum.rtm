@@ -1,13 +1,12 @@
-# WARNING!!! THIS MANIFEST FAILS ON WITHDRAW METHOD CURRENTLY
 CALL_METHOD
     Address("${account}")
     "lock_fee"
     Decimal("100");
 CALL_METHOD 
     Address("${account}")
-    "withdraw"
-    Decimal("33")
-    Address("${xrd}");
+    "withdraw"    
+    Address("${xrd}")
+    Decimal("33");
 TAKE_FROM_WORKTOP
     Address("${xrd}")
     Bucket("xrd");
