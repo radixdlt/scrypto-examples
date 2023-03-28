@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@radixdlt/radix-dapp-toolkit": "0.2.0-alpha.9"
+  }
+}
