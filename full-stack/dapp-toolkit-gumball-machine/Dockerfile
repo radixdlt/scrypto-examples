@@ -4,11 +4,8 @@ WORKDIR /usr/app
 COPY package.json package-lock.json snowpack.config.mjs ./
 RUN npm install
 
-
-COPY public ./public
-COPY src ./src
+COPY client ./client
 RUN npm run build
-
 
 FROM scratch AS export-stage
 COPY --from=build-stage /usr/app/build /
