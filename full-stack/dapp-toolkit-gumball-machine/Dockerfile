@@ -1,7 +1,7 @@
 FROM node:18.12.0 AS build-stage
 
 WORKDIR /usr/app
-COPY package.json package-lock.json snowpack.config.mjs ./
+COPY package.json package-lock.json ./
 RUN npm install
 
 COPY client ./client
