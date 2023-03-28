@@ -4,7 +4,7 @@ import {
   Decimal,
   Bucket,
   Expression,
-  ResourceAddress
+  Address
 } from '@radixdlt/radix-dapp-toolkit'
 const dAppId = 'account_tdx_22_1prd6gfrqj0avlyxwldgyza09fp7gn4vjmga7clhe9p2qv0qt58'
 
@@ -22,13 +22,16 @@ const rdt = RadixDappToolkit(
     })
   },
   {
-    networkId: 12, // for betanet 01 for mainnet
+    networkId: 12, // 12 is for RCnet 01 for Mainnet
     onDisconnect: () => {
       // clear your application state
     },
     onInit: ({ accounts }) => {
       // set your initial application state
       console.log("onInit accounts: ", accounts)
+      document.getElementById('accountName').innerText = accounts[0].label
+      document.getElementById('accountAddress').innerText = accounts[0].address
+      accountAddress = accounts[0].address
     },
   }
 )
@@ -37,20 +40,20 @@ console.log("dApp Toolkit: ", rdt)
 
 // There are four classes exported in the Gateway-SDK These serve as a thin wrapper around the gateway API
 // API docs are available @ https://betanet-gateway.redoc.ly/
-import { TransactionApi, StateApi, StatusApi, StreamApi } from "@radixdlt/babylon-gateway-api-sdk";
+import { TransactionApi, StateApi, StatusApi, StreamApi, Configuration } from "@radixdlt/babylon-gateway-api-sdk";
 
 // Instantiate Gateway SDK
-const transactionApi = new TransactionApi();
+const transactionApi = new TransactionApi()
 const stateApi = new StateApi();
 const statusApi = new StatusApi();
 const streamApi = new StreamApi();
 
 // Global states
 let accountAddress //: string // User account address
-let componentAddress //: string  // GumballMachine component address
+let componentAddress = "component_tdx_c_1q0dyxy0ckweu0qfvltepw4elh3lzrna4fmc7q9faugsskcrhm2"//: string  // GumballMachine component address
 let resourceAddress //: string // GUM resource address
-// You can use this packageAddress to skip the dashboard publishing step package_tdx_b_1qxtzcuyh8jmcp9khn72k0gs4fp8gjqaz9a8jsmcwmh9qhax345
-let xrdAddress = "resource_tdx_b_1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq8z96qp"
+// You can use this packageAddress to skip the dashboard publishing step package_tdx_c_1qp33k08x0khkr0ha9cmzutsn5qzaxaasq4w3stnxkyzs8gnx2s
+let xrdAddress = "resource_tdx_c_1qyqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq40v2wv"
 
 // ************ Instantiate component and fetch component and resource addresses *************
 document.getElementById('instantiateComponent').onclick = async function () {
@@ -58,12 +61,24 @@ document.getElementById('instantiateComponent').onclick = async function () {
   let flavor = document.getElementById("flavor").value;
 
   let manifest = new ManifestBuilder()
-    .callMethod(accountAddress, "create_proof", [ResourceAddress("resource_tdx_b_1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq8z96qp")])
     .callFunction(packageAddress, "GumballMachine", "instantiate_gumball_machine", [Decimal("10"), `"${flavor}"`])
+    .callMethod(accountAddress, "deposit_batch", [Expression("ENTIRE_WORKTOP")])
     .build()
     .toString();
   console.log("Instantiate Manifest: ", manifest)
   // Send manifest to extension for signing
+  let rcManifest = `
+CALL_FUNCTION
+    Address("${packageAddress}")
+    "GumballMachine"
+    "instantiate_gumball_machine"
+    Decimal("5")
+    "GUM";
+CALL_METHOD
+    Address("${accountAddress}")
+    "deposit_batch"
+    Expression("ENTIRE_WORKTOP");
+  `
   const result = await rdt
     .sendTransaction({
       transactionManifest: manifest,
@@ -82,6 +97,7 @@ document.getElementById('instantiateComponent').onclick = async function () {
   });
   console.log('Instantiate TransactionApi transaction/status:', status)
 
+  // !!!!! THE BELOW GATEWAY CALL CURRENTLY ERRS WITH A 400 RES
   // ************* fetch component address from gateway api and set componentAddress variable **************
   let commitReceipt = await transactionApi.transactionCommittedDetails({
     transactionCommittedDetailsRequest: {
@@ -95,11 +111,11 @@ document.getElementById('instantiateComponent').onclick = async function () {
 
   // ****** set componentAddress and resourceAddress variables with gateway api commitReciept payload ******
   // componentAddress = commitReceipt.details.receipt.state_updates.new_global_entities[0].global_address <- long way -- shorter way below ->
-  componentAddress = commitReceipt.details.referenced_global_entities[0]
-  document.getElementById('componentAddress').innerText = componentAddress;
+  // componentAddress = commitReceipt.details.referenced_global_entities[0]
+  // document.getElementById('componentAddress').innerText = componentAddress;
 
-  resourceAddress = commitReceipt.details.referenced_global_entities[1]
-  document.getElementById('gumAddress').innerText = resourceAddress;
+  // resourceAddress = commitReceipt.details.referenced_global_entities[1]
+  // document.getElementById('gumAddress').innerText = resourceAddress;
 }
 
 document.getElementById('buyGumball').onclick = async function () {
@@ -114,10 +130,29 @@ document.getElementById('buyGumball').onclick = async function () {
 
   console.log('buy_gumball manifest: ', manifest)
 
+  let rcManifest = `
+  CALL_METHOD
+  Address("${accountAddress}")
+  "withdraw" 
+  Address("${xrdAddress}")
+  Decimal("33");
+  TAKE_FROM_WORKTOP
+  Address("${xrdAddress}")
+  Bucket("xrd_bucket");
+  CALL_METHOD 
+  Address("${componentAddress}")
+  "buy_gumball"
+  Bucket("xrd_bucket");
+  CALL_METHOD
+  Address("${accountAddress}")
+  "deposit_batch"
+  Expression("ENTIRE_WORKTOP");
+  `
+
   // Send manifest to extension for signing
   const result = await rdt
     .sendTransaction({
-      transactionManifest: manifest,
+      transactionManifest: rcManifest,
       version: 1,
     })
 
