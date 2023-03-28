@@ -12,8 +12,7 @@
     "vite": "^4.1.0"
   },
   "dependencies": {
-    "@radixdlt/alphanet-gateway-api-v0-sdk": "^0.1.5",
-    "@radixdlt/babylon-gateway-api-sdk": "^1.0.0-rc.1.1",
-    "@radixdlt/radix-dapp-toolkit": "^0.2.0-alpha.6"
+    "@radixdlt/babylon-gateway-api-sdk": "^1.0.0-rc.1.4",
+    "@radixdlt/radix-dapp-toolkit": "^0.2.0-alpha.9"
   }
 }

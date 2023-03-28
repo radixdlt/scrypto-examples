@@ -4,13 +4,13 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-sbor = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "rcnet-v1-fac7a0c0f" }
-scrypto = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "rcnet-v1-fac7a0c0f" }
+sbor = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "rcnet-v1-2b019f93" }
+scrypto = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "rcnet-v1-2b019f93" }
 
 [dev-dependencies]
-transaction = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "rcnet-v1-fac7a0c0f" }
-radix-engine = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "rcnet-v1-fac7a0c0f" }
-scrypto-unit = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "rcnet-v1-fac7a0c0f" }
+transaction = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "rcnet-v1-2b019f93" }
+radix-engine = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "rcnet-v1-2b019f93" }
+scrypto-unit = { git = "https://github.com/radixdlt/radixdlt-scrypto", tag = "rcnet-v1-2b019f93" }
 
 [profile.release]
 opt-level = 's'        # Optimize for size.
