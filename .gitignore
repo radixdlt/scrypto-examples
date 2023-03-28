@@ -20,4 +20,4 @@ flamegraph.svg
 # Emacs
 *~
 
-node_modules/
+node_modules
