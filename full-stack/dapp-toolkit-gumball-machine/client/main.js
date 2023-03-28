@@ -137,6 +137,18 @@ document.getElementById('instantiateComponent').onclick = async function () {
     .toString();
   console.log("Instantiate Manifest: ", manifest)
   // Send manifest to extension for signing
+  let rcManifest = `
+CALL_FUNCTION
+    Address("${packageAddress}")
+    "GumballMachine"
+    "instantiate_gumball_machine"
+    Decimal("5")
+    "GUM";
+CALL_METHOD
+    Address("${accountAddress}")
+    "deposit_batch"
+    Expression("ENTIRE_WORKTOP");
+  `
   const result = await rdt
     .sendTransaction({
       transactionManifest: manifest,
