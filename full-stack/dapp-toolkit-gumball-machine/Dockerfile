@@ -1,10 +1,10 @@
 FROM node:18.12.0 AS build-stage
 
 WORKDIR /usr/app
-COPY package.json package-lock.json ./
+COPY client ./client
+
 RUN npm install
 
-COPY client ./client
 RUN npm run build
 
 FROM scratch AS export-stage
