@@ -28,11 +28,12 @@ const rdt = RadixDappToolkit(
     },
     onInit: ({ accounts }) => {
       // set your initial application state
-      // TODO handle undefined account data
       console.log("onInit accounts: ", accounts)
-      document.getElementById('accountName').innerText = accounts[0].label
-      document.getElementById('accountAddress').innerText = accounts[0].address
-      accountAddress = accounts[0].address
+      if (accounts.length > 0) {
+        document.getElementById('accountName').innerText = accounts[0].label
+        document.getElementById('accountAddress').innerText = accounts[0].address
+        accountAddress = accounts[0].address
+      }
     },
   }
 )
@@ -52,11 +53,12 @@ const streamApi = new StreamApi();
 
 // Global states
 let accountAddress // User account address
-let componentAddress //GumballMachine component address
+let componentAddress //= "component_tdx_c_1qdmsqjknc9luw7ps5s9ykw9g6mn5fh8gdatgcy0tx2nqdpvx9c" //GumballMachine component address
 let resourceAddress // GUM resource address
 let xrdAddress = "resource_tdx_c_1qyqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq40v2wv"
 // You can use this packageAddress to skip the dashboard publishing step
 // package_tdx_c_1qp33k08x0khkr0ha9cmzutsn5qzaxaasq4w3stnxkyzs8gnx2s
+// component_tdx_c_1qdmsqjknc9luw7ps5s9ykw9g6mn5fh8gdatgcy0tx2nqdpvx9c 
 
 
 // ************ Instantiate component and fetch component and resource addresses *************
@@ -106,10 +108,9 @@ document.getElementById('instantiateComponent').onclick = async function () {
 }
 
 document.getElementById('buyGumball').onclick = async function () {
-  // TODO refactor this manifest example below 
   let manifest = new ManifestBuilder()
-    .withdrawFromAccountByAmount(accountAddress, 10, "resource_tdx_b_1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq8z96qp")
-    .takeFromWorktopByAmount(10, "resource_tdx_b_1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq8z96qp", "xrd_bucket")
+    .callMethod(accountAddress, "withdraw", [Address(xrdAddress), Decimal("33")])
+    .takeFromWorktop(xrdAddress, "xrd_bucket")
     .callMethod(componentAddress, "buy_gumball", [Bucket("xrd_bucket")])
     .callMethod(accountAddress, "deposit_batch", [Expression("ENTIRE_WORKTOP")])
     .build()
@@ -117,29 +118,10 @@ document.getElementById('buyGumball').onclick = async function () {
 
   console.log('buy_gumball manifest: ', manifest)
 
-  let rcManifest = `
-  CALL_METHOD
-  Address("${accountAddress}")
-  "withdraw" 
-  Address("${xrdAddress}")
-  Decimal("33");
-  TAKE_FROM_WORKTOP
-  Address("${xrdAddress}")
-  Bucket("xrd_bucket");
-  CALL_METHOD 
-  Address("${componentAddress}")
-  "buy_gumball"
-  Bucket("xrd_bucket");
-  CALL_METHOD
-  Address("${accountAddress}")
-  "deposit_batch"
-  Expression("ENTIRE_WORKTOP");
-  `
-
   // Send manifest to extension for signing
   const result = await rdt
     .sendTransaction({
-      transactionManifest: rcManifest,
+      transactionManifest: manifest,
       version: 1,
     })
 
