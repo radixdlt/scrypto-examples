@@ -43,7 +43,7 @@ const examples = (accountA, accountB, accountC, componentAddress1, componentAddr
 
   const example4 = new ManifestBuilder()
     .createProofFromAccount(accountA, adminBadge)
-    .callMethod(componentAddress1, 'withdraw_funds', [])
+    .callMethod(componentAddress1, 'withdraw_earnings', [])
     .callMethod(accountA, 'deposit_batch', [Expression('ENTIRE_WORKTOP')]).build().toString()
 
   const example5 = new ManifestBuilder()
@@ -51,7 +51,7 @@ const examples = (accountA, accountB, accountC, componentAddress1, componentAddr
     .createProofFromAccount(accountA, adminBadge)
     .takeFromWorktopByAmount(5, XRD, 'xrd')
     .callMethod(componentAddress1, 'buy_gumball', [Bucket('xrd')])
-    .callMethod(componentAddress1, 'withdraw_funds', [])
+    .callMethod(componentAddress1, 'withdraw_earnings', [])
     .callMethod(accountA, 'deposit_batch', [Expression('ENTIRE_WORKTOP')]).build().toString()
 
   const example6 = new ManifestBuilder()
