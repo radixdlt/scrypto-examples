@@ -53,7 +53,7 @@ const streamApi = new StreamApi();
 
 // Global states
 let accountAddress // User account address
-let componentAddress //= "component_tdx_c_1qdmsqjknc9luw7ps5s9ykw9g6mn5fh8gdatgcy0tx2nqdpvx9c" //GumballMachine component address
+let componentAddress = "component_tdx_c_1qdmsqjknc9luw7ps5s9ykw9g6mn5fh8gdatgcy0tx2nqdpvx9c" //GumballMachine component address
 let resourceAddress // GUM resource address
 let xrdAddress = "resource_tdx_c_1qyqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq40v2wv"
 // You can use this packageAddress to skip the dashboard publishing step
@@ -67,7 +67,7 @@ document.getElementById('instantiateComponent').onclick = async function () {
   let flavor = document.getElementById("flavor").value;
 
   let manifest = new ManifestBuilder()
-    .callFunction(packageAddress, "GumballMachine", "instantiate_gumball_machine", [Decimal("10"), `"${flavor}"`])
+    .callFunction(packageAddress, "GumballMachine", "instantiate_gumball_machine", [Decimal("1"), `"${flavor}"`])
     .callMethod(accountAddress, "deposit_batch", [Expression("ENTIRE_WORKTOP")])
     .build()
     .toString();
@@ -106,7 +106,7 @@ document.getElementById('instantiateComponent').onclick = async function () {
   resourceAddress = commitReceipt.details.referenced_global_entities[1]
   document.getElementById('gumAddress').innerText = resourceAddress;
 }
-
+// *********** Buy Gumball ***********
 document.getElementById('buyGumball').onclick = async function () {
   let manifest = new ManifestBuilder()
     .callMethod(accountAddress, "withdraw", [Address(xrdAddress), Decimal("33")])
@@ -148,3 +148,42 @@ document.getElementById('buyGumball').onclick = async function () {
   // Show the receipt on the DOM
   document.getElementById('receipt').innerText = JSON.stringify(commitReceipt.details.receipt, null, 2);
 };
+
+document.getElementById('getPrice').onclick = async function () {
+  let manifest = new ManifestBuilder()
+    .callMethod(componentAddress, "get_price", [])
+    .build()
+    .toString()
+  console.log("get price manifest", manifest)
+
+  // Send manifest to extension for signing
+  const result = await rdt
+    .sendTransaction({
+      transactionManifest: manifest,
+      version: 1,
+    })
+
+  if (result.isErr()) throw result.error
+
+  console.log("Buy Gumball getMethods Result: ", result)
+
+  // Fetch the transaction status from the Gateway SDK
+  let status = await transactionApi.transactionStatus({
+    transactionStatusRequest: {
+      intent_hash_hex: result.value.transactionIntentHash
+    }
+  });
+  console.log('Get Price status', status)
+
+  // fetch commit reciept from gateway api 
+  let commitReceipt = await transactionApi.transactionCommittedDetails({
+    transactionCommittedDetailsRequest: {
+      intent_hash_hex: result.value.transactionIntentHash
+    }
+  })
+  console.log('get price commitReceipt', commitReceipt)
+
+  // Show the receipt on the DOM
+  document.getElementById('price').innerText = JSON.stringify(commitReceipt.details.receipt.output[1].data_json.value);
+
+}
