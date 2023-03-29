@@ -30,7 +30,7 @@ const examples = (accountA, accountB, accountC, componentAddress1, componentAddr
 
   const example3 = `
     CALL_METHOD Address("${accountA}") "withdraw" Address("${XRD}") Decimal("5");
-    CALL_METHOD Address("${accountA}") "withdraw" Address("resource_tdx_b_1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq8z96qp") Decimal("3");
+    CALL_METHOD Address("${accountA}") "withdraw" Address("${XRD}") Decimal("3");
     TAKE_FROM_WORKTOP_BY_AMOUNT Decimal("2") Address("${XRD}") Bucket("Delta");
     TAKE_FROM_WORKTOP_BY_AMOUNT Decimal("2.5") Address("${XRD}") Bucket("Echo");
     TAKE_FROM_WORKTOP_BY_AMOUNT Decimal("3.5") Address("${XRD}") Bucket("Foxtrot");
@@ -317,10 +317,13 @@ const getExampleValues = () => [
   document.getElementById('admin-badge').value,
 ]
 
-const sendExampleTx = (number) => rdt.sendTransaction({
-  transactionManifest: examples(...getExampleValues())[`example${number}`],
-  version: 1,
-})
+const sendExampleTx = (number) => {
+  console.log(examples(...getExampleValues())[`example${number}`])
+  rdt.sendTransaction({
+    transactionManifest: examples(...getExampleValues())[`example${number}`],
+    version: 1,
+  })
+}
 
 document.getElementById(`example-1`).onclick = () => sendExampleTx(1)
 document.getElementById(`example-2`).onclick = () => sendExampleTx(2)
