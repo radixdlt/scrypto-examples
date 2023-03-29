@@ -72,7 +72,7 @@ const examples = (accountA, accountB, accountC, componentAddress1, componentAddr
   }
 }
 
-const dAppId = 'account_tdx_22_1prd6gfrqj0avlyxwldgyza09fp7gn4vjmga7clhe9p2qv0qt58'
+const dAppId = 'account_tdx_c_1p9gwhh44k4mtlqu56y7we89xxs93uksu0dkfqwtkzcuqgyp8fw'
 
 const rdt = RadixDappToolkit(
   { dAppDefinitionAddress: dAppId, dAppName: 'GumballMachine' },
