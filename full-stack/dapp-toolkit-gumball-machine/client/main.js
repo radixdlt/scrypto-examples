@@ -56,7 +56,7 @@ let accountAddress // User account address
 let componentAddress = "component_tdx_c_1qdxmfuuva3akxksazaj5dewl3wzzzxm5gyxh4nj4xcwqvlmnay" //GumballMachine component address
 let resourceAddress // GUM resource address
 let xrdAddress = "resource_tdx_c_1qyqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq40v2wv"
-let admin_badge = ""
+let admin_badge = "resource_tdx_c_1q9xmfuuva3akxksazaj5dewl3wzzzxm5gyxh4nj4xcwqx7facl"
 // You can use these addresses to skip steps
 // package_tdx_c_1qrw97eu4sgetyevfw3garzmkvkv96g8z0fre9mrd6wzs3rjqc8
 // Wiped Gumball Machine = component_tdx_c_1qdxmfuuva3akxksazaj5dewl3wzzzxm5gyxh4nj4xcwqvlmnay 
@@ -104,7 +104,7 @@ document.getElementById('instantiateComponent').onclick = async function () {
   componentAddress = commitReceipt.details.referenced_global_entities[0]
   document.getElementById('componentAddress').innerText = componentAddress;
   // ****** Set resourceAddress variable with gateway api commitReciept payload ******
-  resourceAddress = commitReceipt.details.referenced_global_entities[1]
+  admin_badge = commitReceipt.details.referenced_global_entities[1]
   document.getElementById('gumAddress').innerText = resourceAddress;
 }
 // *********** Buy Gumball ***********
@@ -191,7 +191,7 @@ document.getElementById('getPrice').onclick = async function () {
 // *********** Set Price ***********
 document.getElementById('setPrice').onclick = async function () {
   let manifest = new ManifestBuilder()
-    .callMethod(accountAddress, "create_proof", [Address("resource_tdx_c_1q9xmfuuva3akxksazaj5dewl3wzzzxm5gyxh4nj4xcwqx7facl")])
+    .callMethod(accountAddress, "create_proof", [Address(admin_badge)])
     .callMethod(componentAddress, "set_price", [Decimal("5")])
     .build()
     .toString()
