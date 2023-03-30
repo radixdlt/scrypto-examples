@@ -23,7 +23,7 @@ const examples = (accountA, accountB, accountC, componentAddress1, componentAddr
   const example2 = `
     CALL_METHOD Address("${accountA}") "withdraw" Address("${XRD}") Decimal("0.5");
     CALL_METHOD Address("${accountB}") "withdraw" Address("${XRD}") Decimal("0.5");
-    TAKE_FROM_WORKTOP_BY_AMOUNT Decimal("1") Address("${XRD}") Bucket("xrd");
+    TAKE_FROM_WORKTOP_BY_AMOUNT Address("${XRD}") Decimal("1") Bucket("xrd");
     CALL_METHOD Address("${componentAddress1}") "buy_gumball" Bucket("xrd");
     CALL_METHOD Address("${accountA}") "deposit_batch" Expression("ENTIRE_WORKTOP");
   `
@@ -31,37 +31,53 @@ const examples = (accountA, accountB, accountC, componentAddress1, componentAddr
   const example3 = `
     CALL_METHOD Address("${accountA}") "withdraw" Address("${XRD}") Decimal("5");
     CALL_METHOD Address("${accountA}") "withdraw" Address("${XRD}") Decimal("3");
-    TAKE_FROM_WORKTOP_BY_AMOUNT Decimal("2") Address("${XRD}") Bucket("Delta");
-    TAKE_FROM_WORKTOP_BY_AMOUNT Decimal("2.5") Address("${XRD}") Bucket("Echo");
-    TAKE_FROM_WORKTOP_BY_AMOUNT Decimal("3.5") Address("${XRD}") Bucket("Foxtrot");
+    TAKE_FROM_WORKTOP_BY_AMOUNT Address("${XRD}") Decimal("2") Bucket("Delta");
+    TAKE_FROM_WORKTOP_BY_AMOUNT Address("${XRD}") Decimal("2.5") Bucket("Echo");
+    TAKE_FROM_WORKTOP_BY_AMOUNT Address("${XRD}") Decimal("3.5") Bucket("Foxtrot");
     CALL_METHOD Address("${componentAddress1}") "buy_gumball" Bucket("Delta");
-    TAKE_FROM_WORKTOP_BY_AMOUNT Decimal("1") Address("${XRD}") Bucket("Golf");
+    TAKE_FROM_WORKTOP_BY_AMOUNT Address("${XRD}") Decimal("1")  Bucket("Golf");
     CALL_METHOD Address("${accountA}") "deposit_batch" Bucket("Echo") Bucket("Foxtrot");
     CALL_METHOD Address("${accountC}") "deposit" Bucket("Golf");
     CALL_METHOD Address("${accountA}") "deposit_batch" Expression("ENTIRE_WORKTOP");
   `
+
 
   const example4 = new ManifestBuilder()
     .createProofFromAccount(accountA, adminBadge)
     .callMethod(componentAddress1, 'withdraw_earnings', [])
     .callMethod(accountA, 'deposit_batch', [Expression('ENTIRE_WORKTOP')]).build().toString()
 
-  const example5 = new ManifestBuilder()
-    .withdrawFromAccountByAmount(accountB, 10, XRD)
-    .createProofFromAccount(accountA, adminBadge)
-    .takeFromWorktopByAmount(5, XRD, 'xrd')
-    .callMethod(componentAddress1, 'buy_gumball', [Bucket('xrd')])
-    .callMethod(componentAddress1, 'withdraw_earnings', [])
-    .callMethod(accountA, 'deposit_batch', [Expression('ENTIRE_WORKTOP')]).build().toString()
+  // const example5 = new ManifestBuilder()
+  //   .withdrawFromAccountByAmount(accountB, 10, XRD)
+  //   .createProofFromAccount(accountA, adminBadge)
+  //   .takeFromWorktopByAmount(5, XRD, 'xrd')
+  //   .callMethod(componentAddress1, 'buy_gumball', [Bucket('xrd')])
+  //   .callMethod(componentAddress1, 'withdraw_earnings', [])
+  //   .callMethod(accountA, 'deposit_batch', [Expression('ENTIRE_WORKTOP')]).build().toString()
+  const example5 = `
+    CALL_METHOD Address("${accountB}") "withdraw" Address("${XRD} Decimal("10") ");
+    CALL_METHOD Address("${accountA}") "create_proof" Address("${adminBadge}");
+    TAKE_FROM_WORKTOP_BY_AMOUNT Decimal("5") Address("${XRD}") Bucket("xrd");
+    CALL_METHOD Address("${componentAddress1}") "buy_gumball" Bucket("xrd");
+    CALL_METHOD Address("${componentAddress1}") "withdraw_earnings" ;
+    CALL_METHOD Address("${accountA}") "deposit_batch" Expression("ENTIRE_WORKTOP");
+  `
 
-  const example6 = new ManifestBuilder()
-    .withdrawFromAccountByAmount(accountA, 2, XRD)
-    .takeFromWorktopByAmount(2, XRD, 'xrd')
-    .callMethod(componentAddress1, 'buy_gumball', [Bucket('xrd')])
-    .takeFromWorktop(XRD, 'restxrd')
-    .callMethod(componentAddress2, 'buy_gumball', [Bucket('restxrd')])
-    .callMethod(accountB, 'deposit_batch', [Expression('ENTIRE_WORKTOP')]).build().toString()
-
+  // const example6 = new ManifestBuilder()
+  //   .withdrawFromAccountByAmount(accountA, 2, XRD)
+  //   .takeFromWorktopByAmount(2, XRD, 'xrd')
+  //   .callMethod(componentAddress1, 'buy_gumball', [Bucket('xrd')])
+  //   .takeFromWorktop(XRD, 'restxrd')
+  //   .callMethod(componentAddress2, 'buy_gumball', [Bucket('restxrd')])
+  //   .callMethod(accountB, 'deposit_batch', [Expression('ENTIRE_WORKTOP')]).build().toString()
+  const example6 = `
+    CALL_METHOD Address("${accountA}") "withdraw"  Address("${XRD} Decimal("2")");
+    TAKE_FROM_WORKTOP_BY_AMOUNT Address("${XRD}") Decimal("2")  Bucket("xrd");
+    CALL_METHOD Address("${componentAddress1}") "buy_gumball" Bucket("xrd");
+    TAKE_FROM_WORKTOP Address("${XRD}") Bucket("restxrd");
+    CALL_METHOD Address("${componentAddress2}") "buy_gumball" Bucket("restxrd");
+    CALL_METHOD Address("${accountB}") "deposit_batch" Expression("ENTIRE_WORKTOP");
+  `
   return {
     example1,
     example2,
@@ -121,7 +137,7 @@ const streamApi = new StreamApi();
 let accountAddress // User account address
 let componentAddress = "component_tdx_c_1qdxmfuuva3akxksazaj5dewl3wzzzxm5gyxh4nj4xcwqvlmnay" //GumballMachine component address
 let resourceAddress // GUM resource address
-let xrdAddress = "resource_tdx_c_1qyqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq40v2wv"
+let xrdAddress = "${XRD}"
 let admin_badge = ""
 // You can use these addresses to skip steps
 // package_tdx_c_1qrw97eu4sgetyevfw3garzmkvkv96g8z0fre9mrd6wzs3rjqc8
