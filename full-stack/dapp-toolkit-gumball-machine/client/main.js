@@ -53,13 +53,14 @@ const streamApi = new StreamApi();
 
 // Global states
 let accountAddress // User account address
-let componentAddress = "component_tdx_c_1qdmsqjknc9luw7ps5s9ykw9g6mn5fh8gdatgcy0tx2nqdpvx9c" //GumballMachine component address
+let componentAddress = "component_tdx_c_1qdxmfuuva3akxksazaj5dewl3wzzzxm5gyxh4nj4xcwqvlmnay" //GumballMachine component address
 let resourceAddress // GUM resource address
 let xrdAddress = "resource_tdx_c_1qyqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq40v2wv"
-// You can use this packageAddress to skip the dashboard publishing step
-// package_tdx_c_1qp33k08x0khkr0ha9cmzutsn5qzaxaasq4w3stnxkyzs8gnx2s
-// component_tdx_c_1qdmsqjknc9luw7ps5s9ykw9g6mn5fh8gdatgcy0tx2nqdpvx9c 
-
+let admin_badge = ""
+// You can use these addresses to skip steps
+// package_tdx_c_1qrw97eu4sgetyevfw3garzmkvkv96g8z0fre9mrd6wzs3rjqc8
+// Wiped Gumball Machine = component_tdx_c_1qdxmfuuva3akxksazaj5dewl3wzzzxm5gyxh4nj4xcwqvlmnay 
+// admin_badge = resource_tdx_c_1q9xmfuuva3akxksazaj5dewl3wzzzxm5gyxh4nj4xcwqx7facl
 
 // ************ Instantiate component and fetch component and resource addresses *************
 document.getElementById('instantiateComponent').onclick = async function () {
@@ -127,7 +128,7 @@ document.getElementById('buyGumball').onclick = async function () {
 
   if (result.isErr()) throw result.error
 
-  console.log("Buy Gumball getMethods Result: ", result)
+  console.log("Buy Gumball sendTransaction Result: ", result)
 
   // Fetch the transaction status from the Gateway SDK
   let status = await transactionApi.transactionStatus({
@@ -148,7 +149,7 @@ document.getElementById('buyGumball').onclick = async function () {
   // Show the receipt on the DOM
   document.getElementById('receipt').innerText = JSON.stringify(commitReceipt.details.receipt, null, 2);
 };
-
+// *********** Get Price ***********
 document.getElementById('getPrice').onclick = async function () {
   let manifest = new ManifestBuilder()
     .callMethod(componentAddress, "get_price", [])
@@ -165,7 +166,7 @@ document.getElementById('getPrice').onclick = async function () {
 
   if (result.isErr()) throw result.error
 
-  console.log("Buy Gumball getMethods Result: ", result)
+  console.log("get_price sendTransaction Result: ", result)
 
   // Fetch the transaction status from the Gateway SDK
   let status = await transactionApi.transactionStatus({
@@ -182,6 +183,46 @@ document.getElementById('getPrice').onclick = async function () {
     }
   })
   console.log('get price commitReceipt', commitReceipt)
+
+  // Show the receipt on the DOM
+  document.getElementById('price').innerText = JSON.stringify(commitReceipt.details.receipt.output[1].data_json.value);
+
+}
+// *********** Set Price ***********
+document.getElementById('setPrice').onclick = async function () {
+  let manifest = new ManifestBuilder()
+    .callMethod(accountAddress, "create_proof", [Address("resource_tdx_c_1q9xmfuuva3akxksazaj5dewl3wzzzxm5gyxh4nj4xcwqx7facl")])
+    .callMethod(componentAddress, "set_price", [Decimal("5")])
+    .build()
+    .toString()
+  console.log("set price manifest", manifest)
+
+  // Send manifest to extension for signing
+  const result = await rdt
+    .sendTransaction({
+      transactionManifest: manifest,
+      version: 1,
+    })
+
+  if (result.isErr()) throw result.error
+
+  console.log("Set Price sendTransaction Result: ", result)
+
+  // Fetch the transaction status from the Gateway SDK
+  let status = await transactionApi.transactionStatus({
+    transactionStatusRequest: {
+      intent_hash_hex: result.value.transactionIntentHash
+    }
+  });
+  console.log('Set Price status', status)
+
+  // fetch commit reciept from gateway api 
+  let commitReceipt = await transactionApi.transactionCommittedDetails({
+    transactionCommittedDetailsRequest: {
+      intent_hash_hex: result.value.transactionIntentHash
+    }
+  })
+  console.log('Set price commitReceipt', commitReceipt)
 
   // Show the receipt on the DOM
   document.getElementById('price').innerText = JSON.stringify(commitReceipt.details.receipt.output[1].data_json.value);
