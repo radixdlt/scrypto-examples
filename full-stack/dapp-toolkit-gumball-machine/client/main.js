@@ -6,7 +6,7 @@ import {
   Expression,
   Address
 } from '@radixdlt/radix-dapp-toolkit'
-const dAppId = 'account_tdx_22_1prd6gfrqj0avlyxwldgyza09fp7gn4vjmga7clhe9p2qv0qt58'
+const dAppId = 'account_tdx_c_1p9r7e09q9q3jcp98f0hjgmm2wjhc68gxxcc55egf9saqhzw9kl'
 
 const rdt = RadixDappToolkit(
   { dAppDefinitionAddress: dAppId, dAppName: 'GumballMachine' },
@@ -53,14 +53,14 @@ const streamApi = new StreamApi();
 
 // Global states
 let accountAddress // User account address
-let componentAddress = "component_tdx_c_1qdxmfuuva3akxksazaj5dewl3wzzzxm5gyxh4nj4xcwqvlmnay" //GumballMachine component address
+let componentAddress = "component_tdx_c_1qdgd920xn6ed25lscfswmsnjlhztuwkga2gxupwyn4ws3xss6d" //GumballMachine component address
 let resourceAddress // GUM resource address
 let xrdAddress = "resource_tdx_c_1qyqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq40v2wv"
-let admin_badge = "resource_tdx_c_1q9xmfuuva3akxksazaj5dewl3wzzzxm5gyxh4nj4xcwqx7facl"
+let admin_badge = "resource_tdx_c_1q9gd920xn6ed25lscfswmsnjlhztuwkga2gxupwyn4wsm8z7lk"
 // You can use these addresses to skip steps
 // package_tdx_c_1qrw97eu4sgetyevfw3garzmkvkv96g8z0fre9mrd6wzs3rjqc8
-// Wiped Gumball Machine = component_tdx_c_1qdxmfuuva3akxksazaj5dewl3wzzzxm5gyxh4nj4xcwqvlmnay 
-// admin_badge = resource_tdx_c_1q9xmfuuva3akxksazaj5dewl3wzzzxm5gyxh4nj4xcwqx7facl
+// BETA5 Gumball MAchine = component_tdx_c_1qdgd920xn6ed25lscfswmsnjlhztuwkga2gxupwyn4ws3xss6d
+// BETA5 admin_badge = resource_tdx_c_1q9gd920xn6ed25lscfswmsnjlhztuwkga2gxupwyn4wsm8z7lk
 
 // ************ Instantiate component and fetch component and resource addresses *************
 document.getElementById('instantiateComponent').onclick = async function () {
@@ -105,7 +105,7 @@ document.getElementById('instantiateComponent').onclick = async function () {
   document.getElementById('componentAddress').innerText = componentAddress;
   // ****** Set resourceAddress variable with gateway api commitReciept payload ******
   admin_badge = commitReceipt.details.referenced_global_entities[1]
-  document.getElementById('gumAddress').innerText = resourceAddress;
+  document.getElementById('gumAddress').innerText = admin_badge;
 }
 // *********** Buy Gumball ***********
 document.getElementById('buyGumball').onclick = async function () {
@@ -224,7 +224,89 @@ document.getElementById('setPrice').onclick = async function () {
   })
   console.log('Set price commitReceipt', commitReceipt)
 
+  // Show the receipt on the DOM .data_struct.struct_data.data_json.fields[2].value
+  document.getElementById('price').innerText = JSON.stringify(commitReceipt.details.receipt.state_updates.updated_substates[0].substate_data.data_struct.struct_data.data_json.fields[2].value);
+
+}
+// *********** Withdraw Earnings ***********
+document.getElementById('withdrawEarnings').onclick = async function () {
+  let manifest = new ManifestBuilder()
+    .callMethod(accountAddress, "create_proof", [Address(admin_badge)])
+    .callMethod(componentAddress, "withdraw_earnings", [])
+    .callMethod(accountAddress, "deposit_batch", [Expression("ENTIRE_WORKTOP")])
+    .build()
+    .toString()
+  console.log("Withdraw Earnings manifest", manifest)
+
+  // Send manifest to extension for signing
+  const result = await rdt
+    .sendTransaction({
+      transactionManifest: manifest,
+      version: 1,
+    })
+
+  if (result.isErr()) throw result.error
+
+  console.log("Withdraw Earnings sendTransaction Result: ", result)
+
+  // Fetch the transaction status from the Gateway SDK
+  let status = await transactionApi.transactionStatus({
+    transactionStatusRequest: {
+      intent_hash_hex: result.value.transactionIntentHash
+    }
+  });
+  console.log('Withdraw Earnings status', status)
+
+  // fetch commit reciept from gateway api 
+  let commitReceipt = await transactionApi.transactionCommittedDetails({
+    transactionCommittedDetailsRequest: {
+      intent_hash_hex: result.value.transactionIntentHash
+    }
+  })
+  console.log('Withdraw Earnings commitReceipt', commitReceipt)
+
   // Show the receipt on the DOM
-  document.getElementById('price').innerText = JSON.stringify(commitReceipt.details.receipt.output[1].data_json.value);
+  document.getElementById('withdraw').innerText = JSON.stringify(commitReceipt.details.receipt);
+
+}
+// *********** Mint NFT Staff Badge ***********
+document.getElementById('mintStaffBadge').onclick = async function () {
+  let manifest = new ManifestBuilder()
+    .callMethod(accountAddress, "create_proof", [Address(admin_badge)])
+    .callMethod(componentAddress, "mint_staff_badge", [`${"Number 2"}`])
+    .callMethod(accountAddress, "deposit_batch", [Expression("ENTIRE_WORKTOP")])
+    .build()
+    .toString()
+  console.log("mintStaffBadge manifest", manifest)
+
+  // Send manifest to extension for signing
+  const result = await rdt
+    .sendTransaction({
+      transactionManifest: manifest,
+      version: 1,
+    })
+
+  if (result.isErr()) throw result.error
+
+  console.log("mintStaffBadge sendTransaction Result: ", result)
+
+  // Fetch the transaction status from the Gateway SDK
+  let status = await transactionApi.transactionStatus({
+    transactionStatusRequest: {
+      intent_hash_hex: result.value.transactionIntentHash
+    }
+  });
+  console.log('mintStaffBadge status', status)
+
+  // fetch commit reciept from gateway api 
+  let commitReceipt = await transactionApi.transactionCommittedDetails({
+    transactionCommittedDetailsRequest: {
+      intent_hash_hex: result.value.transactionIntentHash
+    }
+  })
+  console.log('mintStaffBadge commitReceipt', commitReceipt)
+
+  // Show the receipt on the DOM
+  document.getElementById('staffBadge').innerText = JSON.stringify(commitReceipt.details.receipt);
 
 }
