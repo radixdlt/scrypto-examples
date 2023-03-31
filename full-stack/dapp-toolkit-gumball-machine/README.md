@@ -9,13 +9,13 @@ This example is meant to guide you through building, deploying and using the [Gu
 ## Building the Scrypto code
 1. Enter the scrypto directory in a terminal: `cd scrypto`
 1. Build the code: `scrypto build`
-1. Two important files (`gumball_machine.abi` and `gumball_machine.wasm`) will be generated in `scrypto/target/wasm32-unknown-unknown/release/`. You will need them for the next step.
+1. Two important files (`gumball_machine.schema` and `gumball_machine.wasm`) will be generated in `scrypto/target/wasm32-unknown-unknown/release/`. You will need them for the next step.
 
 ## Deploy the package to RCnet
 1. Go to the [RCnet Dashboard Website](https://rcnet-dashboard.radixdlt.com/)
 2. Connect the Wallet Via the Connect Button
 3. Navigate to Deploy Package & choose an account and badge or have one created for you if you don't have one yet using the link below. (Which appears once you have selected an account)
-4. Upload both `gumball_machine.abi` and `gumball_machine.wasm`
+4. Upload both `gumball_machine.schema` and `gumball_machine.wasm`
 5. Click on "publish package"
 6. The wallet should open up and ask you to approve the transaction
 7. On the wallet click on "sign transaction"
