@@ -53,14 +53,14 @@ const streamApi = new StreamApi();
 
 // Global states
 let accountAddress // User account address
-let componentAddress = "component_tdx_c_1qdgd920xn6ed25lscfswmsnjlhztuwkga2gxupwyn4ws3xss6d" //GumballMachine component address
+let componentAddress = "component_tdx_c_1q03fknuu5g60rmu95xchgwzn7yaexexq5kclkqeesk3smdcnlk" //GumballMachine component address
 let resourceAddress // GUM resource address
 let xrdAddress = "resource_tdx_c_1qyqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq40v2wv"
-let admin_badge = "resource_tdx_c_1q9gd920xn6ed25lscfswmsnjlhztuwkga2gxupwyn4wsm8z7lk"
+let admin_badge = "resource_tdx_c_1q83fknuu5g60rmu95xchgwzn7yaexexq5kclkqeesk3s3v2a6d"
 // You can use these addresses to skip steps
-// package_tdx_c_1qrw97eu4sgetyevfw3garzmkvkv96g8z0fre9mrd6wzs3rjqc8
-// BETA5 Gumball MAchine = component_tdx_c_1qdgd920xn6ed25lscfswmsnjlhztuwkga2gxupwyn4ws3xss6d
-// BETA5 admin_badge = resource_tdx_c_1q9gd920xn6ed25lscfswmsnjlhztuwkga2gxupwyn4wsm8z7lk
+// package_tdx_c_1qpj4des34yyxv8fqgf8az8rec2np6fycw69e2tljep0qpuzt9m
+// LAUNCH Gumball MAchine = component_tdx_c_1q03fknuu5g60rmu95xchgwzn7yaexexq5kclkqeesk3smdcnlk
+// LAUNCH admin_badge = resource_tdx_c_1q83fknuu5g60rmu95xchgwzn7yaexexq5kclkqeesk3s3v2a6d
 
 // ************ Instantiate component and fetch component and resource addresses *************
 document.getElementById('instantiateComponent').onclick = async function () {
@@ -190,9 +190,10 @@ document.getElementById('getPrice').onclick = async function () {
 }
 // *********** Set Price ***********
 document.getElementById('setPrice').onclick = async function () {
+  let newPrice = document.getElementById('newPrice').value
   let manifest = new ManifestBuilder()
     .callMethod(accountAddress, "create_proof", [Address(admin_badge)])
-    .callMethod(componentAddress, "set_price", [Decimal("5")])
+    .callMethod(componentAddress, "set_price", [Decimal(newPrice)])
     .build()
     .toString()
   console.log("set price manifest", manifest)
@@ -273,7 +274,7 @@ document.getElementById('withdrawEarnings').onclick = async function () {
 document.getElementById('mintStaffBadge').onclick = async function () {
   let manifest = new ManifestBuilder()
     .callMethod(accountAddress, "create_proof", [Address(admin_badge)])
-    .callMethod(componentAddress, "mint_staff_badge", [`${"Number 2"}`])
+    .callMethod(componentAddress, "mint_staff_badge", [`"${"Number 2"}"`])
     .callMethod(accountAddress, "deposit_batch", [Expression("ENTIRE_WORKTOP")])
     .build()
     .toString()
