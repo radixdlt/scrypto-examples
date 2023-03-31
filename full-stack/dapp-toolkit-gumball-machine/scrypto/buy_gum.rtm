@@ -1,0 +1,20 @@
+CALL_METHOD
+    Address("${account}")
+    "lock_fee"
+    Decimal("100");
+CALL_METHOD 
+    Address("${account}")
+    "withdraw"    
+    Address("${xrd}")
+    Decimal("33");
+TAKE_FROM_WORKTOP
+    Address("${xrd}")
+    Bucket("xrd");
+CALL_METHOD
+    Address("${component}")
+    "buy_gumball"
+    Bucket("xrd");
+CALL_METHOD
+    Address("${account}")
+    "deposit_batch"
+    Expression("ENTIRE_WORKTOP");

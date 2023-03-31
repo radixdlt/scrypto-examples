@@ -3,14 +3,16 @@
 
 <head>
   <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css">
-  <title>Betanet-V2 dApp Toolkit Example</title>
+  <title>dApp Toolkit Example</title>
 </head>
 
 <body>
   <noscript>You need to enable JavaScript to run this app.</noscript>
-  <script type="module" src="/dist/index.js"></script>
+  <script type="module" src="/main.js"></script>
+
   <div class="connectBtn">
     <radix-connect-button />
   </div>
@@ -26,23 +28,46 @@
   </div>
 
 
-  <h2>2. Instantiate Gumball Machine</h2>
+  <h2>Instantiate Gumball Machine</h2>
   <input type="text" placeholder="Package address" id="packageAddress" />
   <input type="text" placeholder="Gumball Symbol" id="flavor">
   <p><button id="instantiateComponent">Instantiate component</button></p>
   <div class="container">
     <p>Component Address: <span id="componentAddress"></span></p>
-    <p>GUM token address: <span id="gumAddress"></span></p>
+    <p>admin_badge address: <span id="gumAddress"></span></p>
   </div>
 
 
-  <h2>3. Buy Gumball</h2>
+  <h2>Buy Gumball</h2>
   <p><button id="buyGumball">Buy 1 GUM</button></p>
   <div class="container">
     <p>Receipt:<br>
     <pre id="receipt"></pre>
     </p>
   </div>
+  <p><button id="getPrice">Get Price</button></p>
+  <p><button id="setPrice">Set Price</button></p>
+  <input type="text" placeholder="New Price" id="newPrice">
+  <div class="container">
+    <p>Price:<br>
+    <pre id="price"></pre>
+    </p>
+  </div>
+  <p><button id="withdrawEarnings">Withdraw Earnings</button></p>
+  <div class="container">
+    <p>Amount Withdrawn:<br>
+    <pre id="withdraw"></pre>
+    </p>
+  </div>
+  <p><button id="mintStaffBadge">Mint Staff Badge</button></p>
+  <div class="container">
+    <p>Badge Minted:<br>
+    <pre id="staffBadge"></pre>
+    </p>
+  </div>
+
+
+
 </body>
 
 </html>

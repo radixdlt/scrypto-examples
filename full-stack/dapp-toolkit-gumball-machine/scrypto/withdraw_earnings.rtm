@@ -1,0 +1,15 @@
+CALL_METHOD
+    Address("${account}")
+    "lock_fee"
+    Decimal("100");
+CALL_METHOD
+    Address("${account}")
+    "create_proof"
+    Address("${admin_badge}");
+CALL_METHOD
+    Address("${component}")
+    "withdraw_earnings";
+CALL_METHOD
+    Address("${account}")
+    "deposit_batch"
+    Expression("ENTIRE_WORKTOP");

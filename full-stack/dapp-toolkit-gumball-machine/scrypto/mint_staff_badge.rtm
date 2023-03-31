@@ -1,0 +1,18 @@
+CALL_METHOD
+    Address("${account}")
+    "lock_fee"
+    Decimal("100");
+CALL_METHOD
+    Address("${account}")
+    "create_proof"
+    Address("${admin_badge}");
+CALL_METHOD
+    Address("${component}")
+    "mint_staff_badge"
+    "Number2";
+CALL_METHOD
+    Address("${account}")
+    "deposit_batch"
+    Expression("ENTIRE_WORKTOP");
+# This will deposit the staff_badge into the callers account, in real life this could be to allow the owner to inspect before transferring to the employee or,
+# You might also choose to add an instruction to transfer the staff_badge to the staff members account here instead of the owner
