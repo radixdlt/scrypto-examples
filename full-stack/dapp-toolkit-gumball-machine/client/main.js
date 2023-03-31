@@ -6,7 +6,7 @@ import {
   Expression,
   Address
 } from '@radixdlt/radix-dapp-toolkit'
-const dAppId = 'account_tdx_c_1p9r7e09q9q3jcp98f0hjgmm2wjhc68gxxcc55egf9saqhzw9kl'
+const dAppId = 'account_tdx_c_1pyu3svm9a63wlv6qyjuns98qjsnus0pzan68mjq2hatqejq9fr'
 
 const rdt = RadixDappToolkit(
   { dAppDefinitionAddress: dAppId, dAppName: 'GumballMachine' },
