@@ -117,7 +117,7 @@ mod resource_creation {
                 )
                 .create_with_no_initial_supply();
 
-            let resource_manager: &mut ResourceManager = borrow_resource_manager!(resource_address);
+            let resource_manager = borrow_resource_manager!(resource_address);
 
             // Mint method 1 - put one of our auth tokens into the local authorization zone and mint
             ComponentAuthZone::push(self.auth_vault_charlie.create_proof());
@@ -163,7 +163,7 @@ mod resource_creation {
 
             // Example of how to update the metadata
             // You can overwrite an old value, or create a new key, or both, in a single action
-            let resource_manager: &mut ResourceManager = borrow_resource_manager!(resource_address);
+            let resource_manager = borrow_resource_manager!(resource_address);
             self.auth_vault_alpha.authorize(|| {
                 resource_manager.set_metadata("name".to_owned(), "An even better name".to_owned());
                 resource_manager
@@ -193,7 +193,7 @@ mod resource_creation {
             ComponentAuthZone::push(self.auth_vault_alpha.create_proof());
 
             // Freeze the token, so no one may withdraw or deposit it
-            let resource_manager: &mut ResourceManager = borrow_resource_manager!(resource_address);
+            let resource_manager = borrow_resource_manager!(resource_address);
             resource_manager.set_depositable(rule!(deny_all));
             resource_manager.set_withdrawable(rule!(deny_all));
 
