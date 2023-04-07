@@ -23,7 +23,7 @@ mod flat_admin {
                 .mint_initial_supply(1);
 
             // Setting uo the access rules of the component
-            let rules: AccessRules = AccessRules::new()
+            let rules = AccessRulesConfig::new()
                 // The third parameter here specifies the authority allowed to update the rule.
                 .method(
                     "create_additional_admin",
@@ -34,13 +34,13 @@ mod flat_admin {
                 .default(AccessRule::AllowAll, AccessRule::DenyAll);
 
             // Initialize our component, placing the minting authority badge within its vault, where it will remain forever
-            let mut component = Self {
+            let component = Self {
                 admin_mint_badge: Vault::with_bucket(admin_mint_badge),
                 admin_badge: first_admin_badge.resource_address(),
             }
             .instantiate();
-            component.add_access_check(rules);
-            let component_address = component.globalize();
+
+            let component_address = component.globalize_with_access_rules(rules);
 
             // Return the instantiated component and the admin badge we just minted
             (component_address, first_admin_badge)

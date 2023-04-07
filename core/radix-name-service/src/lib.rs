@@ -1,7 +1,7 @@
 use scrypto::prelude::*;
 use sha2::{Digest, Sha256};
 
-#[derive(NonFungibleData)]
+#[derive(NonFungibleData, ScryptoSbor)]
 struct DomainName {
     #[mutable]
     address: ComponentAddress,
@@ -53,7 +53,7 @@ mod radix_name_service {
                 .updateable_non_fungible_data(rule!(require(minter.resource_address())), LOCKED)
                 .create_with_no_initial_supply();
 
-            let rules = AccessRules::new()
+            let rules = AccessRulesConfig::new()
                 .method(
                     "burn_expired_names",
                     rule!(require(admin_badge.resource_address())),
@@ -77,8 +77,7 @@ mod radix_name_service {
                 fee_renewal_per_year,
             }
             .instantiate();
-            component.add_access_check(rules);
-            let component_address = component.globalize();
+            let component_address = component.globalize_with_access_rules(rules);
 
             (component_address, admin_badge)
         }

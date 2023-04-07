@@ -52,7 +52,7 @@ mod regulated_token {
                 .mint_initial_supply(100);
 
             // Next we need to setup the access rules for the methods of the component
-            let access_rules: AccessRules = AccessRules::new()
+            let access_rules = AccessRulesConfig::new()
                 .method(
                     "toggle_transfer_freeze",
                     rule!(
@@ -82,9 +82,12 @@ mod regulated_token {
                 freeze_badge_resource_address: freeze_admin.resource_address(),
             }
             .instantiate();
-            component.add_access_check(access_rules);
 
-            (component.globalize(), general_admin, freeze_admin)
+            (
+                component.globalize_with_access_rules(access_rules),
+                general_admin,
+                freeze_admin,
+            )
         }
 
         /// Either the general admin or freeze admin badge may be used to freeze or unfreeze consumer transfers of the supply
