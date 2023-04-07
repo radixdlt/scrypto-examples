@@ -288,8 +288,7 @@ mod vesting {
         /// * `Bucket` - A bucket of admin badges.
         pub fn add_admin(&mut self, admin_badges_to_mint: Decimal) -> Bucket {
             // Getting the resource manager of the admin badge
-            let admin_resource_manager: &mut ResourceManager =
-                borrow_resource_manager!(self.admin_badge);
+            let admin_resource_manager = borrow_resource_manager!(self.admin_badge);
 
             // Minting a new admin badge for the caller
             let admin_badge: Bucket = self

@@ -93,7 +93,7 @@ mod regulated_token {
         /// Either the general admin or freeze admin badge may be used to freeze or unfreeze consumer transfers of the supply
         pub fn toggle_transfer_freeze(&self, set_frozen: bool) {
             // Note that this operation will fail if the token has reached stage 3 and the token behavior has been locked
-            let token_resource_manager: &mut ResourceManager =
+            let token_resource_manager =
                 borrow_resource_manager!(self.token_supply.resource_address());
 
             self.internal_authority.authorize(|| {
@@ -125,7 +125,7 @@ mod regulated_token {
             ComponentAuthZone::push(self.internal_authority.create_proof());
 
             assert!(self.current_stage <= 2, "Already at final stage");
-            let token_resource_manager: &mut ResourceManager =
+            let token_resource_manager =
                 borrow_resource_manager!(self.token_supply.resource_address());
 
             if self.current_stage == 1 {

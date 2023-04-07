@@ -46,7 +46,7 @@ mod radix_name_service {
                 .divisibility(DIVISIBILITY_NONE)
                 .mint_initial_supply(dec!("1"));
 
-            let name_resource = ResourceBuilder::new_bytes_non_fungible()
+            let name_resource = ResourceBuilder::new_bytes_non_fungible::<DomainName>()
                 .metadata("name", "DomainName")
                 .mintable(rule!(require(minter.resource_address())), LOCKED)
                 .burnable(rule!(require(minter.resource_address())), LOCKED)
@@ -199,8 +199,7 @@ mod radix_name_service {
                 fee_amount
             );
 
-            let resource_manager: &mut ResourceManager =
-                borrow_resource_manager!(self.name_resource);
+            let resource_manager = borrow_resource_manager!(self.name_resource);
 
             let non_fungible: NonFungible<DomainName> = name_nft.non_fungible();
             let id = non_fungible.local_id();
@@ -246,8 +245,7 @@ mod radix_name_service {
                 fee_amount
             );
 
-            let resource_manager: &mut ResourceManager =
-                borrow_resource_manager!(self.name_resource);
+            let resource_manager = borrow_resource_manager!(self.name_resource);
 
             let non_fungible: NonFungible<DomainName> = name_nft.non_fungible();
             let id = non_fungible.local_id();

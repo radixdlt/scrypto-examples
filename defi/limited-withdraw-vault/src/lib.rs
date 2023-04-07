@@ -407,19 +407,7 @@ mod limited_withdraw_vault {
 
 /// An enum which defines the amount of funds that can be withdrawn, typically in relation to some access rule. The
 /// limit can be finite or infinite.
-#[derive(
-    ScryptoCategorize,
-    ScryptoEncode,
-    ScryptoDecode,
-    LegacyDescribe,
-    Debug,
-    Clone,
-    Copy,
-    PartialEq,
-    PartialOrd,
-    Ord,
-    Eq,
-)]
+#[derive(ScryptoSbor, Debug, Clone, Copy, PartialEq, PartialOrd, Ord, Eq)]
 pub enum WithdrawLimit {
     /// A variant which defines a finite withdrawal limit with a given amount of tokens that can be withdrawn.
     Finite(Decimal),

@@ -82,21 +82,22 @@ mod hello_nft {
                 .metadata("name", "Random Cards Mint Badge")
                 .mint_initial_supply(1);
 
-            let random_card_resource_address = ResourceBuilder::new_integer_non_fungible()
-                .metadata("name", "Random Cards")
-                .mintable(
-                    rule!(require(random_card_mint_badge.resource_address())),
-                    LOCKED,
-                )
-                .burnable(
-                    rule!(require(random_card_mint_badge.resource_address())),
-                    LOCKED,
-                )
-                .updateable_non_fungible_data(
-                    rule!(require(random_card_mint_badge.resource_address())),
-                    LOCKED,
-                )
-                .create_with_no_initial_supply();
+            let random_card_resource_address =
+                ResourceBuilder::new_integer_non_fungible::<MagicCard>()
+                    .metadata("name", "Random Cards")
+                    .mintable(
+                        rule!(require(random_card_mint_badge.resource_address())),
+                        LOCKED,
+                    )
+                    .burnable(
+                        rule!(require(random_card_mint_badge.resource_address())),
+                        LOCKED,
+                    )
+                    .updateable_non_fungible_data(
+                        rule!(require(random_card_mint_badge.resource_address())),
+                        LOCKED,
+                    )
+                    .create_with_no_initial_supply();
 
             // Instantiate our component
             Self {

@@ -303,8 +303,7 @@ mod english_auction {
             let non_fungible_id: NonFungibleLocalId = NonFungibleLocalId::random();
 
             let bidders_badge: Bucket = self.internal_admin_badge.authorize(|| {
-                let bidders_resource_manager: &mut ResourceManager =
-                    borrow_resource_manager!(self.bidders_badge);
+                let bidders_resource_manager = borrow_resource_manager!(self.bidders_badge);
                 bidders_resource_manager.mint_non_fungible(
                     &non_fungible_id.clone(),
                     BidderBadge {
@@ -538,8 +537,7 @@ mod english_auction {
                         // Update the bidder's badge associated with the above non-fungible id to reflect that this is
                         // the winner of the bid.
                         self.internal_admin_badge.authorize(|| {
-                            let resource_manager: &mut ResourceManager =
-                                borrow_resource_manager!(self.bidders_badge);
+                            let resource_manager = borrow_resource_manager!(self.bidders_badge);
 
                             // Getting the already existing NFT data of the bidder's badge to update it
                             let mut bidders_badge_data: BidderBadge =

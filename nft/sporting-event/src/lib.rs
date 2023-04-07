@@ -47,7 +47,7 @@ mod sporting_event {
             ComponentAuthZone::push(my_admin.create_proof());
 
             // Create our NFT
-            let my_non_fungible_address = ResourceBuilder::new_integer_non_fungible()
+            let my_non_fungible_address = ResourceBuilder::new_integer_non_fungible::<Ticket>()
                 .metadata("name", "Ticket to the big game")
                 .mintable(rule!(require(my_admin.resource_address())), LOCKED)
                 .updateable_non_fungible_data(rule!(require(my_admin.resource_address())), LOCKED)
