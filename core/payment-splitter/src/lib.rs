@@ -177,7 +177,7 @@ mod payment_splitter {
                 .create_with_no_initial_supply();
 
             // Creating the PaymentSplitter component and setting the auth on the methods
-            let access_rules: AccessRules = AccessRules::new()
+            let access_rules = AccessRulesConfig::new()
                 .method(
                     "add_shareholder",
                     withdraw_and_lock_rule.clone(),
@@ -203,9 +203,7 @@ mod payment_splitter {
                 total_amount_of_shares: dec!("0"),
             }
             .instantiate();
-            payment_splitter.add_access_check(access_rules);
-
-            return payment_splitter.globalize();
+            return payment_splitter.globalize_with_access_rules(access_rules);
         }
 
         /// Adds a shareholder to the PaymentSplitter
