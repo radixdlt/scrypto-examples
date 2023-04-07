@@ -4,13 +4,13 @@ use scrypto::prelude::*;
 #[blueprint]
 mod proxy2 {
     struct Proxy2 {
-        airdrop: AirdropComponent,
+        airdrop: airdrop::AirdropComponent,
     }
 
     impl Proxy2 {
         pub fn instantiate_proxy() -> ComponentAddress {
             Self {
-                airdrop: AirdropComponent::instantiate_airdrop_local(),
+                airdrop: airdrop::AirdropComponent::instantiate_airdrop_local(),
             }
             .instantiate()
             .globalize()
