@@ -597,7 +597,7 @@ struct BidderBadge {
 
 /// The English auction is by definition stateful and during different periods and states of the auction different
 /// actions may be allowed or disallowed. This enum describes the state of the English auction component.
-#[derive(Debug, ScryptoSbor, ScryptoDescribe)]
+#[derive(Debug, ScryptoSbor)]
 enum AuctionState {
     /// An auction is said to be open if the end epoch of the auction has not yet passed and if the seller has not
     /// decided to cancel their auction. During the `Open` state, bidders can submit bids, increase their bids, or

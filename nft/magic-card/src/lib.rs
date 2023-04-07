@@ -1,6 +1,6 @@
 use scrypto::prelude::*;
 
-#[derive(ScryptoCategorize, ScryptoEncode, ScryptoDecode, LegacyDescribe)]
+#[derive(ScryptoSbor)]
 pub enum Color {
     White,
     Blue,
@@ -9,7 +9,7 @@ pub enum Color {
     Green,
 }
 
-#[derive(ScryptoCategorize, ScryptoEncode, ScryptoDecode, LegacyDescribe)]
+#[derive(ScryptoSbor)]
 pub enum Rarity {
     Common,
     Uncommon,
@@ -17,7 +17,7 @@ pub enum Rarity {
     MythicRare,
 }
 
-#[derive(NonFungibleData)]
+#[derive(NonFungibleData, ScryptoSbor)]
 pub struct MagicCard {
     color: Color,
     rarity: Rarity,

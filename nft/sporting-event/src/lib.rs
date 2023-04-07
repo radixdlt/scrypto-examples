@@ -1,12 +1,12 @@
 use scrypto::prelude::*;
 
-#[derive(ScryptoSbor, LegacyDescribe, Eq, PartialEq)]
+#[derive(ScryptoSbor, Eq, PartialEq)]
 pub enum Section {
     Field,
     Luxury,
 }
 
-#[derive(ScryptoSbor, LegacyDescribe)]
+#[derive(ScryptoSbor)]
 pub enum Team {
     Home,
     Away,
