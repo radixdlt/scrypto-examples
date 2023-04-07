@@ -166,7 +166,7 @@ mod english_auction {
             // Setting up the access rules for the component methods such that only the owner of the ownership badge can
             // make calls to the protected methods.
             let access_rule: AccessRule = rule!(require(ownership_badge.resource_address()));
-            let access_rules: AccessRules = AccessRules::new()
+            let access_rules = AccessRulesConfig::new()
                 .method("cancel_auction", access_rule.clone(), AccessRule::DenyAll)
                 .method("withdraw_payment", access_rule.clone(), AccessRule::DenyAll)
                 .default(rule!(allow_all), AccessRule::DenyAll);
@@ -183,8 +183,8 @@ mod english_auction {
                 state: AuctionState::Open,
             }
             .instantiate();
-            english_auction.add_access_check(access_rules);
-            let english_auction: ComponentAddress = english_auction.globalize();
+            let english_auction: ComponentAddress =
+                english_auction.globalize_with_access_rules(access_rules);
 
             return (english_auction, ownership_badge);
         }
@@ -597,7 +597,7 @@ struct BidderBadge {
 
 /// The English auction is by definition stateful and during different periods and states of the auction different
 /// actions may be allowed or disallowed. This enum describes the state of the English auction component.
-#[derive(Debug, ScryptoSbor, LegacyDescribe)]
+#[derive(Debug, ScryptoSbor, ScryptoDescribe)]
 enum AuctionState {
     /// An auction is said to be open if the end epoch of the auction has not yet passed and if the seller has not
     /// decided to cancel their auction. During the `Open` state, bidders can submit bids, increase their bids, or
