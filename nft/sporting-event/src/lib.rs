@@ -12,7 +12,7 @@ pub enum Team {
     Away,
 }
 
-#[derive(NonFungibleData)]
+#[derive(NonFungibleData, ScryptoSbor)]
 pub struct Ticket {
     /// Which seating section is this ticket for
     section: Section,

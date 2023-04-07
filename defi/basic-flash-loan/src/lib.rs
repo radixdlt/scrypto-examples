@@ -1,6 +1,6 @@
 use scrypto::prelude::*;
 
-#[derive(NonFungibleData)]
+#[derive(NonFungibleData, ScryptoSbor)]
 pub struct LoanDue {
     pub amount_due: Decimal,
 }

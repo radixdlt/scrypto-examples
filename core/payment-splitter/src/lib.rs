@@ -1,6 +1,6 @@
 use scrypto::prelude::*;
 
-#[derive(NonFungibleData)]
+#[derive(NonFungibleData, ScryptoSbor)]
 struct Shareholder {
     /// A struct field which defines the amount of shares owned by this shareholder
     amount_of_shares: Decimal,

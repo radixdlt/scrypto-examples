@@ -583,7 +583,7 @@ mod english_auction {
 
 /// The data used for the bidder's non-fungible token. This NFT is used to authenticate bidders and allow them to add to
 /// their bids, cancel them, or claim the NFT bundle if they win the bid.
-#[derive(NonFungibleData)]
+#[derive(NonFungibleData, ScryptoSbor)]
 struct BidderBadge {
     /// A mutable decimal which holds information on the amount of funds that this bidder has bid. This is mutable as
     /// bidders are allowed to add to their bid.
