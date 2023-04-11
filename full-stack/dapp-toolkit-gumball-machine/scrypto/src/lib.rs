@@ -29,6 +29,8 @@ mod gumball_machine {
                 ResourceBuilder::new_uuid_non_fungible::<StaffBadge>()
                     .metadata("name", "staff_badge")
                     .mintable(rule!(require(admin_badge.resource_address())), LOCKED)
+                    .recallable(rule!(require(admin_badge.resource_address())), LOCKED)
+                    .burnable(rule!(require(admin_badge.resource_address())), LOCKED)
                     .create_with_no_initial_supply();
 
             // create a new Gumball resource, with a fixed quantity of 100
@@ -52,9 +54,11 @@ mod gumball_machine {
             .instantiate();
 
             let access_rules = AccessRulesConfig::new()
+                .method("get_price", AccessRule::AllowAll, LOCKED)
+                .method("buy_gumball", AccessRule::AllowAll, LOCKED)
                 .method(
                     "set_price",
-                    rule!(require(admin_badge.resource_address())),
+                    rule!(require(admin_badge.resource_address()) || require(staff_badge)),
                     LOCKED,
                 )
                 .method(
@@ -62,7 +66,22 @@ mod gumball_machine {
                     rule!(require(admin_badge.resource_address())),
                     LOCKED,
                 )
-                .default(AccessRule::AllowAll, AccessRule::DenyAll);
+                .method(
+                    "mint_staff_badge",
+                    rule!(require(admin_badge.resource_address())),
+                    LOCKED,
+                )
+                .method(
+                    "refill_gumball_machine",
+                    rule!(require(admin_badge.resource_address()) || require(staff_badge)),
+                    LOCKED,
+                )
+                .method(
+                    "recall_staff_badge",
+                    rule!(require(admin_badge.resource_address())),
+                    LOCKED,
+                )
+                .default(rule!(require(admin_badge.resource_address())), LOCKED);
 
             (
                 component.globalize_with_access_rules(access_rules),
@@ -86,6 +105,10 @@ mod gumball_machine {
                     employee_name: employee_name,
                 });
             staff_badge_bucket
+        }
+
+        pub fn recall_staff_badge() {
+            // recall a staff nft badge and burn it.
         }
 
         pub fn refill_gumball_machine(&mut self) {
