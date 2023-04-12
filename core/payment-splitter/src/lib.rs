@@ -178,7 +178,7 @@ mod payment_splitter {
                     .create_with_no_initial_supply();
 
             // Creating the PaymentSplitter component and setting the auth on the methods
-            let access_rules = AccessRulesConfig::new()
+            let access_rules_config = AccessRulesConfig::new()
                 .method(
                     "add_shareholder",
                     withdraw_and_lock_rule.clone(),
@@ -194,7 +194,7 @@ mod payment_splitter {
                 // can take the shareholder badge in a `Proof`, get its ID, and use the data associated with it.
                 .default(rule!(allow_all), AccessRule::DenyAll);
 
-            let mut payment_splitter: PaymentSplitterComponent = Self {
+            let payment_splitter: PaymentSplitterComponent = Self {
                 accepted_token_resource_address: accepted_token_resource_address,
                 shareholder_badge_resource_address: shareholder_badge,
                 internal_admin_badge: Vault::with_bucket(internal_admin_badge),
@@ -204,7 +204,7 @@ mod payment_splitter {
                 total_amount_of_shares: dec!("0"),
             }
             .instantiate();
-            return payment_splitter.globalize_with_access_rules(access_rules);
+            return payment_splitter.globalize_with_access_rules(access_rules_config);
         }
 
         /// Adds a shareholder to the PaymentSplitter
@@ -236,17 +236,15 @@ mod payment_splitter {
             );
             info!("Adding a new shareholder with {} shares", amount_of_shares);
 
-            // Creating a new Non-Fungible ID for the shareholder
-            let non_fungible_id: NonFungibleLocalId = NonFungibleLocalId::random();
-
             let shareholder_badge: Bucket = self.internal_admin_badge.authorize(|| {
-                borrow_resource_manager!(self.shareholder_badge_resource_address).mint_non_fungible(
-                    &non_fungible_id,
+                borrow_resource_manager!(self.shareholder_badge_resource_address).mint_uuid_non_fungible(
                     Shareholder {
                         amount_of_shares: amount_of_shares,
                     },
                 )
             });
+
+            let non_fungible_id: NonFungibleLocalId = shareholder_badge.non_fungible_local_id();
 
             // Creating a vault for the shareholder
             self.vaults.insert(

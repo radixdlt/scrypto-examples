@@ -165,9 +165,10 @@ mod resource_creation {
             // You can overwrite an old value, or create a new key, or both, in a single action
             let resource_manager = borrow_resource_manager!(resource_address);
             self.auth_vault_alpha.authorize(|| {
-                resource_manager.set_metadata("name".to_owned(), "An even better name".to_owned());
+                resource_manager.metadata().set("name".to_owned(), "An even better name".to_owned());
                 resource_manager
-                    .set_metadata("some new key".to_owned(), "Interesting value".to_owned());
+                    .metadata()
+                    .set("some new key".to_owned(), "Interesting value".to_owned());
             });
         }
 

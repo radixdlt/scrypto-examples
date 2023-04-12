@@ -103,7 +103,7 @@ mod vesting {
                 .mint_initial_supply(dec!("1"));
 
             // Creating the beneficiary's badge which is used to keep track of their vesting schedule.
-            let beneficiary_vesting_badge: ResourceAddress = ResourceBuilder::new_integer_non_fungible()
+            let beneficiary_vesting_badge: ResourceAddress = ResourceBuilder::new_integer_non_fungible::<BeneficiaryVestingSchedule>()
                 .metadata("name", "Beneficiary Badge")
                 .metadata(
                     "description",
@@ -156,7 +156,7 @@ mod vesting {
                 // like to handle them all on our own.
                 .default(rule!(allow_all), AccessRule::DenyAll);
 
-            let mut vesting_component: VestingComponent = Self {
+            let vesting_component: VestingComponent = Self {
                 funds: HashMap::new(),
                 beneficiary_vesting_badge: beneficiary_vesting_badge,
                 admin_badge: admin_badge.resource_address(),

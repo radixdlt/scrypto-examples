@@ -131,14 +131,14 @@ mod limited_withdraw_vault {
             tokens_resource_address: ResourceAddress,
         ) -> ComponentAddress {
             // Defining the access rules for the component.
-            let access_rules = AccessRulesConfig::new()
+            let access_rules_config = AccessRulesConfig::new()
                 .method("withdraw", rule!(allow_all), AccessRule::DenyAll)
                 .method("deposit", rule!(allow_all), AccessRule::DenyAll)
                 .default(administration_rule, AccessRule::DenyAll);
 
             // Instantiating the component and returning its address
             return Self::instantiate_bare_bone_limited_withdraw_vault(
-                access_rules,
+                access_rules_config,
                 tokens_resource_address,
             );
         }
@@ -181,7 +181,7 @@ mod limited_withdraw_vault {
         /// that you care about is creating a more complex limited withdraw vault, then consider using other functions
         /// like `instantiate_custom_limited_withdraw_vault`.
         pub fn instantiate_bare_bone_limited_withdraw_vault(
-            access_rules: AccessRulesConfig,
+            access_rules_config: AccessRulesConfig,
             tokens_resource_address: ResourceAddress,
         ) -> ComponentAddress {
             // Performing the checks to determine if the limited withdraw vault can be created
@@ -198,7 +198,7 @@ mod limited_withdraw_vault {
                 vault: Vault::new(tokens_resource_address),
             }
             .instantiate();
-            return local_component.globalize_with_access_rules(access_rules);
+            return local_component.globalize_with_access_rules(access_rules_config);
         }
 
         /// Adds a new withdraw authority to the the list of authorities.
@@ -324,7 +324,6 @@ mod limited_withdraw_vault {
                 .withdraw_information
                 .clone()
                 .into_iter()
-                // NOTE: the `.check()` method do not exist anymore
                 .filter(|(access_rule, _)| access_rule.check(&proofs[..]))
                 .collect::<HashMap<AccessRule, (WithdrawLimit, Decimal)>>();
             info!(

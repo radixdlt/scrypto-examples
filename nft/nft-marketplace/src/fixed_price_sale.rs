@@ -116,7 +116,7 @@ mod fixed_price_sale {
                 .default(rule!(allow_all), AccessRule::DenyAll);
 
             // Instantiating the fixed price sale component
-            let mut fixed_price_sale: FixedPriceSaleComponent = Self {
+            let fixed_price_sale: FixedPriceSaleComponent = Self {
                 nft_vaults,
                 payment_vault: Vault::new(accepted_payment_token),
                 accepted_payment_token,

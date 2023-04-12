@@ -19,12 +19,12 @@ fn test_create_additional_admin() {
             package_address,
             "FlatAdmin",
             "instantiate_flat_admin",
-            args!("test"),
+            manifest_args!("test"),
         )
         .call_method(
             account_component,
             "deposit_batch",
-            args!(ManifestExpression::EntireWorktop),
+            manifest_args!(ManifestExpression::EntireWorktop),
         )
         .build();
     let receipt1 = test_runner.execute_manifest_ignoring_fee(
@@ -36,20 +36,18 @@ fn test_create_additional_admin() {
 
     // Test the `create_additional_admin` method.
     let flat_admin = receipt1
-        .expect_commit()
-        .entity_changes
-        .new_component_addresses[0];
+        .expect_commit(true).new_component_addresses()[0];
+
     let admin_badge = receipt1
-        .expect_commit()
-        .entity_changes
-        .new_resource_addresses[1];
+        .expect_commit(true).new_resource_addresses()[1];
+    
     let manifest2 = ManifestBuilder::new()
-        .create_proof_from_account_by_amount(account_component, dec!("1"), admin_badge)
-        .call_method(flat_admin, "create_additional_admin", args!())
+        .create_proof_from_account_by_amount(account_component, admin_badge, dec!("1"))
+        .call_method(flat_admin, "create_additional_admin", manifest_args!())
         .call_method(
             account_component,
             "deposit_batch",
-            args!(ManifestExpression::EntireWorktop),
+            manifest_args!(ManifestExpression::EntireWorktop),
         )
         .build();
     let receipt2 = test_runner.execute_manifest_ignoring_fee(

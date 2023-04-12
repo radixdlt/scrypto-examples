@@ -130,7 +130,20 @@ mod sporting_event {
 
             // Then commit our updated data to our NFT
             self.admin_authority
-                .authorize(|| nft_bucket.non_fungible().update_data(nft_data));
+                .authorize(|| { 
+
+                    let mut resource_manger: ResourceManager = 
+                    borrow_resource_manager!(nft_bucket.resource_address());
+                    
+                    let non_fungible_local_id: NonFungibleLocalId = nft_bucket.non_fungible_local_id();
+
+                    resource_manger.update_non_fungible_data(
+                        &non_fungible_local_id, 
+                        "prediction", 
+                        Team::Away
+                    );
+                }
+            );   
 
             // All done, send it back
             nft_bucket

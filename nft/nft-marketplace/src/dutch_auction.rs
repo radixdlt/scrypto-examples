@@ -143,7 +143,7 @@ mod dutch_auction {
                 .default(rule!(allow_all), AccessRule::DenyAll);
 
             // Instantiating the dutch auction sale component
-            let mut dutch_auction: DutchAuctionComponent = Self {
+            let dutch_auction: DutchAuctionComponent = Self {
                 nft_vaults,
                 payment_vault: Vault::new(accepted_payment_token),
                 accepted_payment_token,

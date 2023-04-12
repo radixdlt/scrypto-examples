@@ -26,8 +26,8 @@ pub struct MagicCard {
 }
 
 #[blueprint]
-mod hello_nft {
-    struct HelloNft {
+mod magic_card_nft {
+    struct MagicCardNft {
         /// A vault that holds all our special cards
         special_cards: Vault,
         /// The price for each special card
@@ -44,7 +44,7 @@ mod hello_nft {
         collected_xrd: Vault,
     }
 
-    impl HelloNft {
+    impl MagicCardNft {
         pub fn instantiate_component() -> ComponentAddress {
             // Creates a fixed set of NFTs
             let special_cards_bucket = ResourceBuilder::new_integer_non_fungible()
@@ -163,11 +163,21 @@ mod hello_nft {
             );
 
             // Get and update the mutable data
-            let mut non_fungible_data: MagicCard = nft_bucket.non_fungible().data();
-            non_fungible_data.level += 1;
+            
 
             self.random_card_mint_badge
-                .authorize(|| nft_bucket.non_fungible().update_data(non_fungible_data));
+                .authorize(|| {
+                    let nft_local_id: NonFungibleLocalId = nft_bucket.non_fungible_local_id();
+
+                    let mut resource_manager: ResourceManager = 
+                    borrow_resource_manager!(self.random_card_resource_address);
+
+                    let mut non_fungible_data: MagicCard = nft_bucket.non_fungible().data();
+ 
+                    resource_manager.update_non_fungible_data(&nft_local_id, "level", non_fungible_data.level += 1)
+
+                    }
+                );
 
             nft_bucket
         }
