@@ -19,7 +19,7 @@ mod price_oracle {
                 .metadata("name", "Price Oracle Admin Badge")
                 .mint_initial_supply(num_of_admins);
 
-            let rules = AccessRules::new()
+            let rules = AccessRulesConfig::new()
                 .method(
                     "update_price",
                     rule!(require(badges.resource_address())),
@@ -27,13 +27,12 @@ mod price_oracle {
                 )
                 .default(rule!(allow_all), AccessRule::DenyAll);
 
-            let mut component = Self {
+            let component = Self {
                 prices: KeyValueStore::new(),
                 admin_badge: badges.resource_address(),
             }
             .instantiate();
-            component.add_access_check(rules);
-            let component_address = component.globalize();
+            let component_address = component.globalize_with_access_rules(rules);
 
             (badges, component_address)
         }

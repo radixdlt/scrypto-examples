@@ -137,13 +137,13 @@ mod dutch_auction {
             // Setting up the access rules for the component methods such that only the owner of the ownership badge can
             // make calls to the protected methods.
             let access_rule: AccessRule = rule!(require(ownership_badge.resource_address()));
-            let access_rules: AccessRules = AccessRules::new()
+            let access_rules = AccessRulesConfig::new()
                 .method("cancel_sale", access_rule.clone(), AccessRule::DenyAll)
                 .method("withdraw_payment", access_rule.clone(), AccessRule::DenyAll)
                 .default(rule!(allow_all), AccessRule::DenyAll);
 
             // Instantiating the dutch auction sale component
-            let mut dutch_auction: DutchAuctionComponent = Self {
+            let dutch_auction: DutchAuctionComponent = Self {
                 nft_vaults,
                 payment_vault: Vault::new(accepted_payment_token),
                 accepted_payment_token,
@@ -153,8 +153,8 @@ mod dutch_auction {
                 ending_epoch: Runtime::current_epoch() + relative_ending_epoch,
             }
             .instantiate();
-            dutch_auction.add_access_check(access_rules);
-            let dutch_auction: ComponentAddress = dutch_auction.globalize();
+            let dutch_auction: ComponentAddress =
+                dutch_auction.globalize_with_access_rules(access_rules);
 
             return (dutch_auction, ownership_badge);
         }

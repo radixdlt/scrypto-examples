@@ -19,12 +19,12 @@ fn test_create_additional_admin() {
             package_address,
             "HelloNft",
             "instantiate_hello_nft",
-            args!(dec!("5")),
+            manifest_args!(dec!("5")),
         )
         .call_method(
             account_component,
             "deposit_batch",
-            args!(ManifestExpression::EntireWorktop),
+            manifest_args!(ManifestExpression::EntireWorktop),
         )
         .build();
     let receipt1 = test_runner.execute_manifest_ignoring_fee(
@@ -36,18 +36,17 @@ fn test_create_additional_admin() {
 
     // Test the `buy_ticket_by_id` method.
     let component = receipt1
-        .expect_commit()
-        .entity_changes
-        .new_component_addresses[0];
+        .expect_commit(true).new_component_addresses()[0];
+
     let manifest2 = ManifestBuilder::new()
-        .withdraw_from_account_by_amount(account_component, dec!("10"), RADIX_TOKEN)
+        .withdraw_from_account(account_component, RADIX_TOKEN, dec!("10"))
         .take_from_worktop(RADIX_TOKEN, |builder, bucket| {
-            builder.call_method(component, "buy_ticket", args!(bucket))
+            builder.call_method(component, "buy_ticket", manifest_args!(bucket))
         })
         .call_method(
             account_component,
             "deposit_batch",
-            args!(ManifestExpression::EntireWorktop),
+            manifest_args!(ManifestExpression::EntireWorktop),
         )
         .build();
     let receipt2 = test_runner.execute_manifest_ignoring_fee(

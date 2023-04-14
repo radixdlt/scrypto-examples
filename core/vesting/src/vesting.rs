@@ -103,7 +103,7 @@ mod vesting {
                 .mint_initial_supply(dec!("1"));
 
             // Creating the beneficiary's badge which is used to keep track of their vesting schedule.
-            let beneficiary_vesting_badge: ResourceAddress = ResourceBuilder::new_integer_non_fungible()
+            let beneficiary_vesting_badge: ResourceAddress = ResourceBuilder::new_integer_non_fungible::<BeneficiaryVestingSchedule>()
                 .metadata("name", "Beneficiary Badge")
                 .metadata(
                     "description",
@@ -118,7 +118,7 @@ mod vesting {
             // Setting up the auth for the vesting component. With v0.4.0 of Scrypto we can now make the authentication
             // and authorization to happen automatically without us needing to care about them. We can use this to
             // impose quite a number of rules on who is authorized to access what.
-            let rules: AccessRules = AccessRules::new()
+            let rules = AccessRulesConfig::new()
                 // Only people who have at least 1 admin badge in their auth zone may make calls to these methods.
                 .method(
                     "add_beneficiary",
@@ -156,7 +156,7 @@ mod vesting {
                 // like to handle them all on our own.
                 .default(rule!(allow_all), AccessRule::DenyAll);
 
-            let mut vesting_component: VestingComponent = Self {
+            let vesting_component: VestingComponent = Self {
                 funds: HashMap::new(),
                 beneficiary_vesting_badge: beneficiary_vesting_badge,
                 admin_badge: admin_badge.resource_address(),
@@ -166,8 +166,9 @@ mod vesting {
                 min_admins_required_for_multi_admin: dec!("1"),
             }
             .instantiate();
-            vesting_component.add_access_check(rules);
-            let vesting_component_address: ComponentAddress = vesting_component.globalize();
+            // vesting_component.add_access_check(rules);
+            let vesting_component_address: ComponentAddress =
+                vesting_component.globalize_with_access_rules(rules);
 
             return (vesting_component_address, admin_badge);
         }
@@ -287,8 +288,7 @@ mod vesting {
         /// * `Bucket` - A bucket of admin badges.
         pub fn add_admin(&mut self, admin_badges_to_mint: Decimal) -> Bucket {
             // Getting the resource manager of the admin badge
-            let admin_resource_manager: &mut ResourceManager =
-                borrow_resource_manager!(self.admin_badge);
+            let admin_resource_manager = borrow_resource_manager!(self.admin_badge);
 
             // Minting a new admin badge for the caller
             let admin_badge: Bucket = self

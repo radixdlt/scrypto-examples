@@ -1,6 +1,6 @@
 use scrypto::prelude::*;
 
-#[derive(NonFungibleData)]
+#[derive(NonFungibleData, ScryptoSbor)]
 pub struct LoanDue {
     pub amount_due: Decimal,
 }
@@ -27,7 +27,7 @@ mod basic_flash_loan {
                 .mint_initial_supply(1);
 
             // Define a "transient" resource which can never be deposited once created, only burned
-            let address = ResourceBuilder::new_uuid_non_fungible()
+            let address = ResourceBuilder::new_uuid_non_fungible::<LoanDue>()
                 .metadata(
                     "name",
                     "Promise token for BasicFlashLoan - must be returned to be burned!",

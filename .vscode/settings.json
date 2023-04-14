@@ -22,6 +22,6 @@
         "nft/magic-card/Cargo.toml",
         "nft/nft-marketplace/Cargo.toml",
         "nft/sporting-event/Cargo.toml",
-        "full-stack/wallet-sdk-gumball-machine/scrypto/Cargo.toml"
+        "full-stack/dapp-toolkit-gumball-machine/scrypto/Cargo.toml"
     ]
 }

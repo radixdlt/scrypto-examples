@@ -1,18 +1,18 @@
 use scrypto::prelude::*;
 
-#[derive(ScryptoSbor, LegacyDescribe, Eq, PartialEq)]
+#[derive(ScryptoSbor, Eq, PartialEq)]
 pub enum Section {
     Field,
     Luxury,
 }
 
-#[derive(ScryptoSbor, LegacyDescribe)]
+#[derive(ScryptoSbor)]
 pub enum Team {
     Home,
     Away,
 }
 
-#[derive(NonFungibleData)]
+#[derive(NonFungibleData, ScryptoSbor)]
 pub struct Ticket {
     /// Which seating section is this ticket for
     section: Section,
@@ -47,7 +47,7 @@ mod sporting_event {
             ComponentAuthZone::push(my_admin.create_proof());
 
             // Create our NFT
-            let my_non_fungible_address = ResourceBuilder::new_integer_non_fungible()
+            let my_non_fungible_address = ResourceBuilder::new_integer_non_fungible::<Ticket>()
                 .metadata("name", "Ticket to the big game")
                 .mintable(rule!(require(my_admin.resource_address())), LOCKED)
                 .updateable_non_fungible_data(rule!(require(my_admin.resource_address())), LOCKED)
@@ -130,7 +130,20 @@ mod sporting_event {
 
             // Then commit our updated data to our NFT
             self.admin_authority
-                .authorize(|| nft_bucket.non_fungible().update_data(nft_data));
+                .authorize(|| { 
+
+                    let mut resource_manger: ResourceManager = 
+                    borrow_resource_manager!(nft_bucket.resource_address());
+                    
+                    let non_fungible_local_id: NonFungibleLocalId = nft_bucket.non_fungible_local_id();
+
+                    resource_manger.update_non_fungible_data(
+                        &non_fungible_local_id, 
+                        "prediction", 
+                        Team::Away
+                    );
+                }
+            );   
 
             // All done, send it back
             nft_bucket

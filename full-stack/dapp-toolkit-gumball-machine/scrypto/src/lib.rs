@@ -29,6 +29,8 @@ mod gumball_machine {
                 ResourceBuilder::new_uuid_non_fungible::<StaffBadge>()
                     .metadata("name", "staff_badge")
                     .mintable(rule!(require(admin_badge.resource_address())), LOCKED)
+                    .recallable(rule!(require(admin_badge.resource_address())), LOCKED)
+                    .burnable(rule!(require(admin_badge.resource_address())), LOCKED)
                     .create_with_no_initial_supply();
 
             // create a new Gumball resource, with a fixed quantity of 100
@@ -52,9 +54,11 @@ mod gumball_machine {
             .instantiate();
 
             let access_rules = AccessRulesConfig::new()
+                .method("get_price", AccessRule::AllowAll, LOCKED)
+                .method("buy_gumball", AccessRule::AllowAll, LOCKED)
                 .method(
                     "set_price",
-                    rule!(require(admin_badge.resource_address())),
+                    rule!(require(admin_badge.resource_address()) || require(staff_badge)),
                     LOCKED,
                 )
                 .method(
@@ -62,7 +66,22 @@ mod gumball_machine {
                     rule!(require(admin_badge.resource_address())),
                     LOCKED,
                 )
-                .default(AccessRule::AllowAll, AccessRule::DenyAll);
+                .method(
+                    "mint_staff_badge",
+                    rule!(require(admin_badge.resource_address())),
+                    LOCKED,
+                )
+                .method(
+                    "refill_gumball_machine",
+                    rule!(require(admin_badge.resource_address()) || require(staff_badge)),
+                    LOCKED,
+                )
+                .method(
+                    "recall_staff_badge",
+                    rule!(require(admin_badge.resource_address())),
+                    LOCKED,
+                )
+                .default(rule!(require(admin_badge.resource_address())), LOCKED);
 
             (
                 component.globalize_with_access_rules(access_rules),
@@ -79,17 +98,24 @@ mod gumball_machine {
         }
 
         pub fn mint_staff_badge(&mut self, employee_name: String) -> Bucket {
-            let staff_resourcemanager: ResourceManager =
+            let staff_resource_manager: ResourceManager =
                 borrow_resource_manager!(self.staff_badge_address);
             let staff_badge_bucket: Bucket =
-                staff_resourcemanager.mint_uuid_non_fungible(StaffBadge {
+                staff_resource_manager.mint_uuid_non_fungible(StaffBadge {
                     employee_name: employee_name,
                 });
             staff_badge_bucket
         }
 
+        pub fn recall_staff_badge() {
+            // recall a staff nft badge and burn it.
+        }
+
         pub fn refill_gumball_machine(&mut self) {
             // mint some more gumball tokens requires an admin or staff badge
+            let gumball_resource_manager =
+                borrow_resource_manager!(self.gumballs.resource_address());
+            self.gumballs.put(gumball_resource_manager.mint(100));
         }
 
         pub fn buy_gumball(&mut self, mut payment: Bucket) -> (Bucket, Bucket) {

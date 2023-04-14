@@ -1,6 +1,6 @@
 use scrypto::prelude::*;
 
-#[derive(ScryptoCategorize, ScryptoEncode, ScryptoDecode, LegacyDescribe)]
+#[derive(ScryptoSbor)]
 pub enum Color {
     White,
     Blue,
@@ -9,7 +9,7 @@ pub enum Color {
     Green,
 }
 
-#[derive(ScryptoCategorize, ScryptoEncode, ScryptoDecode, LegacyDescribe)]
+#[derive(ScryptoSbor)]
 pub enum Rarity {
     Common,
     Uncommon,
@@ -17,7 +17,7 @@ pub enum Rarity {
     MythicRare,
 }
 
-#[derive(NonFungibleData)]
+#[derive(NonFungibleData, ScryptoSbor)]
 pub struct MagicCard {
     color: Color,
     rarity: Rarity,
@@ -26,8 +26,8 @@ pub struct MagicCard {
 }
 
 #[blueprint]
-mod hello_nft {
-    struct HelloNft {
+mod magic_card_nft {
+    struct MagicCardNft {
         /// A vault that holds all our special cards
         special_cards: Vault,
         /// The price for each special card
@@ -44,7 +44,7 @@ mod hello_nft {
         collected_xrd: Vault,
     }
 
-    impl HelloNft {
+    impl MagicCardNft {
         pub fn instantiate_component() -> ComponentAddress {
             // Creates a fixed set of NFTs
             let special_cards_bucket = ResourceBuilder::new_integer_non_fungible()
@@ -82,21 +82,22 @@ mod hello_nft {
                 .metadata("name", "Random Cards Mint Badge")
                 .mint_initial_supply(1);
 
-            let random_card_resource_address = ResourceBuilder::new_integer_non_fungible()
-                .metadata("name", "Random Cards")
-                .mintable(
-                    rule!(require(random_card_mint_badge.resource_address())),
-                    LOCKED,
-                )
-                .burnable(
-                    rule!(require(random_card_mint_badge.resource_address())),
-                    LOCKED,
-                )
-                .updateable_non_fungible_data(
-                    rule!(require(random_card_mint_badge.resource_address())),
-                    LOCKED,
-                )
-                .create_with_no_initial_supply();
+            let random_card_resource_address =
+                ResourceBuilder::new_integer_non_fungible::<MagicCard>()
+                    .metadata("name", "Random Cards")
+                    .mintable(
+                        rule!(require(random_card_mint_badge.resource_address())),
+                        LOCKED,
+                    )
+                    .burnable(
+                        rule!(require(random_card_mint_badge.resource_address())),
+                        LOCKED,
+                    )
+                    .updateable_non_fungible_data(
+                        rule!(require(random_card_mint_badge.resource_address())),
+                        LOCKED,
+                    )
+                    .create_with_no_initial_supply();
 
             // Instantiate our component
             Self {
@@ -162,11 +163,21 @@ mod hello_nft {
             );
 
             // Get and update the mutable data
-            let mut non_fungible_data: MagicCard = nft_bucket.non_fungible().data();
-            non_fungible_data.level += 1;
+            
 
             self.random_card_mint_badge
-                .authorize(|| nft_bucket.non_fungible().update_data(non_fungible_data));
+                .authorize(|| {
+                    let nft_local_id: NonFungibleLocalId = nft_bucket.non_fungible_local_id();
+
+                    let mut resource_manager: ResourceManager = 
+                    borrow_resource_manager!(self.random_card_resource_address);
+
+                    let mut non_fungible_data: MagicCard = nft_bucket.non_fungible().data();
+ 
+                    resource_manager.update_non_fungible_data(&nft_local_id, "level", non_fungible_data.level += 1)
+
+                    }
+                );
 
             nft_bucket
         }

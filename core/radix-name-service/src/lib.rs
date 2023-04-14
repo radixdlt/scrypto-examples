@@ -1,7 +1,7 @@
 use scrypto::prelude::*;
 use sha2::{Digest, Sha256};
 
-#[derive(NonFungibleData)]
+#[derive(NonFungibleData, ScryptoSbor)]
 struct DomainName {
     #[mutable]
     address: ComponentAddress,
@@ -46,14 +46,14 @@ mod radix_name_service {
                 .divisibility(DIVISIBILITY_NONE)
                 .mint_initial_supply(dec!("1"));
 
-            let name_resource = ResourceBuilder::new_bytes_non_fungible()
+            let name_resource = ResourceBuilder::new_bytes_non_fungible::<DomainName>()
                 .metadata("name", "DomainName")
                 .mintable(rule!(require(minter.resource_address())), LOCKED)
                 .burnable(rule!(require(minter.resource_address())), LOCKED)
                 .updateable_non_fungible_data(rule!(require(minter.resource_address())), LOCKED)
                 .create_with_no_initial_supply();
 
-            let rules = AccessRules::new()
+            let rules = AccessRulesConfig::new()
                 .method(
                     "burn_expired_names",
                     rule!(require(admin_badge.resource_address())),
@@ -66,7 +66,7 @@ mod radix_name_service {
                 )
                 .default(rule!(allow_all), AccessRule::DenyAll);
 
-            let mut component = RadixNameService {
+            let component = RadixNameService {
                 admin_badge: admin_badge.resource_address(),
                 minter: Vault::with_bucket(minter),
                 name_resource,
@@ -77,8 +77,7 @@ mod radix_name_service {
                 fee_renewal_per_year,
             }
             .instantiate();
-            component.add_access_check(rules);
-            let component_address = component.globalize();
+            let component_address = component.globalize_with_access_rules(rules);
 
             (component_address, admin_badge)
         }
@@ -200,21 +199,21 @@ mod radix_name_service {
                 fee_amount
             );
 
-            let resource_manager: &mut ResourceManager =
-                borrow_resource_manager!(self.name_resource);
+            let mut resource_manager = borrow_resource_manager!(self.name_resource);
 
             let non_fungible: NonFungible<DomainName> = name_nft.non_fungible();
             let id = non_fungible.local_id();
 
             let old_name_data = resource_manager.get_non_fungible_data::<DomainName>(&id);
-            let new_name_data = DomainName {
-                address: new_address,
-                last_valid_epoch: old_name_data.last_valid_epoch,
-                deposit_amount: old_name_data.deposit_amount,
-            };
+
 
             self.minter
-                .authorize(|| resource_manager.update_non_fungible_data(&id, new_name_data));
+                .authorize(|| {
+                        resource_manager.update_non_fungible_data(&id, "address", new_address);
+                        resource_manager.update_non_fungible_data(&id, "last_valid_epoch", old_name_data.last_valid_epoch);
+                        resource_manager.update_non_fungible_data(&id, "deposit_amount", old_name_data.deposit_amount);
+                    }
+                );
             self.fees.put(fee.take(fee_amount));
 
             fee
@@ -247,18 +246,17 @@ mod radix_name_service {
                 fee_amount
             );
 
-            let resource_manager: &mut ResourceManager =
-                borrow_resource_manager!(self.name_resource);
+            let mut resource_manager = borrow_resource_manager!(self.name_resource);
 
             let non_fungible: NonFungible<DomainName> = name_nft.non_fungible();
             let id = non_fungible.local_id();
 
-            let mut name_data = resource_manager.get_non_fungible_data::<DomainName>(&id);
-            name_data.last_valid_epoch =
-                name_data.last_valid_epoch + EPOCHS_PER_YEAR * u64::from(renew_years);
+            let name_data = resource_manager.get_non_fungible_data::<DomainName>(&id);
+
+            let new_last_valid_epoch = name_data.last_valid_epoch + EPOCHS_PER_YEAR * u64::from(renew_years);
 
             self.minter
-                .authorize(|| resource_manager.update_non_fungible_data(&id, name_data));
+                .authorize(|| resource_manager.update_non_fungible_data(&id, "name_data", new_last_valid_epoch));
             self.fees.put(fee.take(fee_amount));
 
             fee

@@ -91,19 +91,19 @@ mod bootstrap {
     }
 }
 
-#[derive(NonFungibleData)]
+#[derive(NonFungibleData, ScryptoSbor)]
 struct Car {
     name: String,
     manufacturer: String,
 }
 
-#[derive(NonFungibleData)]
+#[derive(NonFungibleData, ScryptoSbor)]
 struct Phone {
     name: String,
     manufacturer: String,
 }
 
-#[derive(NonFungibleData)]
+#[derive(NonFungibleData, ScryptoSbor)]
 struct Laptop {
     name: String,
     manufacturer: String,

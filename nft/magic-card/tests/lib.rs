@@ -19,7 +19,7 @@ fn test_magic_card() {
             package_address,
             "HelloNft",
             "instantiate_component",
-            args!(),
+            manifest_args!(),
         )
         .build();
     let receipt1 = test_runner.execute_manifest_ignoring_fee(
@@ -31,22 +31,21 @@ fn test_magic_card() {
 
     // Test the `buy_special_card` method.
     let component = receipt1
-        .expect_commit()
-        .entity_changes
-        .new_component_addresses[0];
+        .expect_commit(true).new_component_addresses()[0];
+
     let transaction2 = ManifestBuilder::new()
-        .withdraw_from_account_by_amount(account_component, dec!("666"), RADIX_TOKEN)
+        .withdraw_from_account(account_component, RADIX_TOKEN,  dec!("666"))
         .take_from_worktop(RADIX_TOKEN, |builder, bucket| {
             builder.call_method(
                 component,
                 "buy_special_card",
-                args!(NonFungibleLocalId::integer(2u64), bucket),
+                manifest_args!(NonFungibleLocalId::integer(2u64), bucket),
             )
         })
         .call_method(
             account_component,
             "deposit_batch",
-            args!(ManifestExpression::EntireWorktop),
+            manifest_args!(ManifestExpression::EntireWorktop),
         )
         .build();
     let receipt2 = test_runner.execute_manifest_ignoring_fee(
@@ -58,18 +57,17 @@ fn test_magic_card() {
 
     // Test the `buy_special_card` method.
     let component = receipt1
-        .expect_commit()
-        .entity_changes
-        .new_component_addresses[0];
+        .expect_commit(true).new_component_addresses()[0];
+
     let transaction3 = ManifestBuilder::new()
-        .withdraw_from_account_by_amount(account_component, dec!("500"), RADIX_TOKEN)
+        .withdraw_from_account(account_component, RADIX_TOKEN, dec!("500"))
         .take_from_worktop(RADIX_TOKEN, |builder, bucket| {
-            builder.call_method(component, "buy_random_card", args!(bucket))
+            builder.call_method(component, "buy_random_card", manifest_args!(bucket))
         })
         .call_method(
             account_component,
             "deposit_batch",
-            args!(ManifestExpression::EntireWorktop),
+            manifest_args!(ManifestExpression::EntireWorktop),
         )
         .build();
     let receipt3 = test_runner.execute_manifest_ignoring_fee(

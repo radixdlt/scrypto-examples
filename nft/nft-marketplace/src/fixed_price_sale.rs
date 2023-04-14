@@ -109,22 +109,22 @@ mod fixed_price_sale {
             // Setting up the access rules for the component methods such that only the owner of the ownership badge can
             // make calls to the protected methods.
             let access_rule: AccessRule = rule!(require(ownership_badge.resource_address()));
-            let access_rules: AccessRules = AccessRules::new()
+            let access_rules = AccessRulesConfig::new()
                 .method("cancel_sale", access_rule.clone(), AccessRule::DenyAll)
                 .method("change_price", access_rule.clone(), AccessRule::DenyAll)
                 .method("withdraw_payment", access_rule.clone(), AccessRule::DenyAll)
                 .default(rule!(allow_all), AccessRule::DenyAll);
 
             // Instantiating the fixed price sale component
-            let mut fixed_price_sale: FixedPriceSaleComponent = Self {
+            let fixed_price_sale: FixedPriceSaleComponent = Self {
                 nft_vaults,
                 payment_vault: Vault::new(accepted_payment_token),
                 accepted_payment_token,
                 price,
             }
             .instantiate();
-            fixed_price_sale.add_access_check(access_rules);
-            let fixed_price_sale: ComponentAddress = fixed_price_sale.globalize();
+            let fixed_price_sale: ComponentAddress =
+                fixed_price_sale.globalize_with_access_rules(access_rules);
 
             return (fixed_price_sale, ownership_badge);
         }

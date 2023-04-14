@@ -52,7 +52,7 @@ mod regulated_token {
                 .mint_initial_supply(100);
 
             // Next we need to setup the access rules for the methods of the component
-            let access_rules: AccessRules = AccessRules::new()
+            let access_rules_config = AccessRulesConfig::new()
                 .method(
                     "toggle_transfer_freeze",
                     rule!(
@@ -73,7 +73,7 @@ mod regulated_token {
                 )
                 .default(rule!(allow_all), AccessRule::DenyAll);
 
-            let mut component = Self {
+            let component = Self {
                 token_supply: Vault::with_bucket(my_bucket),
                 internal_authority: Vault::with_bucket(internal_admin),
                 collected_xrd: Vault::new(RADIX_TOKEN),
@@ -82,15 +82,18 @@ mod regulated_token {
                 freeze_badge_resource_address: freeze_admin.resource_address(),
             }
             .instantiate();
-            component.add_access_check(access_rules);
 
-            (component.globalize(), general_admin, freeze_admin)
+            (
+                component.globalize_with_access_rules(access_rules_config),
+                general_admin,
+                freeze_admin,
+            )
         }
 
         /// Either the general admin or freeze admin badge may be used to freeze or unfreeze consumer transfers of the supply
         pub fn toggle_transfer_freeze(&self, set_frozen: bool) {
             // Note that this operation will fail if the token has reached stage 3 and the token behavior has been locked
-            let token_resource_manager: &mut ResourceManager =
+            let token_resource_manager =
                 borrow_resource_manager!(self.token_supply.resource_address());
 
             self.internal_authority.authorize(|| {
@@ -122,7 +125,7 @@ mod regulated_token {
             ComponentAuthZone::push(self.internal_authority.create_proof());
 
             assert!(self.current_stage <= 2, "Already at final stage");
-            let token_resource_manager: &mut ResourceManager =
+            let token_resource_manager =
                 borrow_resource_manager!(self.token_supply.resource_address());
 
             if self.current_stage == 1 {
@@ -131,10 +134,12 @@ mod regulated_token {
                 self.current_stage = 2;
 
                 // Update token's metadata to reflect the current stage
-                token_resource_manager.set_metadata(
-                    "stage".into(),
-                    "Stage 2 - Unlimited supply, may be restricted transfer".into(),
-                );
+                token_resource_manager
+                    .metadata()
+                    .set(
+                        "stage",
+                        "Stage 2 - Unlimited supply, may be restricted transfer".to_string(),
+                    );
 
                 // Enable minting for the token
                 token_resource_manager
@@ -150,10 +155,12 @@ mod regulated_token {
                 self.current_stage = 3;
 
                 // Update token's metadata to reflect the final stage
-                token_resource_manager.set_metadata(
-                    "stage".into(),
-                    "Stage 3 - Unregulated token, fixed supply".into(),
-                );
+                token_resource_manager
+                    .metadata()
+                    .set(
+                        "stage",
+                        "Stage 3 - Unregulated token, fixed supply".to_string(),
+                    );
 
                 // Set our behavior appropriately now that the regulated period has ended
                 token_resource_manager.set_mintable(rule!(deny_all));

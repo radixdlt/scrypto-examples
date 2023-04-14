@@ -11,7 +11,7 @@ use std::cmp;
 /// cliff happens, when the beneficiary was enrolled in the vesting schedule, and other things concerning time. However,
 /// we do not have a concept of "date" in Scrypto, instead we have the concept of epochs which we can use to inform us
 /// of the passing of time and as a replacement for dates.
-#[derive(NonFungibleData)]
+#[derive(NonFungibleData, ScryptoSbor)]
 pub struct BeneficiaryVestingSchedule {
     /// This variable denotes the epoch which the beneficiary was first enrolled in the vesting schedule. This variable
     /// may be smaller than or equal to the `cliff_epoch` as the cliff can't happen before the enrollment epoch.

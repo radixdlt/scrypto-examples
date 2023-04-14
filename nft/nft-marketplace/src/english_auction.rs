@@ -142,7 +142,7 @@ mod english_auction {
 
             // Creating the bidder's badge which will be used to track the bidder's information and bids.
             let bidder_badge_resource_address: ResourceAddress =
-                ResourceBuilder::new_uuid_non_fungible()
+                ResourceBuilder::new_uuid_non_fungible::<BidderBadge>()
                     .metadata("name", "Bidder Badge")
                     .metadata(
                         "description",
@@ -166,13 +166,13 @@ mod english_auction {
             // Setting up the access rules for the component methods such that only the owner of the ownership badge can
             // make calls to the protected methods.
             let access_rule: AccessRule = rule!(require(ownership_badge.resource_address()));
-            let access_rules: AccessRules = AccessRules::new()
+            let access_rules = AccessRulesConfig::new()
                 .method("cancel_auction", access_rule.clone(), AccessRule::DenyAll)
                 .method("withdraw_payment", access_rule.clone(), AccessRule::DenyAll)
                 .default(rule!(allow_all), AccessRule::DenyAll);
 
             // Instantiating the english auction sale component
-            let mut english_auction: EnglishAuctionComponent = Self {
+            let english_auction: EnglishAuctionComponent = Self {
                 nft_vaults,
                 bid_vaults: HashMap::new(),
                 payment_vault: Vault::new(accepted_payment_token),
@@ -183,8 +183,8 @@ mod english_auction {
                 state: AuctionState::Open,
             }
             .instantiate();
-            english_auction.add_access_check(access_rules);
-            let english_auction: ComponentAddress = english_auction.globalize();
+            let english_auction: ComponentAddress =
+                english_auction.globalize_with_access_rules(access_rules);
 
             return (english_auction, ownership_badge);
         }
@@ -300,13 +300,10 @@ mod english_auction {
             // At this point we know that a bid can be added.
 
             // Issuing a bidder's NFT to this bidder with information on the amount that they're bidding
-            let non_fungible_id: NonFungibleLocalId = NonFungibleLocalId::random();
 
             let bidders_badge: Bucket = self.internal_admin_badge.authorize(|| {
-                let bidders_resource_manager: &mut ResourceManager =
-                    borrow_resource_manager!(self.bidders_badge);
-                bidders_resource_manager.mint_non_fungible(
-                    &non_fungible_id.clone(),
+                let bidders_resource_manager = borrow_resource_manager!(self.bidders_badge);
+                bidders_resource_manager.mint_uuid_non_fungible(
                     BidderBadge {
                         bid_amount: funds.amount(),
                         is_winner: false,
@@ -314,9 +311,11 @@ mod english_auction {
                 )
             });
 
+            let non_fungible_local_id: NonFungibleLocalId = bidders_badge.non_fungible_local_id();
+
             // Taking the bidder's funds and depositing them into a newly created vault where their funds will now live
             self.bid_vaults
-                .insert(non_fungible_id, Vault::with_bucket(funds));
+                .insert(non_fungible_local_id, Vault::with_bucket(funds));
 
             // Returning the bidder's badge back to the caller
             return bidders_badge;
@@ -376,8 +375,15 @@ mod english_auction {
             // Updating the metadata of the bidder's badge to reflect on the update of the bidder's bid
             self.internal_admin_badge.authorize(|| {
                 let mut bidders_badge_data: BidderBadge = bidders_badge.non_fungible().data();
-                bidders_badge_data.bid_amount += funds.amount();
-                bidders_badge.non_fungible().update_data(bidders_badge_data);
+                let non_fungible_local_id: NonFungibleLocalId = bidders_badge.non_fungible_local_id();
+                let mut resource_manager = borrow_resource_manager!(self.bidders_badge);
+                resource_manager.update_non_fungible_data(
+                    &non_fungible_local_id, 
+                    "bid_amount", 
+                    bidders_badge_data.bid_amount += funds.amount()
+                );
+
+            
             });
 
             // Adding the funds to the vault of the bidder
@@ -527,7 +533,7 @@ mod english_auction {
                     if self.has_bids() {
                         // Determining the NFT ID which corresponds to the largest bid that has been made for this NFT
                         // bundle.
-                        let non_fungible_id: NonFungibleLocalId = self
+                        let non_fungible_local_id: NonFungibleLocalId = self
                             .bid_vaults
                             .iter()
                             .max_by(|a, b| a.1.amount().cmp(&b.1.amount()))
@@ -538,24 +544,23 @@ mod english_auction {
                         // Update the bidder's badge associated with the above non-fungible id to reflect that this is
                         // the winner of the bid.
                         self.internal_admin_badge.authorize(|| {
-                            let resource_manager: &mut ResourceManager =
-                                borrow_resource_manager!(self.bidders_badge);
-
-                            // Getting the already existing NFT data of the bidder's badge to update it
-                            let mut bidders_badge_data: BidderBadge =
-                                resource_manager.get_non_fungible_data(&non_fungible_id);
-                            bidders_badge_data.is_winner = true;
+                            let mut resource_manager = borrow_resource_manager!(self.bidders_badge);                    
 
                             // Setting the new data as the data of that badge
-                            resource_manager
-                                .update_non_fungible_data(&non_fungible_id, bidders_badge_data);
-                        });
+
+                            resource_manager.update_non_fungible_data(
+                                &non_fungible_local_id, 
+                                "is_winner", 
+                                true
+                            );
+                        }
+                    );
 
                         // Take the funds from the winner's vault and put them in the payment vault so that the seller
                         // can now withdraw them
                         self.payment_vault.put(
                             self.bid_vaults
-                                .get_mut(&non_fungible_id)
+                                .get_mut(&non_fungible_local_id)
                                 .unwrap()
                                 .take_all(),
                         );
@@ -583,7 +588,7 @@ mod english_auction {
 
 /// The data used for the bidder's non-fungible token. This NFT is used to authenticate bidders and allow them to add to
 /// their bids, cancel them, or claim the NFT bundle if they win the bid.
-#[derive(NonFungibleData)]
+#[derive(NonFungibleData, ScryptoSbor)]
 struct BidderBadge {
     /// A mutable decimal which holds information on the amount of funds that this bidder has bid. This is mutable as
     /// bidders are allowed to add to their bid.
@@ -597,7 +602,7 @@ struct BidderBadge {
 
 /// The English auction is by definition stateful and during different periods and states of the auction different
 /// actions may be allowed or disallowed. This enum describes the state of the English auction component.
-#[derive(Debug, ScryptoSbor, LegacyDescribe)]
+#[derive(Debug, ScryptoSbor)]
 enum AuctionState {
     /// An auction is said to be open if the end epoch of the auction has not yet passed and if the seller has not
     /// decided to cancel their auction. During the `Open` state, bidders can submit bids, increase their bids, or

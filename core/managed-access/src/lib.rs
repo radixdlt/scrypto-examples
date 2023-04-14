@@ -30,7 +30,7 @@ mod managed_access {
                 FlatAdminPackageTarget::at(flat_admin_package_address, "FlatAdmin")
                     .instantiate_flat_admin("My Managed Access Badge".into());
 
-            let rules = AccessRules::new()
+            let rules = AccessRulesConfig::new()
                 .method(
                     "withdraw_all",
                     rule!(require(admin_badge.resource_address())),
@@ -38,14 +38,14 @@ mod managed_access {
                 )
                 .default(rule!(allow_all), AccessRule::DenyAll);
 
-            let mut component = Self {
+            let component = Self {
                 admin_badge: admin_badge.resource_address(),
                 flat_admin_controller: flat_admin_component,
                 protected_vault: Vault::new(RADIX_TOKEN),
             }
             .instantiate();
-            component.add_access_check(rules);
-            let component = component.globalize();
+            // component.add_access_check(rules);
+            let component = component.globalize_with_access_rules(rules);
 
             (component, admin_badge)
         }

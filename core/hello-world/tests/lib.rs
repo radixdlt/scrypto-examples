@@ -15,7 +15,7 @@ fn test_hello() {
 
     // Test the `instantiate_hello` function.
     let manifest = ManifestBuilder::new()
-        .call_function(package_address, "Hello", "instantiate_hello", args!())
+        .call_function(package_address, "Hello", "instantiate_hello", manifest_args!())
         .build();
     let receipt = test_runner.execute_manifest_ignoring_fee(
         manifest,
@@ -24,17 +24,15 @@ fn test_hello() {
     println!("{:?}\n", receipt);
     receipt.expect_commit_success();
     let component = receipt
-        .expect_commit()
-        .entity_changes
-        .new_component_addresses[0];
+        .expect_commit(true).new_component_addresses()[0];
 
     // Test the `free_token` method.
     let manifest = ManifestBuilder::new()
-        .call_method(component, "free_token", args!())
+        .call_method(component, "free_token", manifest_args!())
         .call_method(
             account_component,
             "deposit_batch",
-            args!(ManifestExpression::EntireWorktop),
+            manifest_args!(ManifestExpression::EntireWorktop),
         )
         .build();
     let receipt = test_runner.execute_manifest_ignoring_fee(
