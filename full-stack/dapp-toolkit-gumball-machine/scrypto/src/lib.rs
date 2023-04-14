@@ -98,10 +98,10 @@ mod gumball_machine {
         }
 
         pub fn mint_staff_badge(&mut self, employee_name: String) -> Bucket {
-            let staff_resourcemanager: ResourceManager =
+            let staff_resource_manager: ResourceManager =
                 borrow_resource_manager!(self.staff_badge_address);
             let staff_badge_bucket: Bucket =
-                staff_resourcemanager.mint_uuid_non_fungible(StaffBadge {
+                staff_resource_manager.mint_uuid_non_fungible(StaffBadge {
                     employee_name: employee_name,
                 });
             staff_badge_bucket
@@ -113,6 +113,9 @@ mod gumball_machine {
 
         pub fn refill_gumball_machine(&mut self) {
             // mint some more gumball tokens requires an admin or staff badge
+            let gumball_resource_manager =
+                borrow_resource_manager!(self.gumballs.resource_address());
+            self.gumballs.put(gumball_resource_manager.mint(100));
         }
 
         pub fn buy_gumball(&mut self, mut payment: Bucket) -> (Bucket, Bucket) {
