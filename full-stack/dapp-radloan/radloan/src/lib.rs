@@ -36,5 +36,13 @@ mod radloan {
             .instantiate()
             .globalize()
         }
+
+        pub fn available_liquidity(&self) -> Decimal {
+            self.loan_vault.amount()
+        }
+
+        pub fn add_liquidity(&mut self, tokens: Bucket) {
+            self.loan_vault.put(tokens)
+        }
     }
 }
