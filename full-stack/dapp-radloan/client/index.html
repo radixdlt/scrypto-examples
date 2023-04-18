@@ -3,13 +3,71 @@
 
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Scrypto dApp</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <title>RadLoan</title>
 </head>
 
 <body>
-  <div id="app"></div>
+  <div id="app" class="container ">
+    <div class="float-right mb-4 mr-10 ">
+      <radix-connect-button />
+    </div>
+    <div class="w-80 mx-auto mt-6">
+      <img src="/RADLOAN-LOGO.svg" alt="RadLoan Logo">
+    </div>
+    <form id="transactionForm">
+      <div class="sm:container pt-10 text-center mx-auto">
+        <div class="w-80 mx-auto">
+          <button class="p-2 rounded-md mb-3 w-80 bg-gray-100 mx-auto">Add Loan</button>
+          <button class="p-2 rounded-md mb-3 w-80 bg-gray-100 mx-auto">Add Swap</button>
+        </div>
+        <div class="w-80 p-2 rounded-md mb-3 mx-auto bg-violet-200">
+          <label>Flash Loan</label>
+          <select name="loanType" id="loanType" class="border-2 p-2 pr-8 rounded-md ml-2 mb-2 text-black">
+            <option value="coin-1">Coin 1</option>
+            <option value="coin-2">Coin 2</option>
+          </select>
+          <input type="text" name="loanAmount" id="loanAmount" class="border-2 p-2 rounded-md ml-2"
+            placeholder="Amount">
+        </div>
+        <div class="w-80 p-2 rounded-md mb-3 mx-auto bg-gray-100">
+          <label>Radi Swap</label>
+          <select name="swap1" id="swap1" class="border-2 p-2 pr-8 rounded-md ml-2 mb-2 text-black">
+            <option value="coin-1">Coin 1</option>
+            <option value="coin-2">Coin 2</option>
+          </select>
+          <input type="text" name="swap1Amount" id="swap1Amount" class="border-2 p-2 rounded-md ml-2"
+            placeholder="Amount">
+        </div>
+        <div class="w-80 p-2 rounded-md mb-3 mx-auto bg-gray-100">
+          <label>Swap Swap</label>
+          <select name="swap2" id="swap2" class="border-2 p-2 pr-8 rounded-md ml-2 mb-2 text-black">
+            <option value="coin-1">Coin 1</option>
+            <option value="coin-2">Coin 2</option>
+          </select>
+          <input type="text" name="swap2Amount" id="swap2Amount" class="border-2 p-2 rounded-md ml-2"
+            placeholder="Amount">
+        </div>
+        <div class="w-80 p-2 rounded-md mb-3 mx-auto bg-violet-200">
+          <label>Repay Loan</label>
+          <select name="repayLoanType" id="repayLoanType" class="border-2 p-2 pr-8 rounded-md ml-2 mb-2 text-black">
+            <option value="coin-1">Coin 1</option>
+            <option value="coin-2">Coin 2</option>
+          </select>
+          <label for=""></label>
+          <input type="text" name="repayAmount" class="border-2 p-2 rounded-md ml-2" placeholder="Amount">
+        </div>
+        <div class="text-center">
+          <input type="submit" value="Submit Transaction"
+            class=" p-2 rounded-md ml-2 mb-2 bg-indigo-600 text-white w-80" />
+        </div>
+    </form>
+    <div class="w-80 border-2 p-2 rounded-md mb-3 mx-auto">
+      <H2>TRANSACTION PROCEEDS: </H2>
+      <P>XXX Deposited to XXX Account#</P>
+    </div>
+  </div>
   <script type="module" src="/main.js"></script>
 </body>
 
