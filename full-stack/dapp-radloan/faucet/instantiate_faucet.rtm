@@ -1,0 +1,14 @@
+CALL_METHOD
+    Address("component_sim1q0kryz5scup945usk39qjc2yjh6l5zsyuh8t7v5pk0tshjs68x")
+    "lock_fee"
+    Decimal("100");
+CALL_FUNCTION
+    Address("package_sim1qrs0zd583lp0d50nll9w2h5azcvlzj6r4sdhup2pnmgss6dzn2")
+    "Faucet"
+    "instantiate"
+    "scryptoToken"
+    "SCRYPTO";
+CALL_METHOD
+    Address("account_sim1q3d3f0drc2tn2xaaydpj3wv7xtt9t90c70mg7vuugaeq0hmpsv")
+    "deposit_batch"
+    Expression("ENTIRE_WORKTOP");

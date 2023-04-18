@@ -1,0 +1,11 @@
+CALL_METHOD
+    Address("component_sim1q0kryz5scup945usk39qjc2yjh6l5zsyuh8t7v5pk0tshjs68x")
+    "lock_fee"
+    Decimal("100");
+CALL_METHOD
+    Address("component_sim1qwyq6pg8xxhsgd2h4hpcxn2j7n3nu7n6f7fxdp23vq6slvrenp")
+    "free_tokens";
+CALL_METHOD
+    Address("account_sim1q3d3f0drc2tn2xaaydpj3wv7xtt9t90c70mg7vuugaeq0hmpsv")
+    "deposit_batch"
+    Expression("ENTIRE_WORKTOP");
