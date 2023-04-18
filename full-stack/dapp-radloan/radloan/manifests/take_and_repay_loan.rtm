@@ -1,0 +1,26 @@
+CALL_METHOD
+    Address("${account}")
+    "lock_fee"
+    Decimal("100");
+CALL_METHOD
+    Address("${component}")
+    "take_loan"
+    Decimal("500");
+CALL_METHOD
+    Address("${account}")
+    "withdraw"
+    Address("${xrd}")
+    Decimal("0.5");
+TAKE_FROM_WORKTOP_BY_AMOUNT 
+    Decimal("500.5")
+    Address("${xrd}")
+    Bucket("xrd_bucket");
+TAKE_FROM_WORKTOP
+    Address("${transient_token}")
+    Bucket("loan_terms");
+CALL_METHOD
+    Address("${component}")
+    "repay_loan"
+    Bucket("xrd_bucket")
+    Bucket("loan_terms");
+
