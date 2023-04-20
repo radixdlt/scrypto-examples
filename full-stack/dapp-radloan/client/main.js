@@ -22,19 +22,26 @@ const rdt = RadixDappToolkit(
     onInit: ({ accounts }) => {
       // set your initial application state
       console.log("onInit accounts: ", accounts)
+      if (accounts.length > 0) {
+        // document.getElementById('accountName').innerText = accounts[0].label
+        // document.getElementById('accountAddress').innerText = accounts[0].address
+        // accountAddress = accounts[0].address
+      }
     },
   }
 )
 
 
 // Handle Form Data
-const form = document.getElementById('transactionForm')
-form.addEventListener('submit', (e) => {
-  e.preventDefault();
-  const data = new FormData(e.target);
-  console.log(Object.fromEntries(data));
+if (location.pathname === '/index.html') {
+  const form = document.getElementById('transactionForm')
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const data = new FormData(e.target);
+    console.log(Object.fromEntries(data));
 
-})
+  })
+}
 
 
 // ####### RadLoan Methods #######
