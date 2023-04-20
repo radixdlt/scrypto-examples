@@ -5,15 +5,34 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
     <title>RADLOAN Dashboard</title>
 </head>
 
 <body>
-    <a href="/index.html"><button>RADLOAN Home</button></a>
-    <button>Create Faucet</button>
-    <button>Seed DEX's</button>
-    <button>Get Atokens</button>
-    <button>Get Btokens</button>
+    <div class="container">
+        <div class="w-80 mx-auto mt-6">
+            <img src="/RADLOAN-LOGO.svg" alt="RadLoan Logo">
+        </div>
+        <div class="float-right mb-4 mr-10 ">
+            <radix-connect-button />
+        </div>
+        <a href="/index.html">
+            <button class="p-2 rounded-md ml-3 mb-3 w-40 bg-gray-100 mx-auto">RADLOAN Home</button>
+        </a>
+        <div class="p-8 text-center">
+            <button class="p-2 rounded-md mb-3 w-80 bg-gray-100 mx-auto">Create Faucet</button>
+            <button class="p-2 rounded-md mb-3 w-80 bg-gray-100 mx-auto">Seed DEX's</button>
+            <button class="p-2 rounded-md mb-2 w-80 bg-gray-100 mx-auto">Get tokens
+                <select name="loanType" id="loanType" class="border-2 p-2 pr-8 rounded-md ml-2 text-black">
+                    <option value="coin-1">Coin 1</option>
+                    <option value="coin-2">Coin 2</option>
+                </select>
+            </button>
+        </div>
+    </div>
+    <script type="module" src="/main.js"></script>
+
 </body>
 
 </html>
