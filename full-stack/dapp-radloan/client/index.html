@@ -5,23 +5,29 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
   <title>RadLoan</title>
 </head>
 
 <body>
   <div id="app" class="container ">
-    <div class="float-right mb-4 mr-10 ">
+    <div class="float-right mb-4 mr-10 mt-2">
       <radix-connect-button />
     </div>
-    <a href="/dashboard.html"><button class="p-2 rounded-md mb-3 w-80 bg-gray-100 mx-auto">Dashboard</button></a>
+    <a href="/dashboard.html"><button class="p-2 rounded-md ml-6 mt-2 w-40 bg-gray-100 mx-auto"><i
+          class="fa-solid fa-toolbox"></i> Dashboard</button></a>
     <div class="w-80 mx-auto mt-6">
       <img src="/RADLOAN-LOGO.svg" alt="RadLoan Logo">
     </div>
     <form id="transactionForm">
       <div class="sm:container pt-10 text-center mx-auto">
         <div class="w-80 mx-auto">
-          <button class="p-2 rounded-md mb-3 w-80 bg-gray-100 mx-auto">Add Loan</button>
-          <button class="p-2 rounded-md mb-3 w-80 bg-gray-100 mx-auto">Add Swap</button>
+          <button class="p-2 rounded-md mb-3 w-80 bg-gray-100 mx-auto"><i class="fa-solid fa-plus"></i> Add
+            Loan</button>
+          <button class="p-2 rounded-md mb-3 w-80 bg-gray-100 mx-auto"><i class="fa-solid fa-plus"></i> Add
+            Swap</button>
         </div>
         <div class="w-80 p-2 rounded-md mb-3 mx-auto bg-violet-200">
           <label>Flash Loan</label>
@@ -61,8 +67,10 @@
             <option value="coin-1">Coin 1</option>
             <option value="coin-2">Coin 2</option>
           </select>
-          <label for=""></label>
-          <input type="text" name="repayAmount" class="border-2 p-2 rounded-md ml-2" placeholder="Amount">
+          <div class="">
+            <label for="">Repay</label>
+            <input type="text" name="repayAmount" class="border-2 p-2 rounded-md ml-2" placeholder="Amount">
+          </div>
         </div>
         <div class="text-center">
           <input type="submit" value="Submit Transaction"
