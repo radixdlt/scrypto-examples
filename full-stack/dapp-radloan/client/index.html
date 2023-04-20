@@ -13,6 +13,7 @@
     <div class="float-right mb-4 mr-10 ">
       <radix-connect-button />
     </div>
+    <a href="/dashboard.html"><button class="p-2 rounded-md mb-3 w-80 bg-gray-100 mx-auto">Dashboard</button></a>
     <div class="w-80 mx-auto mt-6">
       <img src="/RADLOAN-LOGO.svg" alt="RadLoan Logo">
     </div>
@@ -28,8 +29,9 @@
             <option value="coin-1">Coin 1</option>
             <option value="coin-2">Coin 2</option>
           </select>
-          <input type="text" name="loanAmount" id="loanAmount" class="border-2 p-2 rounded-md ml-2"
-            placeholder="Amount">
+          <div class=""><span>Borrow</span><input type="text" name="loanAmount" id="loanAmount"
+              class="border-2 p-2 rounded-md ml-2" placeholder="Amount"></div>
+
         </div>
         <div class="w-80 p-2 rounded-md mb-3 mx-auto bg-gray-100">
           <label>Radi Swap</label>
@@ -37,8 +39,9 @@
             <option value="coin-1">Coin 1</option>
             <option value="coin-2">Coin 2</option>
           </select>
-          <input type="text" name="swap1Amount" id="swap1Amount" class="border-2 p-2 rounded-md ml-2"
-            placeholder="Amount">
+          <div class=""><span>Buy</span><input type="text" name="swap1Amount" id="swap1Amount"
+              class="border-2 p-2 rounded-md ml-2" placeholder="Amount"></div>
+
         </div>
         <div class="w-80 p-2 rounded-md mb-3 mx-auto bg-gray-100">
           <label>Swap Swap</label>
@@ -46,8 +49,11 @@
             <option value="coin-1">Coin 1</option>
             <option value="coin-2">Coin 2</option>
           </select>
-          <input type="text" name="swap2Amount" id="swap2Amount" class="border-2 p-2 rounded-md ml-2"
-            placeholder="Amount">
+          <div class=""><span>Sell</span>
+            <input type="text" name="swap2Amount" id="swap2Amount" class="border-2 p-2 rounded-md ml-2"
+              placeholder="Amount">
+          </div>
+
         </div>
         <div class="w-80 p-2 rounded-md mb-3 mx-auto bg-violet-200">
           <label>Repay Loan</label>
