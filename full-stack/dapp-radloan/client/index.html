@@ -16,19 +16,29 @@
     <div class="float-right mb-4 mr-10 mt-2">
       <radix-connect-button />
     </div>
-    <a href="/dashboard.html"><button class="p-2 rounded-md ml-6 mt-2 w-40 bg-gray-100 mx-auto"><i
-          class="fa-solid fa-toolbox"></i> Dashboard</button></a>
-    <div class="w-80 mx-auto mt-6">
+    <div class="w-80 ml-6 mt-6 mb-6">
       <img src="/RADLOAN-LOGO.svg" alt="RadLoan Logo">
     </div>
+    <div class="mx-auto">
+      <a href="/dashboard.html">
+        <button class="p-2 rounded-md ml-6 mt-2 w-40 bg-gray-100 mx-auto">
+          <i class="fa-solid fa-toolbox"></i>
+          Dashboard
+        </button>
+      </a>
+      <button class="p-2 rounded-md mb-3 w-40 bg-gray-100 mx-auto">
+        <i class="fa-solid fa-coins"></i>
+        Add Liquidity
+      </button>
+      <button class="p-2 rounded-md mb-3 w-40 bg-gray-100 mx-auto"><i class="fa-solid fa-plus"></i> Add
+        Loan</button>
+      <button class="p-2 rounded-md mb-3 w-40 bg-gray-100 mx-auto"><i class="fa-solid fa-plus"></i> Add
+        Swap</button>
+    </div>
+
+
     <form id="transactionForm">
       <div class="sm:container pt-10 text-center mx-auto">
-        <div class="w-80 mx-auto">
-          <button class="p-2 rounded-md mb-3 w-80 bg-gray-100 mx-auto"><i class="fa-solid fa-plus"></i> Add
-            Loan</button>
-          <button class="p-2 rounded-md mb-3 w-80 bg-gray-100 mx-auto"><i class="fa-solid fa-plus"></i> Add
-            Swap</button>
-        </div>
         <div class="w-80 p-2 rounded-md mb-3 mx-auto bg-violet-200">
           <label>Flash Loan</label>
           <select name="loanType" id="loanType" class="border-2 p-2 pr-8 rounded-md ml-2 mb-2 text-black">

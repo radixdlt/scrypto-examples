@@ -14,23 +14,45 @@
 
 <body>
     <div class="container">
-        <div class="w-80 mx-auto mt-6">
-            <img src="/RADLOAN-LOGO.svg" alt="RadLoan Logo">
-        </div>
-        <div class="float-right mb-4 mr-10 ">
+        <div class="float-right mb-4 mr-10 mt-2">
             <radix-connect-button />
         </div>
+        <div class="w-80 ml-6 mt-6 mb-6">
+            <img src="/RADLOAN-LOGO.svg" alt="RadLoan Logo">
+        </div>
+
         <a href="/index.html">
             <button class="p-2 rounded-md ml-3 mb-3 w-40 bg-gray-100 mx-auto"><i class="fa-solid fa-house-user"></i>
                 RADLOAN Home</button>
         </a>
         <div class="p-8 text-center">
-            <button class="p-2 rounded-md mb-3 w-80 bg-gray-100 mx-auto"><i class="fa-solid fa-faucet"></i> Create
-                Faucet</button>
-            <button class="p-2 rounded-md mb-3 w-80 bg-gray-100 mx-auto"><i class="fa-brands fa-stack-exchange"></i>
-                Seed DEX's</button>
-            <button class="p-2 rounded-md mb-2 w-80 bg-gray-100 mx-auto"><i class="fa-solid fa-coins"></i> Get
-                tokens
+            <button class="p-2 rounded-md mb-3 w-80 bg-gray-100 mx-auto">
+                <i class="fa-solid fa-faucet"></i>
+                Create Faucet
+                <select name="loanType" id="loanType" class="border-2 p-2 pr-8 rounded-md ml-2 text-black">
+                    <option value="coin-1">Coin 1</option>
+                    <option value="coin-2">Coin 2</option>
+                </select>
+            </button>
+            <button class="p-2 rounded-md mb-3 w-80 bg-gray-100 mx-auto">
+                <i class="fa-solid fa-coins"></i>
+                Seed DEX's
+                <select name="loanType" id="loanType" class="border-2 p-2 pr-8 rounded-md ml-2 text-black">
+                    <option value="coin-1">Coin 1</option>
+                    <option value="coin-2">Coin 2</option>
+                </select>
+            </button>
+            <button class="p-2 rounded-md mb-3 w-80 bg-gray-100 mx-auto">
+                <i class="fa-solid fa-coins"></i>
+                Add Liquidity
+                <select name="loanType" id="loanType" class="border-2 p-2 pr-8 rounded-md ml-2 text-black">
+                    <option value="coin-1">Coin 1</option>
+                    <option value="coin-2">Coin 2</option>
+                </select>
+            </button>
+            <button class="p-2 rounded-md mb-2 w-80 bg-gray-100 mx-auto">
+                <i class="fa-solid fa-coins"></i>
+                Get tokens
                 <select name="loanType" id="loanType" class="border-2 p-2 pr-8 rounded-md ml-2 text-black">
                     <option value="coin-1">Coin 1</option>
                     <option value="coin-2">Coin 2</option>
