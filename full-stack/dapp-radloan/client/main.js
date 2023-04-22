@@ -1,4 +1,5 @@
-import { RadixDappToolkit, ManifestBuilder, Decimal, Bucket, Expression, ResourceAddress } from '@radixdlt/radix-dapp-toolkit'
+import { RadixDappToolkit } from '@radixdlt/radix-dapp-toolkit'
+import { RadixEngineToolkit, ManifestBuilder, ManifestAstValue } from '@radixdlt/radix-engine-toolkit'
 
 const rdt = RadixDappToolkit(
   {
@@ -15,7 +16,7 @@ const rdt = RadixDappToolkit(
     })
   },
   {
-    networkId: 11,
+    networkId: 12,
     onDisconnect: () => {
       // clear your application state
     },
@@ -43,6 +44,31 @@ if (location.pathname === '/index.html') {
   })
 }
 
+let accountAddress = "account_tdx_22_1pz7vywgwz4fq6e4v3aeeu8huamq0ctmsmzltay07vzpqm82mp5"
+let resourceAddr = "resource_tdx_22_1pz7vywgwz4fq6e4v3aeeu8huamq0ctmsmzltay07vzpqm82mp5"
+let packageAddress = "package_tdx_22_1pz7vywgwz4fq6e4v3aeeu8huamq0ctmsmzltay07vzpqm82mp5"
+
+let manifest = new ManifestBuilder()
+  .callMethod(accountAddress, "withdraw", [
+    new ManifestAstValue.Address(resourceAddr),
+    new ManifestAstValue.Decimal(100),
+  ])
+  .takeFromWorktop(
+    resourceAddr,
+    (builder, bucket) => builder.callFunction(
+      packageAddress,
+      'RadLoan',
+      'instantiate',
+      [bucket]
+    )
+  )
+  .build()
+
+
+let ret = new RadixEngineToolkit()
+console.log("manifest", manifest)
+console.log("ret", ret)
+console.log("rdt", rdt)
 
 // ####### RadLoan Methods #######
 // instantiate_default(initial_liquidity: Bucket)
