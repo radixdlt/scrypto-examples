@@ -57,6 +57,9 @@ mod radiswap_module {
                 )
                 .mint_initial_supply(100);
 
+            let access_rules_config = AccessRulesConfig::new()
+                .default(rule!(allow_all), rule!(deny_all));
+
             // Create the Radiswap component and globalize it
             let radiswap: ComponentAddress = Self {
                 vault_a: Vault::with_bucket(bucket_a),
@@ -66,7 +69,7 @@ mod radiswap_module {
                 fee: fee,
             }
             .instantiate()
-            .globalize();
+            .globalize_with_access_rules(access_rules_config);
             
             // Return the component address as well as the pool units tokens
             (radiswap, pool_units)
@@ -194,6 +197,53 @@ mod radiswap_module {
                 self.vault_a.take(self.vault_a.amount() * share),
                 self.vault_b.take(self.vault_b.amount() * share),
             )
+        }
+
+        pub fn get_liquidity(&self) -> (Decimal, Decimal) {
+            let vault_a_amount: Decimal = self.vault_a.amount();
+            let vault_b_amount: Decimal = self.vault_b.amount();
+
+            (vault_a_amount, vault_b_amount)
+        }
+
+        pub fn get_token_pair(&self) -> (ResourceAddress, ResourceAddress) {
+            let vault_a_address: ResourceAddress = self.vault_a.resource_address();
+            let vault_b_address: ResourceAddress = self.vault_b.resource_address();
+
+            (vault_a_address, vault_b_address)
+        }
+
+        pub fn get_token_pair_metadata(&self) -> (String, String) {
+            let resource_manager_a = borrow_resource_manager!(self.vault_a.resource_address());
+            let metadata_a = resource_manager_a.metadata();
+            
+            let token_a_name = metadata_a.get_string("name").unwrap_or_else(|_| "unknown".to_string());
+        
+            let resource_manager_b = borrow_resource_manager!(self.vault_b.resource_address());
+            let metadata_b = resource_manager_b.metadata();
+            let token_b_name = metadata_b.get_string("name").unwrap_or_else(|_| "unknown".to_string());
+        
+            (token_a_name, token_b_name)
+        }
+
+        pub fn get_total_lp(&self) -> Decimal {
+            let resource_manager = borrow_resource_manager!(self.pool_units_resource_address);
+
+            let lp_amount = resource_manager.total_supply();
+
+            return lp_amount
+        }
+
+        pub fn get_resource_type(&self) -> (ResourceType, ResourceType) {
+            let resource_manager_a = borrow_resource_manager!(self.vault_a.resource_address());
+
+            let resource_type_a = resource_manager_a.resource_type();
+
+            let resource_manager_b = borrow_resource_manager!(self.vault_b.resource_address());
+
+            let resource_type_b = resource_manager_b.resource_type();
+
+            (resource_type_a, resource_type_b)
         }
     }
 }

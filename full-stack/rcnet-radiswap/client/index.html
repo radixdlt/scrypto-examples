@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite App</title>
+  </head>
+  <body>
+
+    <!-- <div class="connectBtn">
+      <radix-connect-button />
+    </div> -->
+
+    <div id="app"></div>
+    <script type="module" src="/main.js"></script>
+
+   <h1>Radiswap</h1>
+
+<div class="container">
+  <p>Account Name:
+  <pre id="accountName"></pre>
+  </p>
+  <p>Account Address:
+  <pre id="accountAddress"></pre>
+  </p>
+</div>
+
+<h2>Get RCnet Tokens</h2>
+<p><button id="getRcnetTokens">Get RCnet Tokens</button></p>
+<p>
+  <pre><a class="getRcnetTokenTx" href="#" target="_blank" style="display: none;">View transaction</a></pre>
+</p> 
+  
+
+<h2>Deploy Package</h2>
+<input type="file" id="fileWasm">
+<input type="file" id="fileSchema">
+<p><button id="deployPackage">Deploy Package</button></p>
+<p>Package Address:
+  <pre id="newPackageAddress"></pre>
+</p> 
+<p>
+<pre><a class="deployPackageTx" href="#" target="_blank" style="display: none;">View transaction</a></pre>
+</p> 
+
+<h3>Set Package Royalty</h3>
+<p><button id="setRoyalty">Set Royalty</button></p>
+
+<h3>Claim Royalty</h3>
+<p><button id="claimRoyalty">Claim Royalty</button></p>
+
+<h2>Create Token</h2>
+<div><input type="text" placeholder="Token Name" id="tokenName" /></div>
+<div><input type="text" placeholder="Token Symbol" id="tokenSymbol" /></div>
+<p><button id="createToken">Create Token</button></p>
+<p>Resource Address:
+  <pre id="newTokenAddress"></pre>
+</p> 
+<p>
+<pre><a class="createTokenTx" href="#" target="_blank" style="display: none;">View transaction</a></pre>
+</p> 
+
+
+<h2>Instantiate Radiswap</h2>
+<div><input type="text" placeholder="Package address" id="packageAddress" /></div>
+<div><select id="selectTokenA"></select></div>
+<input type="text" placeholder="Amount" id="amountA" />
+<div><select id="selectTokenB"></select></div>
+<input type="text" placeholder="Amount" id="amountB" /> <br>
+<input type="text" placeholder="Swap Fee" id="swapFee" />
+<p><button id="instantiateComponent">Instantiate component</button></p>
+<div class="container">
+  <p>Component Address: <span id="componentAddress"></span></p>
+  <p>Pool Units Address: <span id="poolUnitsAddress"></span></p>
+  <p>
+  <pre><a class="instantiateComponentTx" href="#" target="_blank" style="display: none;">View transaction</a></pre>
+  </p> 
+</div>
+
+<h2>Pool Information:</h2>
+<div class="container">
+  <p>Token Pair:<br>
+    <pre id="tokenPair"></pre>
+    Liquidity:<br>
+  <pre id="liquidity"></pre>
+  </p>
+</div>
+
+<h2>Swap</h2>
+<div><select id="swapDropDown"></select></div>
+<input type="text" placeholder="Amount" id="inputAmount" />
+<p><button id="swapToken">Swap Tokens</button></p>
+<div class="container">
+  <p>
+  <pre><a class="swapTx" href="#" target="_blank" style="display: none;">View transaction</a></pre>
+  </p> 
+</div>
+
+<h2>Exact Swap</h2>
+<div><select id="exactSwapDropDown"></select></div>
+<div><input type="text" placeholder="Requested Amount" id="requestedAmount" /></div>
+<button id="getAmount">Get Required Amount</button>
+<div class="container">
+  <p>Required Resource:<br>
+  <pre id="requiredResource" data-address=""></pre>
+    Required Amount:<br>
+  <pre id="requiredAmount"></pre>
+  </p>
+</div>
+<p><button id="exactSwapToken">Exact Swap Tokens</button></p>
+<div class="container">
+  <p>
+  <pre><a class="exactSwapTx" href="#" target="_blank" style="display: none;">View transaction</a></pre>
+  </p> 
+</div>
+
+<h2>Add Liquidity</h2>
+<p>
+<pre id="tokenAAddress"></pre>
+
+<input type="text" placeholder="Token A Amount" id="tokenAAmount" /><br>
+  
+<pre id="tokenBAddress"></pre>
+</p>
+
+<input type="text" placeholder="Token B Amount" id="tokenBAmount" /><br>
+
+<p><button id="addLiquidity">Add Liquidity</button></p>
+<div class="container">
+  <p>
+  <pre><a class="addLiquidityTx" href="#" target="_blank" style="display: none;">View transaction</a></pre>
+  </p> 
+</div>
+
+<h3>Remove Liquidity</h3>
+<input type="text" placeholder="Pool Units Amount" id="poolUnitsAmount" />
+<p><button id="removeLiquidity">Remove Liquidity</button></p>
+<div class="container">
+  <p>
+  <pre><a class="removeLiquidityTx" href="#" target="_blank" style="display: none;">View transaction</a></pre>
+  </p> 
+</div>
+
+
+<!-- <h3>Get Token Pair ResourceAddress</h3>
+<p><button id="getTokenPair">Get TokenPair</button></p>
+
+<h3>Get Token Pair ResourceAddress</h3>
+<p><button id="getTokenPair">Get TokenPair</button></p>
+
+<h3>Get Token Pair Metadata</h3>
+<p><button id="getMetadata">Get TokenPair Metadata</button></p>
+
+<h3>Get Token Pair Metadata</h3>
+<p><button id="getMetadata">Get TokenPair Metadata</button></p> -->
+
+<!-- <h3>Get Total LP</h3>
+<p><button id="getTotalLP">Get Total LP</button></p>
+
+<h3>Get ResourceType</h3>
+<p><button id="getResourceType">Get ResourceType</button></p> -->
+
+  </body>
+</html>
