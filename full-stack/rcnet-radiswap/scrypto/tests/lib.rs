@@ -551,15 +551,35 @@ fn swap_token_a_for_b() {
     // This test fails on "InsufficientBalance" but I have no way to determine why/how.
     println!("{}/n", receipt.display(&Bech32Encoder::for_simulator()));
 
-    // println!("Worktop Changes: {:?}/n", receipt.execution_trace.worktop_changes()); 
+    // Unreadable
+    println!("Transaction Execution Trace: {:?}/n", receipt.execution_trace);
 
-    // println!("Resource Usage: {:?}/n", receipt.execution_trace.resource_changes);
+    // Unreadable
+    println!("Resource Changes: {:?}/n", receipt.execution_trace.resource_changes);
 
-    // let vault_balance = test_environment.get_vault_balance();
+    // Don't know what this means
+    println!("Resource Usage: {:?}/n", receipt.execution_trace.resources_usage);
 
-    // println!("Vault Balance: {:?}", vault_balance);
+    // Ideally should be in order of the manifest.
+    println!("Worktop Changes: {:?}/n", receipt.execution_trace.worktop_changes()); 
 
-    receipt.expect_commit_success();
+    // Unreadable
+    println!("Resource Usage: {:?}/n", receipt.execution_trace.resource_changes);
+
+    let commit_receipt = receipt.expect_commit_success();
+
+    // Unreadable
+    println!("Balance Changes: {:?}", commit_receipt.balance_changes());
+
+    // Unreadable
+    println!("Application Event: {:?}/n", commit_receipt.application_events);
+
+    // Not sure what this does
+    // println!("Output: {:?}/n", commit_receipt.output(nth));
+
+    // Unreadable 
+    println!("Outcome: {:?}/n", commit_receipt.outcome);
+    
 }
 
 
@@ -593,20 +613,7 @@ fn swap_token_b_for_a() {
     println!("{}/n", receipt.display(&Bech32Encoder::for_simulator()));
     println!("Output amount: {:?}", output_amount);
 
-    // Unreadable
-    // println!("Transaction Execution Trace: {:?}/n", receipt.execution_trace);
-
-    // Unreadable
-    // println!("Resource Changes: {:?}/n", receipt.execution_trace.resource_changes);
-
-    // Don't know what this means
-    // println!("Resource Usage: {:?}/n", receipt.execution_trace.resources_usage);
-
-    // Ideally should be in order of the manifest.
-    // println!("Worktop Changes: {:?}/n", receipt.execution_trace.worktop_changes()); 
-
     // let balance_changes = receipt.expect_commit_success().balance_changes();
-
     // println!("Balance Changes: {:?}", balance_changes);
 
     // Ideally, should be able to do something like:
@@ -618,15 +625,7 @@ fn swap_token_b_for_a() {
         // );
     // Very difficult to retrieve values and create assertions. Also in an unreadible format.
 
-    // Unreadable
-    // println!("Application Event: {:?}/n", success.application_events);
 
-    // Not sure what this does
-    // receipt.expect_commit_success().output(nth);
-
-    // Unreadable 
-    // println!("Outcome: {:?}/n", success.outcome);
-    
 }
 
 
