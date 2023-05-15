@@ -32,21 +32,21 @@ pub struct Account {
 
 /// We are setting up a testing environment with a `TestEnvironment` struct to maintain the state of the various test scenarios we will later create.
 struct TestEnvironment {
-    /// Our TestEnvironment will have its own TestRunner to execute, manage, and view transaction, component state, and asset flows.
+    // Our TestEnvironment will have its own TestRunner to execute, manage, and view transaction, component state, and asset flows.
     test_runner: TestRunner,
-    /// This is the Account struct that will maintain the record of the account in which we will be making test transactions with. This Account 
-    /// struct contains the account's Public Key, Private Key, and account ComponentAddress.
+    // This is the Account struct that will maintain the record of the account in which we will be making test transactions with. This Account 
+    // struct contains the account's Public Key, Private Key, and account ComponentAddress.
     account: Account,
-    /// The PackageAddress of our Blueprint Package to instantiate our Radiswap component(s).
+    // The PackageAddress of our Blueprint Package to instantiate our Radiswap component(s).
     package_address: PackageAddress,
-    /// The ComponentAddress of our instantiated Radiswap pool.
+    // The ComponentAddress of our instantiated Radiswap pool.
     component_address: ComponentAddress,
-    /// The ResourceAddress of Token A, which will be defaulted to XRD. 
+    // The ResourceAddress of Token A, which will be defaulted to XRD. 
     token_a_resource_address: ResourceAddress,
-    /// The ResourceAddress of Token B, which will be a fungible token we will later create and mint with an initial supply of 10,000.
+    // The ResourceAddress of Token B, which will be a fungible token we will later create and mint with an initial supply of 10,000.
     token_b_resource_address: ResourceAddress,
     swap_fee: Decimal,
-    /// The ResourceAddress of the Pool's "LP" token to track ownership.
+    // The ResourceAddress of the Pool's "LP" token to track ownership.
     pool_unit_address: ResourceAddress,
 }
 /// The implementation of our TestEnvironment will set up the state of our test. It will bootstrap our environment by:
@@ -548,11 +548,12 @@ fn swap_token_a_for_b() {
         dec!(100)
     );
 
+    // This test fails on "InsufficientBalance" but I have no way to determine why/how.
     println!("{}/n", receipt.display(&Bech32Encoder::for_simulator()));
 
-    println!("Worktop Changes: {:?}/n", receipt.execution_trace.worktop_changes()); 
+    // println!("Worktop Changes: {:?}/n", receipt.execution_trace.worktop_changes()); 
 
-    println!("Resource Usage: {:?}/n", receipt.execution_trace.resource_changes);
+    // println!("Resource Usage: {:?}/n", receipt.execution_trace.resource_changes);
 
     // let vault_balance = test_environment.get_vault_balance();
 
@@ -575,7 +576,9 @@ fn swap_token_b_for_a() {
     let swap_fee = test_environment.swap_fee;
     
     // This translates to dy = (y * r * dx) / (x + r * dx)
-    let _output_amount: Decimal = (output_vault_amount
+    // This logic is used to create an assertion that the amount that is
+    // returned to be is the correct amount.
+    let output_amount: Decimal = (output_vault_amount
     * (dec!("1") - swap_fee)
     * input_amount)
     / (input_vault_amount + input_amount 
@@ -588,6 +591,7 @@ fn swap_token_b_for_a() {
 
     // Ideally should also display the steps of each manifest execution.
     println!("{}/n", receipt.display(&Bech32Encoder::for_simulator()));
+    println!("Output amount: {:?}", output_amount);
 
     // Unreadable
     // println!("Transaction Execution Trace: {:?}/n", receipt.execution_trace);
@@ -601,13 +605,17 @@ fn swap_token_b_for_a() {
     // Ideally should be in order of the manifest.
     // println!("Worktop Changes: {:?}/n", receipt.execution_trace.worktop_changes()); 
 
+    // let balance_changes = receipt.expect_commit_success().balance_changes();
+
+    // println!("Balance Changes: {:?}", balance_changes);
+
     // Ideally, should be able to do something like:
-    // let success = receipt.expect_commit_success().balance_changes();
-    // success.assert_component_received(
-    //     account_component,
-    //     resource_address,
-    //     output_amount
-    // );
+        // let balance_changes = receipt.expect_commit_success().balance_changes();
+        // balance_changes.assert_component_received(
+        //     account_component,
+        //     resource_address,
+        //     output_amount
+        // );
     // Very difficult to retrieve values and create assertions. Also in an unreadible format.
 
     // Unreadable
@@ -642,6 +650,8 @@ fn add_liquidity() {
     let token_a_amount = dec!(100);
     let token_b_amount = dec!(100);
 
+    // Logic which maintains the ratio of liquidity between two tokens when tokens are 
+    // deposited to the pool.
     let (correct_amount_a, correct_amount_b) = 
         if (
             (vault_a_amount == Decimal::zero()) | (vault_b_amount == Decimal::zero())
@@ -670,13 +680,12 @@ fn add_liquidity() {
         token_b_amount,
     );
 
-
     println!("Transaction Receipt: {}", receipt.display(&Bech32Encoder::for_simulator()));
     println!("Correct Amount A: {:?}", correct_amount_a);
     println!("Correct Amount B: {:?}", correct_amount_b);
     // println!("Pool Units: {:?}", pool_units_amount);
 
-    // let success = receipt.expect_commit_success();
+    // let balance_changes = receipt.expect_commit_success();
 
     // Again ideally it would be nice to be able to do this:
     // let balance_changes = success.balance_changes();

@@ -6,7 +6,7 @@ use transaction::builder::ManifestBuilder;
 use radix_engine::transaction::TransactionReceipt;
 use radix_engine::types::Bech32Encoder;
 use transaction::ecdsa_secp256k1::EcdsaSecp256k1PrivateKey;
-use radix_engine::utils::*;
+use utils::*;
 
 pub struct Account {
     pub public_key: EcdsaSecp256k1PublicKey,
@@ -551,9 +551,9 @@ fn swap_token_a_for_b() {
     // This test fails on "InsufficientBalance" but I have no way to determine why/how.
     println!("{}/n", receipt.display(&Bech32Encoder::for_simulator()));
 
-    println!("Worktop Changes: {:?}/n", receipt.execution_trace.worktop_changes()); 
+    // println!("Worktop Changes: {:?}/n", receipt.execution_trace.worktop_changes()); 
 
-    println!("Resource Usage: {:?}/n", receipt.execution_trace.resource_changes);
+    // println!("Resource Usage: {:?}/n", receipt.execution_trace.resource_changes);
 
     // let vault_balance = test_environment.get_vault_balance();
 
@@ -576,7 +576,9 @@ fn swap_token_b_for_a() {
     let swap_fee = test_environment.swap_fee;
     
     // This translates to dy = (y * r * dx) / (x + r * dx)
-    let _output_amount: Decimal = (output_vault_amount
+    // This logic is used to create an assertion that the amount that is
+    // returned to be is the correct amount.
+    let output_amount: Decimal = (output_vault_amount
     * (dec!("1") - swap_fee)
     * input_amount)
     / (input_vault_amount + input_amount 
@@ -589,6 +591,7 @@ fn swap_token_b_for_a() {
 
     // Ideally should also display the steps of each manifest execution.
     println!("{}/n", receipt.display(&Bech32Encoder::for_simulator()));
+    println!("Output amount: {:?}", output_amount);
 
     // Unreadable
     // println!("Transaction Execution Trace: {:?}/n", receipt.execution_trace);
@@ -602,13 +605,17 @@ fn swap_token_b_for_a() {
     // Ideally should be in order of the manifest.
     // println!("Worktop Changes: {:?}/n", receipt.execution_trace.worktop_changes()); 
 
+    // let balance_changes = receipt.expect_commit_success().balance_changes();
+
+    // println!("Balance Changes: {:?}", balance_changes);
+
     // Ideally, should be able to do something like:
-    // let success = receipt.expect_commit_success().balance_changes();
-    // success.assert_component_received(
-    //     account_component,
-    //     resource_address,
-    //     output_amount
-    // );
+        // let balance_changes = receipt.expect_commit_success().balance_changes();
+        // balance_changes.assert_component_received(
+        //     account_component,
+        //     resource_address,
+        //     output_amount
+        // );
     // Very difficult to retrieve values and create assertions. Also in an unreadible format.
 
     // Unreadable
@@ -643,6 +650,8 @@ fn add_liquidity() {
     let token_a_amount = dec!(100);
     let token_b_amount = dec!(100);
 
+    // Logic which maintains the ratio of liquidity between two tokens when tokens are 
+    // deposited to the pool.
     let (correct_amount_a, correct_amount_b) = 
         if (
             (vault_a_amount == Decimal::zero()) | (vault_b_amount == Decimal::zero())
@@ -671,13 +680,12 @@ fn add_liquidity() {
         token_b_amount,
     );
 
-
     println!("Transaction Receipt: {}", receipt.display(&Bech32Encoder::for_simulator()));
     println!("Correct Amount A: {:?}", correct_amount_a);
     println!("Correct Amount B: {:?}", correct_amount_b);
     // println!("Pool Units: {:?}", pool_units_amount);
 
-    // let success = receipt.expect_commit_success();
+    // let balance_changes = receipt.expect_commit_success();
 
     // Again ideally it would be nice to be able to do this:
     // let balance_changes = success.balance_changes();
