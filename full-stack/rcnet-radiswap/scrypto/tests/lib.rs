@@ -1,9 +1,9 @@
-use scrypto::blueprints::account::ACCOUNT_WITHDRAW_IDENT;
-use scrypto::blueprints::account::{ACCOUNT_DEPOSIT_BATCH_IDENT};
+use radix_engine::ledger::ReadableSubstateStore;
+use scrypto::blueprints::account::ACCOUNT_DEPOSIT_BATCH_IDENT;
 use scrypto::prelude::*;
 use scrypto_unit::*;
 use transaction::builder::ManifestBuilder;
-use radix_engine::transaction::TransactionReceipt;
+use radix_engine::transaction::{TransactionReceipt, BalanceChange};
 use radix_engine::types::Bech32Encoder;
 use transaction::ecdsa_secp256k1::EcdsaSecp256k1PrivateKey;
 use utils::*;
@@ -39,15 +39,10 @@ struct TestEnvironment {
     account: Account,
     // The PackageAddress of our Blueprint Package to instantiate our Radiswap component(s).
     package_address: PackageAddress,
-    // The ComponentAddress of our instantiated Radiswap pool.
-    component_address: ComponentAddress,
     // The ResourceAddress of Token A, which will be defaulted to XRD. 
     token_a_resource_address: ResourceAddress,
     // The ResourceAddress of Token B, which will be a fungible token we will later create and mint with an initial supply of 10,000.
     token_b_resource_address: ResourceAddress,
-    swap_fee: Decimal,
-    // The ResourceAddress of the Pool's "LP" token to track ownership.
-    pool_unit_address: ResourceAddress,
 }
 /// The implementation of our TestEnvironment will set up the state of our test. It will bootstrap our environment by:
 /// 1. Creating an account to sign transactions.
@@ -57,10 +52,10 @@ struct TestEnvironment {
 /// 
 /// Setting this environment will require that these procedures run successfully before we begin creating different scenarios for our test cases.
 impl TestEnvironment {
-    pub fn new() -> Self {
+    pub fn new(mut test_runner: TestRunner) -> Self {
 
         // Creating a fresh new instance of our TestRunner.
-        let mut test_runner = TestRunner::builder().build();
+        // let mut test_runner = TestRunner::builder().build();
 
         // Creating our first Account.
         let (public_key, private_key, account_component) = test_runner.new_allocated_account();    
@@ -69,11 +64,14 @@ impl TestEnvironment {
         // Deploying our Blueprint Package Locally.
         let package_address = test_runner.compile_and_publish(this_package!());
 
+        
+
         // Creating and minting Token B for testing purposes.
         let create_fungible_manifest = ManifestBuilder::new()
-            .new_token_fixed(
+            .new_token_mutable(
                 Default::default(), 
-                dec!("10000"))
+                AccessRule::AllowAll
+            )
             .call_method(
                 account_component, 
                 ACCOUNT_DEPOSIT_BATCH_IDENT, 
@@ -91,60 +89,55 @@ impl TestEnvironment {
         // Defining our Token A (defaulted to XRD).
         let token_a_resource_address = RADIX_TOKEN;
 
-        let swap_fee = dec!("0.02");
-
         // Instantiating our Radiswap Pool Component with a default initial supply of 1,000 for each token and swap fee of 2%.
-        let manifest = ManifestBuilder::new()
-            .call_method(
-                account_component, 
-                ACCOUNT_WITHDRAW_IDENT, 
-                manifest_args!(token_a_resource_address, dec!(1000))
-            )
-            .call_method(
-                account_component, 
-                ACCOUNT_WITHDRAW_IDENT, 
-                manifest_args!(token_b_resource_address, dec!(1000))
-            )
-            .take_from_worktop(token_a_resource_address, |builder, xrd_bucket| {
-                builder.take_from_worktop(token_b_resource_address, |builder, token_b_bucket| {
-                    builder.call_function(
-                        package_address, 
-                        "Radiswap", 
-                        "instantiate_radiswap", 
-                        manifest_args!(
-                            xrd_bucket,
-                            token_b_bucket,
-                            swap_fee 
-                        )
-                    )
-                })
-            })
-            .call_method(
-                account_component, 
-                ACCOUNT_DEPOSIT_BATCH_IDENT, 
-                manifest_args!(ManifestExpression::EntireWorktop))
-            .build();
+        // let manifest = ManifestBuilder::new()
+        //     .call_method(
+        //         account_component, 
+        //         ACCOUNT_WITHDRAW_IDENT, 
+        //         manifest_args!(token_a_resource_address, dec!(1000))
+        //     )
+        //     .call_method(
+        //         account_component, 
+        //         ACCOUNT_WITHDRAW_IDENT, 
+        //         manifest_args!(token_b_resource_address, dec!(1000))
+        //     )
+        //     .take_from_worktop(token_a_resource_address, |builder, xrd_bucket| {
+        //         builder.take_from_worktop(token_b_resource_address, |builder, token_b_bucket| {
+        //             builder.call_function(
+        //                 package_address, 
+        //                 "Radiswap", 
+        //                 "instantiate_radiswap", 
+        //                 manifest_args!(
+        //                     xrd_bucket,
+        //                     token_b_bucket,
+        //                     swap_fee 
+        //                 )
+        //             )
+        //         })
+        //     })
+        //     .call_method(
+        //         account_component, 
+        //         ACCOUNT_DEPOSIT_BATCH_IDENT, 
+        //         manifest_args!(ManifestExpression::EntireWorktop))
+        //     .build();
 
-        let receipt = test_runner.execute_manifest_ignoring_fee(
-            manifest, 
-            vec![NonFungibleGlobalId::from_public_key(&public_key)],
-        );
+        // let receipt = test_runner.execute_manifest_ignoring_fee(
+        //     manifest, 
+        //     vec![NonFungibleGlobalId::from_public_key(&public_key)],
+        // );
 
-        let success = receipt.expect_commit_success();
+        // let success = receipt.expect_commit_success();
         
         // Retrieving the ComponentAddress of our Radiswap pool component and ResourceAddress of our Pool Units resource.
-        let component_address = success.new_component_addresses()[0];
-        let pool_unit_address = success.new_resource_addresses()[1];
+        // let component_address = success.new_component_addresses()[0];
+        // let pool_unit_address = success.new_resource_addresses()[1];
 
         Self { 
             test_runner, 
             account, 
             package_address, 
-            component_address, 
             token_a_resource_address, 
             token_b_resource_address,
-            swap_fee,
-            pool_unit_address,
         }
     }
 
@@ -166,7 +159,6 @@ impl TestEnvironment {
                 Default::default(), 
                 access_rules_config
             )
-            // .set_metadata(entity_address, key, value)
             .build();
 
             util::write_manifest_to_fs(
@@ -191,7 +183,8 @@ impl TestEnvironment {
     /// We may use this method to instantiate multiple Radiswap pool component to test different liquidity pool configurations.
     pub fn instantiate_radiswap(
         &mut self,
-        package_address: PackageAddress, 
+        account: &Account,
+        // package_address: PackageAddress, 
         token_a_amount: Decimal,
         token_b_amount: Decimal,
         swap_fee: Decimal,
@@ -206,19 +199,19 @@ impl TestEnvironment {
         // 6. Deposit any returned resource into our default account.
         let manifest = ManifestBuilder::new()
             .withdraw_from_account(
-                self.account.account_component, 
+                account.account_component, 
                 self.token_a_resource_address, 
                 token_a_amount
             )
             .withdraw_from_account(
-                self.account.account_component, 
+                account.account_component, 
                 self.token_b_resource_address, 
                 token_b_amount
             )
             .take_from_worktop(self.token_a_resource_address, |builder, xrd_bucket| {
                 builder.take_from_worktop(self.token_b_resource_address, |builder, token_b_bucket| {
                     builder.call_function(
-                        package_address, 
+                        self.package_address, 
                         "Radiswap", 
                         "instantiate_radiswap", 
                         manifest_args!(
@@ -230,11 +223,11 @@ impl TestEnvironment {
                 })
             })
             .call_method(
-                self.account.account_component, 
+                account.account_component, 
                 ACCOUNT_DEPOSIT_BATCH_IDENT, 
-                manifest_args!(ManifestExpression::EntireWorktop))
+                manifest_args!(ManifestExpression::EntireWorktop)
+            )
             .build();
-
 
         // This generates the .rtm file of the Transaction Manifest.
         util::write_manifest_to_fs(
@@ -247,7 +240,7 @@ impl TestEnvironment {
         // Executes the manifest above and returns the Transaction Receipt.
         let receipt = self.test_runner.execute_manifest_ignoring_fee(
             manifest, 
-            vec![NonFungibleGlobalId::from_public_key(&self.account.public_key)],
+            vec![NonFungibleGlobalId::from_public_key(&account.public_key)],
         );
 
         return receipt
@@ -257,6 +250,7 @@ impl TestEnvironment {
     /// resource in our method signature to provide us flexibility in what and how much token we want to swap for.
     pub fn swap(
         &mut self,
+        component_address: ComponentAddress,
         input_token: ResourceAddress,
         input_amount: Decimal,
     ) -> TransactionReceipt {
@@ -274,7 +268,7 @@ impl TestEnvironment {
             )
             .take_from_worktop_by_amount(input_amount, input_token, |builder, input_bucket| {
                 builder.call_method(
-                    self.component_address, 
+                    component_address, 
                     "swap", 
                     manifest_args!(input_bucket)
                 )
@@ -311,7 +305,8 @@ impl TestEnvironment {
     /// pool will be distributed correctly.
     pub fn add_liquidity(
         &mut self,
-        account_address: ComponentAddress,
+        account: &Account,
+        component_address: ComponentAddress,
         token_a_amount: Decimal,
         token_b_amount: Decimal,
     ) -> TransactionReceipt {
@@ -325,12 +320,12 @@ impl TestEnvironment {
         // 6. Deposit any returned resources into our default account.
         let manifest = ManifestBuilder::new()
             .withdraw_from_account(
-                account_address, 
+                account.account_component, 
                 self.token_a_resource_address, 
                 token_a_amount
             )
             .withdraw_from_account(
-                account_address, 
+                account.account_component, 
                 self.token_b_resource_address, 
                 token_b_amount
             )
@@ -341,7 +336,7 @@ impl TestEnvironment {
                         self.token_b_resource_address, 
                         |builder, token_b_bucket| {
                             builder.call_method(
-                                self.component_address, 
+                                component_address, 
                                 "add_liquidity", 
                                 manifest_args!(
                                     xrd_bucket,
@@ -350,7 +345,7 @@ impl TestEnvironment {
                         })
                 })
             .call_method(
-                account_address, 
+                account.account_component, 
                 ACCOUNT_DEPOSIT_BATCH_IDENT, 
                 manifest_args!(ManifestExpression::EntireWorktop)
             )
@@ -367,7 +362,7 @@ impl TestEnvironment {
         // Executes the manifest above and returns the Transaction Receipt.
         let receipt = self.test_runner.execute_manifest_ignoring_fee(
             manifest, 
-            vec![NonFungibleGlobalId::from_public_key(&self.account.public_key)],
+            vec![NonFungibleGlobalId::from_public_key(&account.public_key)],
         );
 
         return receipt
@@ -379,6 +374,8 @@ impl TestEnvironment {
     pub fn remove_liquidity(
         &mut self,
         account: &Account,
+        component_address: ComponentAddress,
+        pool_unit_address: ResourceAddress,
         pool_units_amount: Decimal,
     ) -> TransactionReceipt {
 
@@ -390,14 +387,14 @@ impl TestEnvironment {
         let manifest = ManifestBuilder::new()
             .withdraw_from_account(
                 account.account_component, 
-                self.pool_unit_address, 
+                pool_unit_address, 
                 pool_units_amount
             )
             .take_from_worktop(
-                self.pool_unit_address, 
+                pool_unit_address, 
                 |builder, pool_unit_bucket| {
                     builder.call_method(
-                        self.component_address, 
+                        component_address, 
                         "remove_liquidity", 
                         manifest_args!(pool_unit_bucket)
                     )
@@ -434,6 +431,29 @@ impl TestEnvironment {
     #[allow(unused)]
     pub fn new_account(&mut self) -> Account {
         let (public_key, private_key, account_component) = self.test_runner.new_allocated_account();
+        
+        let manifest = ManifestBuilder::new()
+            // .withdraw_from_account(
+            //     self.account.account_component, 
+            //     self.token_b_resource_address, 
+            //     dec!(1000)
+            // )
+            .mint_fungible(
+                self.token_b_resource_address, 
+                dec!(10000)
+            )
+            .call_method(
+                account_component, 
+                ACCOUNT_DEPOSIT_BATCH_IDENT, 
+                manifest_args!(ManifestExpression::EntireWorktop)
+            )
+            .build();
+
+        let receipt = self.test_runner.execute_manifest_ignoring_fee(
+            manifest, 
+            vec![NonFungibleGlobalId::from_public_key(&self.account.public_key)],
+        );
+        
         Account { public_key, private_key, account_component }
     }
 
@@ -445,27 +465,27 @@ impl TestEnvironment {
 
         let token_a_balance = self.test_runner.account_balance(account_address, self.token_a_resource_address);
         let token_b_balance = self.test_runner.account_balance(account_address, self.token_b_resource_address);
-        let pool_unit_balance = self.test_runner.account_balance(account_address, self.pool_unit_address);
+        // let pool_unit_balance = self.test_runner.account_balance(account_address, self.pool_unit_address);
 
         account_balance.insert(self.token_a_resource_address, token_a_balance.unwrap());
         account_balance.insert(self.token_b_resource_address, token_b_balance.unwrap());
-        account_balance.insert(self.pool_unit_address, pool_unit_balance.unwrap());
+        // account_balance.insert(self.pool_unit_address, pool_unit_balance.unwrap());
 
         return account_balance;
     }
 
     /// This method retrieves the balances of the resources the component holds.
     #[allow(unused)]
-    pub fn get_vault_balance(&mut self) -> HashMap<ResourceAddress, Decimal> {
-        let vault_balance = self.test_runner.get_component_resources(self.component_address);
+    pub fn get_vault_balance(&mut self, component_address: ComponentAddress) -> HashMap<ResourceAddress, Decimal> {
+        let vault_balance = self.test_runner.get_component_resources(component_address);
 
         return vault_balance;
     }
 
     /// This method retrieves the balance of Token A the component holds.
     #[allow(unused)]
-    pub fn get_vault_a_amount(&mut self) -> Decimal {
-        let vault_id = self.test_runner.get_component_vaults(self.component_address, self.token_a_resource_address);
+    pub fn get_vault_a_amount(&mut self, component_address: ComponentAddress) -> Decimal {
+        let vault_id = self.test_runner.get_component_vaults(component_address, self.token_a_resource_address);
         let vault_a_amount = self.test_runner.inspect_vault_balance(vault_id[0]);
 
         return vault_a_amount.unwrap();
@@ -473,18 +493,54 @@ impl TestEnvironment {
 
     /// This method retrieves the balance of Token B the component holds.
     #[allow(unused)]
-    pub fn get_vault_b_amount(&mut self) -> Decimal {
-        let vault_id = self.test_runner.get_component_vaults(self.component_address, self.token_b_resource_address);
+    pub fn get_vault_b_amount(&mut self, component_address: ComponentAddress) -> Decimal {
+        let vault_id = self.test_runner.get_component_vaults(component_address, self.token_b_resource_address);
         let vault_b_amount = self.test_runner.inspect_vault_balance(vault_id[0]);
 
         return vault_b_amount.unwrap();
+    }
+
+    pub fn get_resource_supply(&self, resource_address: ResourceAddress) -> Decimal {
+
+        let retrieve_substate = self.test_runner.substate_store().get_substate(
+            &SubstateId(
+                RENodeId::GlobalObject(
+                    Address::Resource(resource_address)), 
+                    NodeModuleId::SELF, 
+                    SubstateOffset::ResourceManager(ResourceManagerOffset::ResourceManager)
+                )
+            ).unwrap();
+    
+        let resource_supply = retrieve_substate.substate.resource_manager().total_supply;
+
+        return resource_supply
+        
+    }
+
+    #[allow(unused)]
+    pub fn assert_component_receive_fungible(
+        &mut self, 
+        receipt: &TransactionReceipt, 
+        component: ComponentAddress, 
+        resource_address: ResourceAddress, 
+        amount: Decimal
+    ) {
+        let balance_changes = receipt.expect_commit_success().balance_changes();
+        let account_changes = balance_changes.get(&Address::Component(component)).unwrap();
+        let resource_changes = account_changes.get_key_value(&resource_address).unwrap();
+
+        assert_eq!(
+            resource_changes,
+            (&resource_address, &BalanceChange::Fungible(amount)),
+        );
     }
 
 }
 
 #[test]
 fn deploy_package() {
-    let mut test_environment = TestEnvironment::new();
+    let test_runner = TestRunner::builder().build();
+    let mut test_environment = TestEnvironment::new(test_runner);
 
     let royalty_config_builder = RoyaltyConfigBuilder::new().add_rule("instantiate_radiswap", 10000000);
 
@@ -523,11 +579,13 @@ fn deploy_package() {
 
 #[test]
 fn instantiate_radiswap() {
-    let mut test_environment = TestEnvironment::new();
+    let test_runner = TestRunner::builder().build();
+    let mut test_environment = TestEnvironment::new(test_runner);
+    let account = test_environment.new_account();
 
 
     let receipt = test_environment.instantiate_radiswap(
-        test_environment.package_address,
+        &account,
         dec!(1000), 
         dec!(1000), 
         dec!("0.02")
@@ -541,9 +599,21 @@ fn instantiate_radiswap() {
 /// 1. The method actually runs - I can pass in a Bucket of resources and it returns me a Bucket of resource.
 #[test]
 fn swap_token_a_for_b() {
-    let mut test_environment = TestEnvironment::new();
+    let test_runner = TestRunner::builder().build();
+    let mut test_environment = TestEnvironment::new(test_runner);
+    let account = test_environment.new_account();
+
+    let instantiate_radiswap = test_environment.instantiate_radiswap(
+        &account,
+        dec!(1000), 
+        dec!(1000), 
+        dec!("0.02")
+    );
+
+    let radiswap_address = instantiate_radiswap.expect_commit_success().new_component_addresses()[0];
 
     let receipt = test_environment.swap(
+        radiswap_address,
         test_environment.token_a_resource_address, 
         dec!(100)
     );
@@ -579,21 +649,31 @@ fn swap_token_a_for_b() {
 
     // Unreadable 
     println!("Outcome: {:?}/n", commit_receipt.outcome);
-    
 }
 
 
 #[test]
 fn swap_token_b_for_a() {
-    let mut test_environment = TestEnvironment::new();
+    let test_runner = TestRunner::builder().build();
+    let mut test_environment = TestEnvironment::new(test_runner);
+    let account = test_environment.new_account();
+    let swap_fee = dec!("0.02");
+    let instantiate_radiswap = test_environment.instantiate_radiswap(
+        &account,
+        dec!(1000), 
+        dec!(1000), 
+        swap_fee
+    );
+
+    let radiswap_address = instantiate_radiswap.expect_commit_success().new_component_addresses()[0];
 
     let input_token = test_environment.token_b_resource_address;
     let input_amount = dec!(100);
 
     // Creating variables for dy = (y * r * dx) / (x + r * dx) formula.
-    let input_vault_amount = test_environment.get_vault_b_amount();
-    let output_vault_amount = test_environment.get_vault_a_amount();
-    let swap_fee = test_environment.swap_fee;
+    let input_vault_amount = test_environment.get_vault_b_amount(radiswap_address);
+    let output_vault_amount = test_environment.get_vault_a_amount(radiswap_address);
+    
     
     // This translates to dy = (y * r * dx) / (x + r * dx)
     // This logic is used to create an assertion that the amount that is
@@ -605,27 +685,61 @@ fn swap_token_b_for_a() {
     * (dec!("1") - swap_fee));
 
     let receipt = test_environment.swap(
+        radiswap_address,
         input_token, 
         input_amount
     );
 
+    test_environment.assert_component_receive_fungible(
+        &receipt, 
+        test_environment.account.account_component, 
+        test_environment.token_a_resource_address, 
+        output_amount
+    );
+
     // Ideally should also display the steps of each manifest execution.
     println!("{}/n", receipt.display(&Bech32Encoder::for_simulator()));
-    println!("Output amount: {:?}", output_amount);
 
+    // I've arrived at this point and I'm evaluating the things I can do to create an assert that I received the 
+    // correct resource and amount I should be expecting.
+    // Balance Changes seems to be the right one, but since I'm unfamiliar with its output I first need to see how to
+    // traverse the output.
     // let balance_changes = receipt.expect_commit_success().balance_changes();
+
+    // It's not as nice of a display as the Balance Changes in the TransactionReceipt, but I can still sort of make it out
+    // and it would be quite nice if this were in Bech32. I'm aware of the different between `NormalComponent` and `AccountComponent`
+    // because I've fiddled around the engine before, but to a new developer, they will find this confusing.
     // println!("Balance Changes: {:?}", balance_changes);
 
-    // Ideally, should be able to do something like:
-        // let balance_changes = receipt.expect_commit_success().balance_changes();
-        // balance_changes.assert_component_received(
-        //     account_component,
-        //     resource_address,
-        //     output_amount
-        // );
-    // Very difficult to retrieve values and create assertions. Also in an unreadible format.
+    // The value I care about is what resource and amount my account received. Traversing through this IndexMap isn't too bad, 
+    // I pass in a reference of my Account ComponentAddress, but this is a little bit strange because `test_environment.account.account_component`
+    // should already be a ComponentAddress so it threw me off a bit that I had to pass `Address::Component`, but no sweat.
+    // let instruction_balance_changes = balance_changes.get(&Address::Component(test_environment.account.account_component)).unwrap();
 
+    // I still need to make sure that I am getting the output that I want so it's neater to work with, so I do still need to read it.
+    // And the output I see here is neater than the print on line 624, but I need to dial it down more.
+    // println!("Instruction Changes: {:?}", instruction_balance_changes);
 
+    // I'm unfamiliar with working with IndexMap and to someone more seasoned, the ordering probably makes obvious sense to them, but
+    // to me, I'm not there yet so I want to print more so I get the right format correct so that I can create my assert.
+    // println!("Instruction Changes2: {:?}", instruction_balance_changes.get_key_value(&test_environment.token_a_resource_address));
+
+    // I actually thought I had to create an `IndexMap` to compare both, but now I realized that I can unwrap the IndexMap to a tuple,
+    // so it's a bit easier to structure my assert. And I get to this point. Which isn't too bad, but not a lot of people understand
+    // that you have to pass BalanceChange::Fungible.
+    // assert_eq!(
+    //     instruction_balance_changes.get_index(1).unwrap(),
+    //     (&test_environment.token_a_resource_address, &BalanceChange::Fungible(output_amount))
+    // );
+
+    // With documentation and a few reps, I can see people being more comfortable with this. Although it will be really nice if we can do this:
+    // let balance_changes = receipt.expect_commit_success().balance_changes();
+    // balance_changes.assert_component_received(
+    //     account_component,
+    //     resource_address,
+    //     output_amount
+    // );
+    
 }
 
 
@@ -636,15 +750,23 @@ fn swap_token_b_for_a() {
 /// 4. Amounts deposited are proportionally deposited.
 /// 5. Pool Units amounts minted correctly.
 /// 6. Pool Units distributed correctly.
-
 #[test]
 fn add_liquidity() {
-    let mut test_environment = TestEnvironment::new();
+    let test_runner = TestRunner::builder().build();
+    let mut test_environment = TestEnvironment::new(test_runner);
+    let account = test_environment.new_account();
+    let swap_fee = dec!("0.02");
+    let instantiate_radiswap = test_environment.instantiate_radiswap(
+        &account,
+        dec!(1000), 
+        dec!(1000), 
+        swap_fee
+    );
+    let radiswap_address = instantiate_radiswap.expect_commit_success().new_component_addresses()[0];
+    let pool_unit_address = instantiate_radiswap.expect_commit_success().new_resource_addresses()[1];
 
-    let default_account = test_environment.account.account_component;
-
-    let vault_a_amount = test_environment.get_vault_a_amount();
-    let vault_b_amount = test_environment.get_vault_b_amount();
+    let vault_a_amount = test_environment.get_vault_a_amount(radiswap_address);
+    let vault_b_amount = test_environment.get_vault_b_amount(radiswap_address);
 
     let token_a_amount = dec!(100);
     let token_b_amount = dec!(100);
@@ -673,16 +795,44 @@ fn add_liquidity() {
     //         token_a_amount * pool_units_total_supply / vault_a_amount
     //     };
 
+    let pool_unit_supply = test_environment.get_resource_supply(pool_unit_address);
+
+    let pool_units_amount =
+        if pool_unit_supply == Decimal::zero() {
+            dec!("100.00")
+        } else {
+            token_a_amount * pool_unit_supply / vault_a_amount
+        };
+
     let receipt = test_environment.add_liquidity(
-        default_account,
+        &account,
+        radiswap_address,
         token_a_amount, 
         token_b_amount,
     );
 
     println!("Transaction Receipt: {}", receipt.display(&Bech32Encoder::for_simulator()));
-    println!("Correct Amount A: {:?}", correct_amount_a);
-    println!("Correct Amount B: {:?}", correct_amount_b);
-    // println!("Pool Units: {:?}", pool_units_amount);
+
+    test_environment.assert_component_receive_fungible(
+        &receipt, 
+        radiswap_address, 
+        test_environment.token_a_resource_address, 
+        correct_amount_a
+    );
+
+    test_environment.assert_component_receive_fungible(
+        &receipt, 
+        radiswap_address, 
+        test_environment.token_b_resource_address, 
+        correct_amount_b
+    );
+
+    test_environment.assert_component_receive_fungible(
+        &receipt, 
+        account.account_component, 
+        pool_unit_address, 
+        pool_units_amount
+    );
 
     // let balance_changes = receipt.expect_commit_success();
 
@@ -720,28 +870,149 @@ fn add_liquidity() {
 
 
 #[test]
+fn multiple_add_liquidity() {
+
+    let test_runner = TestRunner::builder().build();
+    let mut test_environment = TestEnvironment::new(test_runner);
+    let account = test_environment.new_account();
+    let swap_fee = dec!("0.02");
+    let instantiate_radiswap = test_environment.instantiate_radiswap(
+        &account,
+        dec!(1000), 
+        dec!(1000), 
+        swap_fee
+    );
+    let radiswap_address = instantiate_radiswap.expect_commit_success().new_component_addresses()[0];
+    let pool_unit_address = instantiate_radiswap.expect_commit_success().new_resource_addresses()[1];    
+
+    let account_1 = test_environment.new_account();
+    let account_2 = test_environment.new_account();
+    let account_3 = test_environment.new_account();
+
+    let vector_of_accounts = vec![account_1, account_2, account_3];
+
+    let mut vector_of_receipts = vec![];
+
+    for account in vector_of_accounts {
+
+        let vault_a_amount = test_environment.get_vault_a_amount(radiswap_address);
+        let vault_b_amount = test_environment.get_vault_b_amount(radiswap_address);
+        let token_a_amount = dec!(1000);
+        let token_b_amount = dec!(1000);
+    
+        // Logic which maintains the ratio of liquidity between two tokens when tokens are 
+        // deposited to the pool.
+        let (correct_amount_a, correct_amount_b) = 
+            if (
+                (vault_a_amount == Decimal::zero()) | (vault_b_amount == Decimal::zero())
+            ) | ((vault_a_amount / vault_b_amount) == (token_a_amount / token_b_amount))
+            {
+                (token_a_amount, token_b_amount)
+            } else if (vault_a_amount / vault_b_amount) < (token_a_amount / token_b_amount) {
+                (token_b_amount * (vault_a_amount / vault_b_amount), token_b_amount)
+            } else {
+                (token_a_amount, token_a_amount * (token_b_amount / token_a_amount))
+            };
+        
+        let pool_unit_supply = test_environment.get_resource_supply(pool_unit_address);
+    
+        let pool_units_amount =
+            if pool_unit_supply == Decimal::zero() {
+                dec!("100.00")
+            } else {
+                token_a_amount * pool_unit_supply / vault_a_amount
+            };
+
+        let receipt = test_environment.add_liquidity(
+            &account,
+            radiswap_address,
+            token_a_amount, 
+            token_b_amount,
+        );
+
+        let display_receipt = receipt.to_string(&Bech32Encoder::for_simulator());
+
+        vector_of_receipts.push(display_receipt);
+
+        test_environment.assert_component_receive_fungible(
+            &receipt, 
+            radiswap_address, 
+            test_environment.token_a_resource_address, 
+            correct_amount_a
+        );
+    
+        test_environment.assert_component_receive_fungible(
+            &receipt, 
+            radiswap_address, 
+            test_environment.token_b_resource_address, 
+            correct_amount_b
+        );
+    
+        test_environment.assert_component_receive_fungible(
+            &receipt, 
+            account.account_component, 
+            pool_unit_address, 
+            pool_units_amount
+        );
+        
+    }
+
+    println!("Transaction Receipt: {}", vector_of_receipts[0]);
+    println!("Transaction Receipt: {}", vector_of_receipts[1]);
+    println!("Transaction Receipt: {}", vector_of_receipts[2]);
+
+}
+
+#[test]
 fn remove_liquidity() {
-    let mut test_environment = TestEnvironment::new();
+    let test_runner = TestRunner::builder().build();
+    let mut test_environment = TestEnvironment::new(test_runner);
+    let account = test_environment.new_account();
+    let swap_fee = dec!("0.02");
+    let instantiate_radiswap = test_environment.instantiate_radiswap(
+        &account,
+        dec!(1000), 
+        dec!(1000), 
+        swap_fee
+    );
+    let radiswap_address = instantiate_radiswap.expect_commit_success().new_component_addresses()[0];
+    let pool_unit_address = instantiate_radiswap.expect_commit_success().new_resource_addresses()[1];
 
-    // let pool_units_amount = dec!(100);
+    let pool_units_amount = dec!(100);
 
-    // let share = pool_units_amount / 
-    // pool_units_resource_manager.total_supply();
+    let pool_unit_supply = test_environment.get_resource_supply(pool_unit_address);
 
-    let _vault_a_amount = test_environment.get_vault_a_amount();
-    let _vault_b_amount = test_environment.get_vault_b_amount();
+    let share = pool_units_amount / 
+    pool_unit_supply;
 
-    // let token_a_returned = vault_a_amount * share;
-    // let token_b_returned = vault_b_amount * share;
+    let vault_a_amount = test_environment.get_vault_a_amount(radiswap_address);
+    let vault_b_amount = test_environment.get_vault_b_amount(radiswap_address);
 
-    let default_account = test_environment.new_account();
+    let token_a_returned = vault_a_amount * share;
+    let token_b_returned = vault_b_amount * share;
 
     let receipt = test_environment.remove_liquidity(
-        &default_account,
+        &account,
+        radiswap_address,
+        pool_unit_address,
         dec!(100), 
     );
 
     println!("Transaction Receipt: {}", receipt.display(&Bech32Encoder::for_simulator()));
+
+    test_environment.assert_component_receive_fungible(
+        &receipt, 
+        account.account_component, 
+        test_environment.token_a_resource_address, 
+        token_a_returned
+    );
+
+    test_environment.assert_component_receive_fungible(
+        &receipt, 
+        account.account_component, 
+        test_environment.token_b_resource_address, 
+        token_b_returned
+    );
 
 }
 
