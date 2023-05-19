@@ -29,6 +29,7 @@ mod radiswap_module {
                 !bucket_a.is_empty() && !bucket_b.is_empty(),
                 "You must pass in an initial supply of each token"
             );
+
             assert!(
                 fee >= dec!("0") && fee <= dec!("1"),
                 "Invalid fee in thousandths"
@@ -199,51 +200,8 @@ mod radiswap_module {
             )
         }
 
-        pub fn get_liquidity(&self) -> (Decimal, Decimal) {
-            let vault_a_amount: Decimal = self.vault_a.amount();
-            let vault_b_amount: Decimal = self.vault_b.amount();
-
-            (vault_a_amount, vault_b_amount)
-        }
-
-        pub fn get_token_pair(&self) -> (ResourceAddress, ResourceAddress) {
-            let vault_a_address: ResourceAddress = self.vault_a.resource_address();
-            let vault_b_address: ResourceAddress = self.vault_b.resource_address();
-
-            (vault_a_address, vault_b_address)
-        }
-
-        pub fn get_token_pair_metadata(&self) -> (String, String) {
-            let resource_manager_a = borrow_resource_manager!(self.vault_a.resource_address());
-            let metadata_a = resource_manager_a.metadata();
-            
-            let token_a_name = metadata_a.get_string("name").unwrap_or_else(|_| "unknown".to_string());
-        
-            let resource_manager_b = borrow_resource_manager!(self.vault_b.resource_address());
-            let metadata_b = resource_manager_b.metadata();
-            let token_b_name = metadata_b.get_string("name").unwrap_or_else(|_| "unknown".to_string());
-        
-            (token_a_name, token_b_name)
-        }
-
-        pub fn get_total_lp(&self) -> Decimal {
-            let resource_manager = borrow_resource_manager!(self.pool_units_resource_address);
-
-            let lp_amount = resource_manager.total_supply();
-
-            return lp_amount
-        }
-
-        pub fn get_resource_type(&self) -> (ResourceType, ResourceType) {
-            let resource_manager_a = borrow_resource_manager!(self.vault_a.resource_address());
-
-            let resource_type_a = resource_manager_a.resource_type();
-
-            let resource_manager_b = borrow_resource_manager!(self.vault_b.resource_address());
-
-            let resource_type_b = resource_manager_b.resource_type();
-
-            (resource_type_a, resource_type_b)
+        pub fn get_swap_fee(&self) -> Decimal {
+            return self.fee;
         }
     }
 }
