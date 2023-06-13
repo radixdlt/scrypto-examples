@@ -11,17 +11,19 @@ mod airdrop {
     }
 
     impl Airdrop {
-        pub fn instantiate_airdrop() -> ComponentAddress {
+        pub fn instantiate_airdrop() -> Global<Airdrop> {
             // .globalize makes the component accessible globally through a public component address
-            Self::instantiate_airdrop_local().globalize()
+            return Self::instantiate_airdrop_local()
+                .prepare_to_globalize(OwnerRole::None)
+                .globalize();
         }
 
-        pub fn instantiate_airdrop_local() -> AirdropComponent {
+        pub fn instantiate_airdrop_local() -> Owned<Airdrop> {
             // Simply instantiating the component (without globalizing it) makes its methods
             // not callable from outside. In this case, it has to be owned by a particular component. Only that
             // component will be able to call methods on it. You can see an example of this in `intra_package.rs`
 
-            Self {
+            return Self {
                 tokens: Vault::with_bucket(
                     ResourceBuilder::new_fungible()
                         .divisibility(DIVISIBILITY_MAXIMUM)
@@ -29,7 +31,7 @@ mod airdrop {
                         .mint_initial_supply(1000),
                 ),
             }
-            .instantiate()
+            .instantiate();
         }
 
         pub fn free_token(&mut self) -> Bucket {

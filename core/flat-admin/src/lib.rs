@@ -2,71 +2,67 @@ use scrypto::prelude::*;
 
 #[blueprint]
 mod flat_admin {
+    enable_method_auth! {
+        roles {
+            admin
+        },
+        methods {
+            create_additional_admin => admin;
+            destroy_admin_badge => PUBLIC;
+            get_admin_badge_address => PUBLIC;
+        }
+    }
     struct FlatAdmin {
-        admin_mint_badge: Vault,
-        admin_badge: ResourceAddress,
+        first_admin_badge: ResourceManager,
     }
 
     impl FlatAdmin {
-        pub fn instantiate_flat_admin(badge_name: String) -> (ComponentAddress, Bucket) {
-            // Create a badge for internal use which will hold mint/burn authority for the admin badge we will soon create
-            let admin_mint_badge = ResourceBuilder::new_fungible()
-                .divisibility(DIVISIBILITY_NONE)
-                .mint_initial_supply(1);
+        pub fn instantiate_flat_admin(badge_name: String) -> (Global<FlatAdmin>, Bucket) {
+
+            let blueprint_id = Runtime::blueprint_id();
+            let (_global_address_reservation, component_address) = Runtime::allocate_component_address(blueprint_id);
 
             // Create the ResourceManager for a mutable supply admin badge
             let first_admin_badge = ResourceBuilder::new_fungible()
                 .divisibility(DIVISIBILITY_NONE)
                 .metadata("name", badge_name)
-                .mintable(rule!(require(admin_mint_badge.resource_address())), LOCKED)
-                .burnable(rule!(require(admin_mint_badge.resource_address())), LOCKED)
+                .mintable(rule!(require(global_caller(component_address))), LOCKED)
+                .burnable(rule!(require(global_caller(component_address))), LOCKED)
                 .mint_initial_supply(1);
-
-            // Setting uo the access rules of the component
-            let rules = AccessRulesConfig::new()
-                // The third parameter here specifies the authority allowed to update the rule.
-                .method(
-                    "create_additional_admin",
-                    rule!(require(first_admin_badge.resource_address())),
-                    LOCKED,
-                )
-                // The second parameter here specifies the authority allowed to update the rule.
-                .default(AccessRule::AllowAll, AccessRule::DenyAll);
 
             // Initialize our component, placing the minting authority badge within its vault, where it will remain forever
             let component = Self {
-                admin_mint_badge: Vault::with_bucket(admin_mint_badge),
-                admin_badge: first_admin_badge.resource_address(),
+                first_admin_badge: first_admin_badge.resource_manager(),
             }
-            .instantiate();
-
-            let component_address = component.globalize_with_access_rules(rules);
+            .instantiate()
+            .prepare_to_globalize(OwnerRole::Updateable(rule!(require(first_admin_badge.resource_address()))))
+            .roles(
+                roles!(
+                    admin => rule!(require(first_admin_badge.resource_address())), mutable_by: admin, admin;
+                )
+            )
+            .globalize();
 
             // Return the instantiated component and the admin badge we just minted
-            (component_address, first_admin_badge)
+            (component, first_admin_badge)
         }
 
         // Any existing admin may create another admin token
         pub fn create_additional_admin(&mut self) -> Bucket {
             // The "authorize" method provides a convenient shortcut to make use of the mint authority badge within our vault without removing it
-            self.admin_mint_badge.authorize(|| {
-                let admin_badge_manager = borrow_resource_manager!(self.admin_badge);
-                admin_badge_manager.mint(1)
-            })
+            return self.first_admin_badge.mint(dec!(1));
         }
 
         pub fn destroy_admin_badge(&mut self, to_destroy: Bucket) {
             assert!(
-                to_destroy.resource_address() == self.admin_badge,
+                to_destroy.resource_address() == self.first_admin_badge.resource_address(),
                 "Can not destroy the contents of this bucket!"
             );
-            self.admin_mint_badge.authorize(|| {
-                to_destroy.burn();
-            })
+            to_destroy.burn();
         }
 
         pub fn get_admin_badge_address(&self) -> ResourceAddress {
-            self.admin_badge
+            return self.first_admin_badge.resource_address();
         }
     }
 }
