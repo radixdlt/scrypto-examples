@@ -2,10 +2,10 @@ use scrypto::prelude::*;
 
 
 #[blueprint]
-mod proxy1 {
+mod extern_blueprint_call {
     extern_blueprint!(
         "package_sim1p4kwg8fa7ldhwh8exe5w4acjhp9v982svmxp3yqa8ncruad4rv980g",
-        AirdropBlueprintTarget {
+        Airdrop {
             fn instantiate_airdrop() -> Global<Airdrop>;
             fn instantiate_airdrop_local() -> Owned<Airdrop>;
             fn free_token(&mut self) -> Bucket;
@@ -13,14 +13,14 @@ mod proxy1 {
     );
 
     const AIRDROP: Global<Airdrop> = global_component!(
-        AirdropBlueprintTarget,
+        Airdrop,
         "component_sim1cpz9230mp9jp2e5fqxg6p2700txlude7mk5genwyk6ktaxxgfwmz7c"
     );
 
-    struct Proxy1 {}
+    struct ExternBlueprintCall {}
 
-    impl Proxy1 {
-        pub fn instantiate_proxy() -> Global<Proxy1> {
+    impl ExternBlueprintCall {
+        pub fn instantiate_proxy() -> Global<ExternBlueprintCall> {
             Self {
             }
             .instantiate()
@@ -30,8 +30,7 @@ mod proxy1 {
 
         pub fn free_token(&self) -> Bucket {
             // Calling a method on a component using `.free_token()`.
-            let mut airdrop = AIRDROP.free_token();
-            return airdrop
+            return AIRDROP.free_token();
         }
     }
 }
