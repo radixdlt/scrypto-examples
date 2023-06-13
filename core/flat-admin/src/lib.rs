@@ -38,7 +38,7 @@ mod flat_admin {
             .prepare_to_globalize(OwnerRole::Updateable(rule!(require(first_admin_badge.resource_address()))))
             .roles(
                 roles!(
-                    admin => rule!(require(first_admin_badge.resource_address())), mutable_by: admin, admin;
+                    admin => rule!(require(first_admin_badge.resource_address())), mutable_by: admin;
                 )
             )
             .globalize();

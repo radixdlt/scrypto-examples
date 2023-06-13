@@ -2,19 +2,21 @@ use scrypto::prelude::*;
 
 #[blueprint]
 mod managed_access {
-    const TARGET_PACKAGE_ADDRESS: PackageAddress = PackageAddress::new_or_panic([
-        13, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1,
-    ]);
-
     extern_blueprint!(
-        TARGET_PACKAGE_ADDRESS,
+        "package_sim1p4kwg8fa7ldhwh8exe5w4acjhp9v982svmxp3yqa8ncruad4rv980g",
         FlatAdmin {
-            fn instantiate_flat_admin(badge_name: String);
-            fn create_additional_admin(&mut self);
+            fn instantiate_flat_admin(badge_name: String) -> (Global<FlatAdmin>, Bucket);
+            fn create_additional_admin(&mut self) -> Bucket;
             fn destroy_admin_badge(&mut self, to_destroy: Bucket);
-            fn get_admin_badge_address(&self);
+            fn get_admin_badge_address(&self) -> ResourceAddress;
         }
     );
+
+    // const FLATADMIN: Global<FlatAdmin> = global_component!(
+    //     FlatAdmin,
+    //     ""
+    // );
+
     enable_method_auth! {
         roles {
             admin
@@ -34,19 +36,12 @@ mod managed_access {
 
     impl ManagedAccess {
         pub fn instantiate_managed_access(
-            flat_admin_package_address: PackageAddress,
+            badge_name: String
         ) -> (Global<ManagedAccess>, Bucket) {
-            let (flat_admin_component, admin_badge): (Global<FlatAdmin>, Bucket) = Runtime::call_function(
-                flat_admin_package_address, 
-                "FlatAdmin", 
-                "instantiate_flat_admin", 
-                scrypto_args!("Admin Badge")
-            );
             
-            // let (flat_admin_component, admin_badge) =
-                // FlatAdminPackageTarget::at(flat_admin_package_address, "FlatAdmin")
-                //     .instantiate_flat_admin("My Managed Access Badge".into());
-
+            let 
+            (flat_admin_component, admin_badge): (Global<FlatAdmin>, Bucket) = 
+            Blueprint::<FlatAdmin>::instantiate_flat_admin(badge_name);
 
             let component = Self {
                 admin_badge: admin_badge.resource_address(),
@@ -57,7 +52,7 @@ mod managed_access {
             .prepare_to_globalize(OwnerRole::None)
             .roles(
                 roles!(
-                    admin => rule!(require(admin_badge.resource_address())), mutable_by: admin, admin;
+                    admin => rule!(require(admin_badge.resource_address())), mutable_by: admin;
                 )
             )
             .globalize();
@@ -77,8 +72,8 @@ mod managed_access {
             self.admin_badge
         }
 
-        pub fn get_flat_admin_controller_address(&self) -> ComponentAddress {
-            self.flat_admin_controller.component_address()
+        pub fn get_flat_admin_controller_address(&self) -> Global<FlatAdmin> {
+            self.flat_admin_controller
         }
     }
 }
