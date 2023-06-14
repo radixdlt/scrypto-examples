@@ -86,6 +86,7 @@ mod regulated_token {
             //     )
             //     .default(rule!(allow_all), AccessRule::DenyAll);
 
+
             let component = Self {
                 token_supply: Vault::with_bucket(my_bucket),
                 internal_authority: Vault::with_bucket(internal_admin),
