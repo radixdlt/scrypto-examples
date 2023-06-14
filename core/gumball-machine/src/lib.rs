@@ -10,7 +10,7 @@ mod gumball_machine {
 
     impl GumballMachine {
         // given a price in XRD, creates a ready-to-use gumball machine
-        pub fn instantiate_gumball_machine(price: Decimal) -> ComponentAddress {
+        pub fn instantiate_gumball_machine(price: Decimal) -> Global<GumballMachine> {
             // create a new Gumball resource, with a fixed quantity of 100
             let bucket_of_gumballs = ResourceBuilder::new_fungible()
                 .metadata("name", "Gumball")
@@ -25,6 +25,7 @@ mod gumball_machine {
                 price: price,
             }
             .instantiate()
+            .prepare_to_globalize(OwnerRole::None)
             .globalize()
         }
 
