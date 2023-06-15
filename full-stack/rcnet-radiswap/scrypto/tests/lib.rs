@@ -5,8 +5,11 @@ use scrypto_unit::*;
 use transaction::builder::ManifestBuilder;
 use radix_engine::transaction::{TransactionReceipt, BalanceChange};
 use radix_engine::types::Bech32Encoder;
-use transaction::prelude::NetworkDefinition;
-use utils::*;
+use transaction::prelude::{NetworkDefinition, Secp256k1PrivateKey};
+
+
+// use utils::*;
+use sbor::prelude::ContextualDisplay;
 
 enum PoolResource {
     Xrd,
@@ -14,7 +17,7 @@ enum PoolResource {
 }
 
 pub struct Account {
-    pub public_key: EcdsaSecp256k1PublicKey,
+    pub public_key: Secp256k1PublicKey,
     pub account_component: ComponentAddress,
 }
 
@@ -89,7 +92,8 @@ impl TestEnvironment {
                 account_component, 
                 token_b_resource_address, 
                 dec!(1000)
-            );
+            )
+            .build();
             // .take_from_worktop(token_a_resource_address,
             //     dec!(1000),
             //     |builder, xrd_bucket| {
@@ -109,18 +113,18 @@ impl TestEnvironment {
             //     })
             // })
 
-        let (manifesto, xrd_bucket) = manifest
-            .take_from_worktop(
-                token_b_resource_address, 
-                dec!(1000)
-            );
+        // let (manifesto, xrd_bucket) = manifest
+        //     .take_from_worktop(
+        //         token_b_resource_address, 
+        //         dec!(1000)
+        //     );
 
-        let built_manifest = manifesto    
-            .deposit_batch(account.account_component)
-            .build();
+        // let built_manifest = manifesto    
+        //     .deposit_batch(account.account_component)
+        //     .build();
 
         let receipt = test_runner.execute_manifest_ignoring_fee(
-            built_manifest, 
+            manifest, 
             vec![NonFungibleGlobalId::from_public_key(&public_key)],
         );
 
@@ -484,32 +488,32 @@ pub struct Nft {
 }
 
 
-#[test]
-fn create() {
-    let mut test_environment = TestEnvironment::new();
+// #[test]
+// fn create() {
+//     let mut test_environment = TestEnvironment::new();
 
-    let resource_address = test_environment.token_a_resource_address;
-    let resource_address1 = test_environment.token_b_resource_address;
-    let account_address = test_environment.account.account_component;
-    let component_address = test_environment.component_address;
+//     let resource_address = test_environment.token_a_resource_address;
+//     let resource_address1 = test_environment.token_b_resource_address;
+//     let account_address = test_environment.account.account_component;
+//     let component_address = test_environment.component_address;
 
-    let public_key = test_environment.account.public_key;
-
-
-
-let manifest = ManifestBuilder::new()
-    .
-    .build();
+//     let public_key = test_environment.account.public_key;
 
 
-    let receipt = test_environment.test_runner.execute_manifest_ignoring_fee(
-        manifest, 
-        vec![NonFungibleGlobalId::from_public_key(&test_environment.account.public_key)]
-    );
 
-    println!("{:?}", receipt);
+// let manifest = ManifestBuilder::new()
+//     .
+//     .build();
 
-}
+
+//     let receipt = test_environment.test_runner.execute_manifest_ignoring_fee(
+//         manifest, 
+//         vec![NonFungibleGlobalId::from_public_key(&test_environment.account.public_key)]
+//     );
+
+//     println!("{:?}", receipt);
+
+// }
 
 /// The purpose of our Radiswap liquidity pool is to provide the means for users to exchange between two fungible tokens.
 /// Therefore, we must ensure that instantiation process can create a liquidity pool that facilitates this process.
@@ -796,59 +800,6 @@ fn multiple_add_liquidity() {
 
 }
 
-use scrypto::prelude::*;
-use scrypto_unit::*;
-use transaction::builder::ManifestBuilder;
-
-#[derive(NonFungibleData, ScryptoSbor)]
-pub struct TestData {
-    name: String
-}
-
-#[test]
-fn test_fixed_token_sale_with_royalty() {
-    // Set up environment.
-    let mut test_runner = TestRunner::builder().build();
-
-    // Create an account
-    let (public_key, _private_key, account_component) = test_runner.new_allocated_account();
-
-    // Publish package
-    let package_address = test_runner.compile_and_publish(this_package!());
-
-    // Create our NFTs
-
-    let mut nfts = test_runner.create_non_fungible_resource(account)
-    let mut nfts: Bucket = ResourceBuilder::new_uuid_non_fungible::<TestData>()
-      .mint_initial_supply([
-        (TestData { name: "NFT One".to_owned() }),
-        (TestData { name: "NFT Two".to_owned() }),
-    ]);
-    let nft_buckets: Vec<Bucket> = Vec::new();
-    // nft_buckets.push(nfts);
-
-    // let random_card_mint_badge = ResourceBuilder::new_fungible()
-    //   .divisibility(DIVISIBILITY_NONE)
-    //   .metadata("name", "Random Cards Mint Badge")
-    //   .mint_initial_supply(1);
-
-    // Test the `instantiate_component` function.
-    let transaction1 = ManifestBuilder::new()
-        .call_function(
-            package_address,
-            "FixedTokenSaleWithRoyalty",
-            "instantiate_fixed_price_sale_with_royalty",
-            manifest_args!(
-              nft_buckets,
-              // RADIX_TOKEN,
-              // Decimal::new(),
-              // [RoyaltyShare { percentage: 10 }]
-            ),
-        )
-        .build();
-}
-
-
 #[test]
 fn remove_liquidity() {
     let mut test_environment = TestEnvironment::new();
@@ -950,6 +901,30 @@ fn check_internal_state() {
         swap_fee
     );
 
+}
+
+#[test]
+fn testing() {
+    let private_key = Secp256k1PrivateKey::from_u64(1).unwrap();
+    let account_component =
+        ComponentAddress::virtual_account_from_public_key(&private_key.public_key());
+
+    let manifest = ManifestBuilder::new()
+            .withdraw_from_account(
+                account_component, 
+                RADIX_TOKEN, 
+                dec!(10)
+            )
+            .deposit_batch(account_component)
+            // .deposit_batch(account.account_component)
+            .build();
+
+        // This generates the .rtm file of the Transaction Manifest.
+        dump_manifest_to_file_system(
+            &manifest, 
+            "./transaction-manifest", 
+            &NetworkDefinition::simulator()
+        ).err();
 }
 
 

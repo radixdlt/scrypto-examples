@@ -1,27 +1,28 @@
-import './style.css'
-import scryptoLogo from './scryptoLogo.png'
-import { 
-  RadixDappToolkit, 
- } from "@radixdlt/radix-dapp-toolkit";
-import { 
-  NetworkId,
-  ManifestBuilder, 
-  ManifestAstValue, 
-  InstructionList, 
-  // Transactions
-  NotarizedTransaction,
-  PrivateKey,
-  TransactionBuilder,
-  TransactionHeader,
-  TransactionManifest,
-  ValidationConfig,
-  generateRandomNonce,
-  Convert,
-  TransactionIntent,
-  SignedTransactionIntent,
-  RadixEngineToolkit,
-  PublicKey,
-} from '@radixdlt/radix-engine-toolkit'
+// import './style.css'
+// import scryptoLogo from './scryptoLogo.png'
+import scryptoLogo from ./scryptoLogo
+// import { 
+//   RadixDappToolkit, 
+//  } from "@radixdlt/radix-dapp-toolkit";
+// import { 
+//   NetworkId,
+//   ManifestBuilder, 
+//   ManifestAstValue, 
+//   InstructionList, 
+//   // Transactions
+//   NotarizedTransaction,
+//   PrivateKey,
+//   TransactionBuilder,
+//   TransactionHeader,
+//   TransactionManifest,
+//   ValidationConfig,
+//   generateRandomNonce,
+//   Convert,
+//   TransactionIntent,
+//   SignedTransactionIntent,
+//   RadixEngineToolkit,
+//   PublicKey,
+// } from '@radixdlt/radix-engine-toolkit'
 
 
 document.querySelector('#app').innerHTML = `
