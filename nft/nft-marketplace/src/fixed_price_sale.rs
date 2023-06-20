@@ -2,6 +2,21 @@ use scrypto::prelude::*;
 
 #[blueprint]
 mod fixed_price_sale {
+    enable_method_auth! {
+        roles {
+            admin
+        },
+        methods {
+            cancel_sale => admin;
+            change_price => admin;
+            withdraw_payment => admin;
+            buy => PUBLIC;
+            price => PUBLIC;
+            is_sold => PUBLIC;
+            non_fungible_ids => PUBLIC;
+            non_fungible_addresses => PUBLIC;
+        }
+    }
     /// This blueprint defines the state and logic involved in a fixed-price non-fungible token sale. People who
     /// instantiate components from this blueprint, signify their intent at selling their NFT(s) at a fixed price of
     /// their choosing and for a token of their choosing.
@@ -13,7 +28,7 @@ mod fixed_price_sale {
         /// These are the vaults where the NFTs will be stored. Since this blueprint allows for multiple NFTs to be sold
         /// at once, this HashMap is used to store all of these NFTs with the hashmap key being the resource address of
         /// these NFTs if they are not all of the same _kind_.
-        nft_vaults: HashMap<ResourceAddress, Vault>,
+        nft_vaults: HashMap<ResourceAddress, NonFungibleVault>,
 
         /// This is the vault which stores the payment of the NFTs once it has been made. This vault may contain XRD or
         /// other tokens depending on the `ResourceAddress` of the accepted payment token specified by the instantiator
@@ -56,21 +71,21 @@ mod fixed_price_sale {
         /// * `Bucket` - A bucket containing an ownership badge which entitles the holder to the assets in this
         /// component.
         pub fn instantiate_fixed_price_sale(
-            non_fungible_tokens: Vec<Bucket>,
+            non_fungible_tokens: Vec<NonFungibleBucket>,
             accepted_payment_token: ResourceAddress,
             price: Decimal,
-        ) -> (ComponentAddress, Bucket) {
+        ) -> (Global<FixedPriceSale>, Bucket) {
             // Performing checks to ensure that the creation of the component can go through
-            assert!(
-                !non_fungible_tokens.iter().any(|x| !matches!(
-                    borrow_resource_manager!(x.resource_address()).resource_type(),
-                    ResourceType::NonFungible { id_type: _ }
-                )),
-                "[Instantiation]: Can not perform a sale for fungible tokens."
-            );
+            // assert!(
+            //     !non_fungible_tokens.iter().any(|x| !matches!(
+            //         borrow_resource_manager!(x.resource_address()).resource_type(),
+            //         ResourceType::NonFungible { id_type: _ }
+            //     )),
+            //     "[Instantiation]: Can not perform a sale for fungible tokens."
+            // );
             assert!(
                 !matches!(
-                    borrow_resource_manager!(accepted_payment_token).resource_type(),
+                    ResourceManager::from_address(accepted_payment_token).resource_type(),
                     ResourceType::NonFungible { id_type: _ }
                 ),
                 "[Instantiation]: Only payments of fungible resources are accepted."
@@ -85,11 +100,11 @@ mod fixed_price_sale {
             // Create a new HashMap of vaults and aggregate all of the tokens in the buckets into the vaults of this
             // HashMap. This means that if somebody passes multiple buckets of the same resource, then they would end
             // up in the same vault.
-            let mut nft_vaults: HashMap<ResourceAddress, Vault> = HashMap::new();
+            let mut nft_vaults: HashMap<ResourceAddress, NonFungibleVault> = HashMap::new();
             for bucket in non_fungible_tokens.into_iter() {
                 nft_vaults
                     .entry(bucket.resource_address())
-                    .or_insert(Vault::new(bucket.resource_address()))
+                    .or_insert(NonFungibleVault::new(bucket.resource_address()))
                     .put(bucket)
             }
 
@@ -108,23 +123,23 @@ mod fixed_price_sale {
 
             // Setting up the access rules for the component methods such that only the owner of the ownership badge can
             // make calls to the protected methods.
-            let access_rule: AccessRule = rule!(require(ownership_badge.resource_address()));
-            let access_rules = AccessRulesConfig::new()
-                .method("cancel_sale", access_rule.clone(), AccessRule::DenyAll)
-                .method("change_price", access_rule.clone(), AccessRule::DenyAll)
-                .method("withdraw_payment", access_rule.clone(), AccessRule::DenyAll)
-                .default(rule!(allow_all), AccessRule::DenyAll);
+            // let access_rule: AccessRule = rule!(require(ownership_badge.resource_address()));
+            // let access_rules = AccessRulesConfig::new()
+            //     .method("cancel_sale", access_rule.clone(), AccessRule::DenyAll)
+            //     .method("change_price", access_rule.clone(), AccessRule::DenyAll)
+            //     .method("withdraw_payment", access_rule.clone(), AccessRule::DenyAll)
+            //     .default(rule!(allow_all), AccessRule::DenyAll);
 
             // Instantiating the fixed price sale component
-            let fixed_price_sale: FixedPriceSaleComponent = Self {
+            let fixed_price_sale = Self {
                 nft_vaults,
                 payment_vault: Vault::new(accepted_payment_token),
                 accepted_payment_token,
                 price,
             }
-            .instantiate();
-            let fixed_price_sale: ComponentAddress =
-                fixed_price_sale.globalize_with_access_rules(access_rules);
+            .instantiate()
+            .prepare_to_globalize(OwnerRole::None)
+            .globalize();
 
             return (fixed_price_sale, ownership_badge);
         }
@@ -146,7 +161,7 @@ mod fixed_price_sale {
         /// # Returns:
         ///
         /// * `Vec<Bucket>` - A vector of buckets of the non-fungible tokens which were being sold.
-        pub fn buy(&mut self, mut payment: Bucket) -> Vec<Bucket> {
+        pub fn buy(&mut self, mut payment: Bucket) -> (Bucket, Vec<NonFungibleBucket>) {
             // Checking if the appropriate amount of the payment token was provided before approving the token sale
             assert_eq!(
                 payment.resource_address(),
@@ -169,7 +184,7 @@ mod fixed_price_sale {
             // tokens from the payment
             let resource_addresses: Vec<ResourceAddress> =
                 self.nft_vaults.keys().cloned().collect();
-            let mut tokens: Vec<Bucket> = vec![payment];
+            let mut tokens: Vec<NonFungibleBucket> = Vec::new();
             for resource_address in resource_addresses.into_iter() {
                 tokens.push(
                     self.nft_vaults
@@ -179,7 +194,7 @@ mod fixed_price_sale {
                 )
             }
 
-            return tokens;
+            return (payment, tokens)
         }
 
         /// Cancels the sale of the tokens and returns the tokens back to their owner.
@@ -198,7 +213,7 @@ mod fixed_price_sale {
         /// * There is no danger in not checking if the sale has occurred or not and attempting to return the tokens
         /// anyway. This is because we literally lose the tokens when they're sold so even if we attempt to give them
         /// back after they'd been sold we return a vector of empty buckets.
-        pub fn cancel_sale(&mut self) -> Vec<Bucket> {
+        pub fn cancel_sale(&mut self) -> Vec<NonFungibleBucket> {
             // Checking if the tokens have been sold or not.
             assert!(
                 !self.is_sold(),
@@ -208,7 +223,7 @@ mod fixed_price_sale {
             // Taking out all of the tokens from the vaults and returning them back to the caller.
             let resource_addresses: Vec<ResourceAddress> =
                 self.nft_vaults.keys().cloned().collect();
-            let mut tokens: Vec<Bucket> = Vec::new();
+            let mut tokens: Vec<NonFungibleBucket> = Vec::new();
             for resource_address in resource_addresses.into_iter() {
                 tokens.push(
                     self.nft_vaults

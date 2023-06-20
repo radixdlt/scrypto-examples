@@ -9,7 +9,7 @@ mod bootstrap {
         /// Creates a number of NFT collections used for testing of the NFT marketplace blueprints.
         pub fn bootstrap() -> Vec<Bucket> {
             // Creating the resources used for our non-fungible tokens
-            let cars: Bucket = ResourceBuilder::new_uuid_non_fungible()
+            let cars: Bucket = ResourceBuilder::new_ruid_non_fungible()
                 .metadata("name", "Cars NFT")
                 .metadata(
                     "description",
@@ -36,7 +36,7 @@ mod bootstrap {
                     },
                 ]);
 
-            let phones: Bucket = ResourceBuilder::new_uuid_non_fungible()
+            let phones: Bucket = ResourceBuilder::new_ruid_non_fungible()
                 .metadata("name", "Phones NFT")
                 .metadata(
                     "description",
@@ -62,7 +62,7 @@ mod bootstrap {
                     },
                 ]);
 
-            let laptops: Bucket = ResourceBuilder::new_uuid_non_fungible()
+            let laptops: Bucket = ResourceBuilder::new_ruid_non_fungible()
                 .metadata("name", "Laptops NFT")
                 .metadata("description", "Do you really want me to describe to you what a laptop is? I'm a bit concerned...")
                 .metadata("symbol", "LTOP")

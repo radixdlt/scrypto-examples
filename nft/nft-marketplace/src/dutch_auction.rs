@@ -2,6 +2,20 @@ use scrypto::prelude::*;
 
 #[blueprint]
 mod dutch_auction {
+    enable_method_auth! {
+        roles {
+            admin
+        },
+        methods {
+            cancel_sale => admin;
+            withdraw_payment => admin;
+            buy => PUBLIC;
+            price => PUBLIC;
+            is_sold => PUBLIC;
+            non_fungible_ids => PUBLIC;
+            non_fungible_addresses => PUBLIC;
+        }
+    }
     /// This blueprint defines the state and logic involved in a dutch auction non-fungible token sale. People who
     /// instantiate components from this blueprint, signify their intent at selling their NFT(s) at a price which
     /// reduces over time.
@@ -13,7 +27,7 @@ mod dutch_auction {
         /// These are the vaults where the NFTs will be stored. Since this blueprint allows for multiple NFTs to be sold
         /// at once, this HashMap is used to store all of these NFTs with the hashmap key being the resource address of
         /// these NFTs if they are not all of the same _kind_.
-        nft_vaults: HashMap<ResourceAddress, Vault>,
+        nft_vaults: HashMap<ResourceAddress, NonFungibleVault>,
 
         /// This is the vault which stores the payment of the NFTs once it has been made. This vault may contain XRD or
         /// other tokens depending on the `ResourceAddress` of the accepted payment token specified by the instantiator
@@ -32,11 +46,11 @@ mod dutch_auction {
         ending_price: Decimal,
 
         /// This is the epoch when the sale begins.
-        starting_epoch: u64,
+        starting_epoch: Epoch,
 
         /// This is the ending epoch. When this epoch is reached or exceeded, the price of the NFT bundle will be the
         /// `ending_price`.
-        ending_epoch: u64,
+        ending_epoch: Epoch,
     }
 
     impl DutchAuction {
@@ -74,23 +88,23 @@ mod dutch_auction {
         /// * `Bucket` - A bucket containing an ownership badge which entitles the holder to the assets in this
         /// component.
         pub fn instantiate_dutch_auction(
-            non_fungible_tokens: Vec<Bucket>,
+            non_fungible_tokens: Vec<NonFungibleBucket>,
             accepted_payment_token: ResourceAddress,
             starting_price: Decimal,
             ending_price: Decimal,
             relative_ending_epoch: u64,
-        ) -> (ComponentAddress, Bucket) {
+        ) -> (Global<DutchAuction>, Bucket) {
             // Performing checks to ensure that the creation of the component can go through
-            assert!(
-                !non_fungible_tokens.iter().any(|x| !matches!(
-                    borrow_resource_manager!(x.resource_address()).resource_type(),
-                    ResourceType::NonFungible { id_type: _ }
-                )),
-                "[Instantiation]: Can not perform a sale for fungible tokens."
-            );
+            // assert!(
+            //     !non_fungible_tokens.iter().any(|x| !matches!(
+            //         ResourceManager::from_address(x.resource_address()).resource_type(),
+            //         ResourceType::NonFungible { id_type: _ }
+            //     )),
+            //     "[Instantiation]: Can not perform a sale for fungible tokens."
+            // );
             assert!(
                 !matches!(
-                    borrow_resource_manager!(accepted_payment_token).resource_type(),
+                    ResourceManager::from_address(accepted_payment_token).resource_type(),
                     ResourceType::NonFungible { id_type: _ }
                 ),
                 "[Instantiation]: Only payments of fungible resources are accepted."
@@ -104,7 +118,7 @@ mod dutch_auction {
                 "[Instantiation]: The starting price must be greater than the ending price."
             );
             assert!(
-                relative_ending_epoch > Runtime::current_epoch(),
+                Runtime::current_epoch().after(relative_ending_epoch) > Runtime::current_epoch(),
                 "[Instantiation]: The ending epoch has already passed."
             );
 
@@ -113,11 +127,11 @@ mod dutch_auction {
             // Create a new HashMap of vaults and aggregate all of the tokens in the buckets into the vaults of this
             // HashMap. This means that if somebody passes multiple buckets of the same resource, then they would end
             // up in the same vault.
-            let mut nft_vaults: HashMap<ResourceAddress, Vault> = HashMap::new();
+            let mut nft_vaults: HashMap<ResourceAddress, NonFungibleVault> = HashMap::new();
             for bucket in non_fungible_tokens.into_iter() {
                 nft_vaults
                     .entry(bucket.resource_address())
-                    .or_insert(Vault::new(bucket.resource_address()))
+                    .or_insert(NonFungibleVault::new(bucket.resource_address()))
                     .put(bucket)
             }
 
@@ -136,25 +150,25 @@ mod dutch_auction {
 
             // Setting up the access rules for the component methods such that only the owner of the ownership badge can
             // make calls to the protected methods.
-            let access_rule: AccessRule = rule!(require(ownership_badge.resource_address()));
-            let access_rules = AccessRulesConfig::new()
-                .method("cancel_sale", access_rule.clone(), AccessRule::DenyAll)
-                .method("withdraw_payment", access_rule.clone(), AccessRule::DenyAll)
-                .default(rule!(allow_all), AccessRule::DenyAll);
+            // let access_rule: AccessRule = rule!(require(ownership_badge.resource_address()));
+            // let access_rules = AccessRulesConfig::new()
+            //     .method("cancel_sale", access_rule.clone(), AccessRule::DenyAll)
+            //     .method("withdraw_payment", access_rule.clone(), AccessRule::DenyAll)
+            //     .default(rule!(allow_all), AccessRule::DenyAll);
 
             // Instantiating the dutch auction sale component
-            let dutch_auction: DutchAuctionComponent = Self {
+            let dutch_auction = Self {
                 nft_vaults,
                 payment_vault: Vault::new(accepted_payment_token),
                 accepted_payment_token,
                 starting_price,
                 ending_price,
                 starting_epoch: Runtime::current_epoch(),
-                ending_epoch: Runtime::current_epoch() + relative_ending_epoch,
+                ending_epoch: Runtime::current_epoch().after(relative_ending_epoch),
             }
-            .instantiate();
-            let dutch_auction: ComponentAddress =
-                dutch_auction.globalize_with_access_rules(access_rules);
+            .instantiate()
+            .prepare_to_globalize(OwnerRole::None)
+            .globalize();
 
             return (dutch_auction, ownership_badge);
         }
@@ -176,7 +190,7 @@ mod dutch_auction {
         /// # Returns:
         ///
         /// * `Vec<Bucket>` - A vector of buckets of the non-fungible tokens which were being sold.
-        pub fn buy(&mut self, mut payment: Bucket) -> Vec<Bucket> {
+        pub fn buy(&mut self, mut payment: Bucket) -> (Bucket, Vec<NonFungibleBucket>) {
             // Checking if the appropriate amount of the payment token was provided before approving the token sale
             assert_eq!(
                 payment.resource_address(),
@@ -199,7 +213,7 @@ mod dutch_auction {
             // tokens from the payment
             let resource_addresses: Vec<ResourceAddress> =
                 self.nft_vaults.keys().cloned().collect();
-            let mut tokens: Vec<Bucket> = vec![payment];
+            let mut tokens: Vec<NonFungibleBucket> = Vec::new();
             for resource_address in resource_addresses.into_iter() {
                 tokens.push(
                     self.nft_vaults
@@ -209,7 +223,7 @@ mod dutch_auction {
                 )
             }
 
-            return tokens;
+            return (payment, tokens);
         }
 
         /// Cancels the sale of the tokens and returns the tokens back to their owner.
@@ -228,7 +242,7 @@ mod dutch_auction {
         /// * There is no danger in not checking if the sale has occurred or not and attempting to return the tokens
         /// anyway. This is because we literally lose the tokens when they're sold so even if we attempt to give them
         /// back after they'd been sold we return a vector of empty buckets.
-        pub fn cancel_sale(&mut self) -> Vec<Bucket> {
+        pub fn cancel_sale(&mut self) -> Vec<NonFungibleBucket> {
             // Checking if the tokens have been sold or not.
             assert!(
                 !self.is_sold(),
@@ -238,7 +252,7 @@ mod dutch_auction {
             // Taking out all of the tokens from the vaults and returning them back to the caller.
             let resource_addresses: Vec<ResourceAddress> =
                 self.nft_vaults.keys().cloned().collect();
-            let mut tokens: Vec<Bucket> = Vec::new();
+            let mut tokens: Vec<NonFungibleBucket> = Vec::new();
             for resource_address in resource_addresses.into_iter() {
                 tokens.push(
                     self.nft_vaults
@@ -291,12 +305,12 @@ mod dutch_auction {
         /// * `Decimal` - A decimal value of the price of the NFT(s) in terms of the `accepted_payment_token`.
         pub fn price(&self) -> (ResourceAddress, Decimal) {
             let gradient: Decimal = (self.ending_price - self.starting_price)
-                / (self.ending_epoch - self.starting_epoch);
+                / (self.ending_epoch.number() - self.starting_epoch.number());
             return (
                 self.accepted_payment_token,
                 std::cmp::max(
                     self.ending_price,
-                    gradient * (Runtime::current_epoch() - self.starting_epoch)
+                    gradient * (Runtime::current_epoch().number() - self.starting_epoch.number())
                         + self.starting_price,
                 ),
             );
