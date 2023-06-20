@@ -1,28 +1,28 @@
 // import './style.css'
 // import scryptoLogo from './scryptoLogo.png'
-import scryptoLogo from ./scryptoLogo
-// import { 
-//   RadixDappToolkit, 
-//  } from "@radixdlt/radix-dapp-toolkit";
-// import { 
-//   NetworkId,
-//   ManifestBuilder, 
-//   ManifestAstValue, 
-//   InstructionList, 
-//   // Transactions
-//   NotarizedTransaction,
-//   PrivateKey,
-//   TransactionBuilder,
-//   TransactionHeader,
-//   TransactionManifest,
-//   ValidationConfig,
-//   generateRandomNonce,
-//   Convert,
-//   TransactionIntent,
-//   SignedTransactionIntent,
-//   RadixEngineToolkit,
-//   PublicKey,
-// } from '@radixdlt/radix-engine-toolkit'
+import { 
+  RadixDappToolkit, 
+  ManifestBuilder
+ } from "@radixdlt/radix-dapp-toolkit";
+import { 
+  NetworkId,
+  // ManifestBuilder, 
+  ManifestAstValue, 
+  InstructionList, 
+  // Transactions
+  NotarizedTransaction,
+  PrivateKey,
+  TransactionBuilder,
+  TransactionHeader,
+  TransactionManifest,
+  ValidationConfig,
+  generateRandomNonce,
+  Convert,
+  TransactionIntent,
+  SignedTransactionIntent,
+  RadixEngineToolkit,
+  PublicKey,
+} from '@radixdlt/radix-engine-toolkit'
 
 
 document.querySelector('#app').innerHTML = `
@@ -43,12 +43,21 @@ document.querySelector('#app').innerHTML = `
   </div>
 `
 
-import { TransactionApi, StateApi, StatusApi, StreamApi, } from "@radixdlt/babylon-gateway-api-sdk";
+// import { TransactionApi, StateApi, StatusApi, StreamApi, } from "@radixdlt/babylon-gateway-api-sdk";
 
-const transactionApi = new TransactionApi();
-const stateApi = new StateApi();
-const statusApi = new StatusApi();
-const streamApi = new StreamApi();
+// const transactionApi = new TransactionApi();
+// const stateApi = new StateApi();
+// const statusApi = new StatusApi();
+// const streamApi = new StreamApi();
+
+// import { GatewayApiClient } from '@radixdlt/babylon-gateway-api-sdk'
+
+// const gatewayApi = GatewayApiClient.initialize({
+//   basePath: 'https://rcnet.radixdlt.com',
+// })
+// const { status, transaction, stream, state } = gatewayApi
+
+// gatewayApi.state.innerClient.stateEntityDetails
 
 let accountAddress // User account address
 let componentAddress

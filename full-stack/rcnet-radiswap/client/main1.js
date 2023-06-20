@@ -230,6 +230,8 @@ document.getElementById('instantiateComponent').onclick = async function () {
     InstructionList.Kind.String,
     NetworkId.RCnetV1
   );
+
+  
   
   let string_converted_manifest = converted_manifest.instructions.value;
           

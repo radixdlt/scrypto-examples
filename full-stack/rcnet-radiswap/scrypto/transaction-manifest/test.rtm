@@ -1,0 +1,11 @@
+CALL_METHOD
+    Address("account_sim168fghy4kapzfnwpmq7t7753425lwklk65r82ys7pz2xzleehgpzql2")
+    "withdraw"
+    Address("resource_sim1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxakj8n3")
+    Decimal("10")
+;
+CALL_METHOD
+    Address("account_sim168fghy4kapzfnwpmq7t7753425lwklk65r82ys7pz2xzleehgpzql2")
+    "deposit_batch"
+    Expression("ENTIRE_WORKTOP")
+;

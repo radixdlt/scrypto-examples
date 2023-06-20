@@ -204,6 +204,7 @@ impl TestEnvironment {
         dump_manifest_to_file_system(
             &manifest, 
             "./transaction-manifest", 
+            Some("test".into()),
             &NetworkDefinition::simulator()
         ).err();
 
@@ -251,6 +252,7 @@ impl TestEnvironment {
         dump_manifest_to_file_system(
             &manifest, 
             "./transaction-manifest", 
+            Some("test".into()),
             &NetworkDefinition::simulator()
         ).err();
 
@@ -543,8 +545,8 @@ fn instantiate_radiswap() {
         swap_fee 
     );
 
-    let trace = &receipt.execution_trace.execution_traces[0].input;
-    println!("Trace: {:?}", trace);
+    // let trace = &receipt.execution_trace.execution_traces[0].input;
+    // println!("Trace: {:?}", trace);
 
 
     receipt.expect_commit_success();    
@@ -908,21 +910,23 @@ fn testing() {
     let private_key = Secp256k1PrivateKey::from_u64(1).unwrap();
     let account_component =
         ComponentAddress::virtual_account_from_public_key(&private_key.public_key());
+    let package_address = compile(this_package!());    
 
-    let manifest = ManifestBuilder::new()
-            .withdraw_from_account(
-                account_component, 
-                RADIX_TOKEN, 
-                dec!(10)
-            )
-            .deposit_batch(account_component)
-            // .deposit_batch(account.account_component)
+        let manifest = ManifestBuilder::new()
+            .allocate_global_address(
+                BlueprintId::new(
+                    package_address, 
+                    "GumballMachine"), 
+                    |builder, address_reservation| {
+                        
+                    })
             .build();
 
         // This generates the .rtm file of the Transaction Manifest.
         dump_manifest_to_file_system(
             &manifest, 
             "./transaction-manifest", 
+            Some("test".into()),
             &NetworkDefinition::simulator()
         ).err();
 }
