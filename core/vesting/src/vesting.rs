@@ -5,7 +5,7 @@ use scrypto::prelude::*;
 mod vesting {
     enable_method_auth! {
         roles {
-            admin
+            admin, component_actor
         },
         methods {
             add_beneficiary => admin;
@@ -171,13 +171,18 @@ mod vesting {
             .with_address(address_reservation)
             .roles(
                 roles!(
+                    component_actor => rule!(
+                        require(
+                            global_caller(component_address)
+                        )
+                    );
                     admin => rule!(
                         require_amount(
                             dec!(1),
                             admin_badge.resource_address()
                         )
                     ),
-                    mutable_by: admin;
+                    mutable_by: component_actor;
                 )
             )
             .globalize();
@@ -303,10 +308,6 @@ mod vesting {
             // Minting a new admin badge for the caller
             let admin_badge: Bucket = admin_resource_manager.mint(admin_badges_to_mint);
 
-            let component = Global::access_rules(&self);
-
-            
-
             // Determining the amount of admins required for a multi-admin call to be made. This number will always be
             // 50% or more depending on the total amount of admin badges.
             self.min_admins_required_for_multi_admin =
@@ -319,6 +320,17 @@ mod vesting {
                 "[Add Admin]: Minimum required admins is: {}",
                 self.min_admins_required_for_multi_admin
             );
+
+            Runtime::access_rules()
+                .update_role_rule(
+                    "admin".into(), 
+                    rule!(
+                        require_amount(
+                            self.min_admins_required_for_multi_admin, 
+                            admin_badge.resource_address()
+                        )
+                    )
+                );
 
             // Returning the newly created admin badge back to the caller
             return admin_badge;
