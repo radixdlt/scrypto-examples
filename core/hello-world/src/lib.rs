@@ -9,7 +9,6 @@ mod hello {
 
     impl Hello {
         // Implement the functions and methods which will manage those resources and data
-
         // This is a function, and can be called directly on the blueprint once deployed
         pub fn instantiate_hello() -> Global<Hello> {
             // Create a new token called "HelloToken," with a fixed supply of 1000, and put that supply into a bucket

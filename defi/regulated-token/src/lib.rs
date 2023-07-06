@@ -4,11 +4,11 @@ use scrypto::prelude::*;
 mod regulated_token {
     enable_method_auth!{
         roles {
-            super_admin => updatable_by: [];
+            freeze_admin => updatable_by: [];
             general_admin => updatable_by: [];
         },
         methods {
-            toggle_transfer_freeze => restrict_to: [super_admin];
+            toggle_transfer_freeze => restrict_to: [freeze_admin];
             collect_payments => restrict_to: [general_admin];
             advance_stage => restrict_to: [general_admin];
             get_current_stage => PUBLIC;
@@ -25,11 +25,13 @@ mod regulated_token {
 
     impl RegulatedToken {
         pub fn instantiate_regulated_token() -> (Global<RegulatedToken>, Bucket, Bucket) {
+
+            // We are allocating a ComponentAddress used for our actor virtual badge and provide 
+            // minting & transfer authority to our component.
+        let (address_reservation, component_address) =
+            Runtime::allocate_component_address(Runtime::blueprint_id());
             
-            let (address_reservation, component_address) =
-                Runtime::allocate_component_address(Runtime::blueprint_id());
-            
-            // We will start by creating two tokens we will use as badges and return to our instantiator
+            // Creating two resources we will use as badges and return to our instantiator
             let general_admin: Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
                 .divisibility(DIVISIBILITY_NONE)
                 .metadata(metadata! (
@@ -61,14 +63,14 @@ mod regulated_token {
                 require(general_admin.resource_address())
                     || require(global_caller(component_address))
             );
-            let my_bucket: Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
+            let regulated_tokens: Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
                 .divisibility(DIVISIBILITY_MAXIMUM)
                 .metadata(metadata! (
                     roles {
-                        metadata_setter => rule!(require(global_caller(component_address)));
-                        metadata_setter_updater => rule!(require(global_caller(component_address)));
-                        metadata_locker => rule!(require(global_caller(component_address)));
-                        metadata_locker_updater => rule!(require(global_caller(component_address)));
+                        metadata_setter => access_rule.clone();
+                        metadata_setter_updater => access_rule.clone();
+                        metadata_locker => access_rule.clone();
+                        metadata_locker_updater => access_rule.clone();
                     },
                     init {
                         "name" => "Regulo".to_string(), locked;
@@ -77,11 +79,11 @@ mod regulated_token {
                     }
                 ))
                 .freeze_roles(freeze_roles!(
-                    freezer => access_rule.clone();
+                    freezer => rule!(require(freeze_admin.resource_address()));
                     freezer_updater => access_rule.clone();
                 ))
                 .withdraw_roles(withdraw_roles!(
-                    withdrawer => access_rule.clone();
+                    withdrawer => rule!(require(freeze_admin.resource_address()));
                     withdrawer_updater => access_rule.clone();
                 ))
                 .recall_roles(recall_roles!(
@@ -90,12 +92,12 @@ mod regulated_token {
                 ))
                 .mint_roles(mint_roles!(
                     minter => rule!(deny_all);
-                    minter_updater => rule!(require(global_caller(component_address)));
+                    minter_updater => access_rule.clone();
                 ))
                 .mint_initial_supply(100);
 
             let component = Self {
-                token_supply: Vault::with_bucket(my_bucket),
+                token_supply: Vault::with_bucket(regulated_tokens),
                 collected_xrd: Vault::new(RADIX_TOKEN),
                 current_stage: 1,
                 admin_badge_address: general_admin.resource_address(),
@@ -105,11 +107,7 @@ mod regulated_token {
             .prepare_to_globalize(OwnerRole::None)
             .roles(
                 roles!(
-                    super_admin => rule!(
-                        require(general_admin.resource_address())
-                            ||  require(freeze_admin.resource_address())
-                    );
-
+                    freeze_admin => rule!(require(freeze_admin.resource_address()));
                     general_admin => rule!(require(general_admin.resource_address()));
                 )
             )
@@ -123,7 +121,7 @@ mod regulated_token {
             )
         }
 
-        /// Either the general admin or freeze admin badge may be used to freeze or unfreeze consumer transfers of the supply
+        /// The freeze admin badge may be used to freeze or unfreeze consumer transfers of the supply
         pub fn toggle_transfer_freeze(&self, set_frozen: bool) {
             // Note that this operation will fail if the token has reached stage 3 and the token behavior has been locked
             let token_resource_manager = 
@@ -131,8 +129,7 @@ mod regulated_token {
   
             if set_frozen {
                 token_resource_manager.set_withdrawable(rule!(
-                    require(self.admin_badge_address)
-                        || require(self.freeze_admin_badge_address)
+                    require(self.freeze_admin_badge_address)
                 ));
                 info!("Token transfer is now RESTRICTED");
             } else {
