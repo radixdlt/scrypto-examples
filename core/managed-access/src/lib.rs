@@ -12,14 +12,9 @@ mod managed_access {
         }
     );
 
-    // const FLATADMIN: Global<FlatAdmin> = global_component!(
-    //     FlatAdmin,
-    //     ""
-    // );
-
     enable_method_auth! {
         roles {
-            admin => updatable_by: [admin];
+            admin => updatable_by: [];
         },
         methods {
             withdraw_all => restrict_to: [admin];
@@ -43,25 +38,25 @@ mod managed_access {
             (flat_admin_component, admin_badge): (Global<FlatAdmin>, Bucket) = 
             Blueprint::<FlatAdmin>::instantiate_flat_admin(badge_name);
 
-            let component = Self {
-                admin_badge: admin_badge.resource_address(),
-                flat_admin_controller: flat_admin_component,
-                protected_vault: Vault::new(RADIX_TOKEN),
-            }
-            .instantiate()
-            .prepare_to_globalize(OwnerRole::None)
-            .roles(
-                roles!(
-                    admin => rule!(require(admin_badge.resource_address()));
-                )
+        let component = Self {
+            admin_badge: admin_badge.resource_address(),
+            flat_admin_controller: flat_admin_component,
+            protected_vault: Vault::new(RADIX_TOKEN),
+        }
+        .instantiate()
+        .prepare_to_globalize(OwnerRole::None)
+        .roles(
+            roles!(
+                admin => rule!(require(admin_badge.resource_address()));
             )
-            .globalize();
+        )
+        .globalize();
 
             (component, admin_badge)
         }
 
         pub fn withdraw_all(&mut self) -> Bucket {
-            self.protected_vault.take_all()
+            self.protected_vault.take_all
         }
 
         pub fn deposit(&mut self, to_deposit: Bucket) {

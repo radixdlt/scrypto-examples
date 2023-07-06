@@ -9,9 +9,7 @@ mod vesting {
     // let rules = AccessRulesConfig::new()
     enable_method_auth! {
         roles {
-            component_actor => updatable_by: [];
-            admin => updatable_by: [component_actor]; 
-            metadata_admin => updatable_by: [metadata_admin];
+            admin => updatable_by: [SELF]; 
         },
         methods {
             // Only people who have at least 1 admin badge in their auth zone may make calls to these methods.
@@ -146,29 +144,15 @@ mod vesting {
             .with_address(address_reservation)
             .roles(
                 roles!(
-                    component_actor => rule!(
-                        require(
-                            global_caller(component_address)
-                        )
-                    );
                     admin => rule!(
                         require_amount(
                             dec!(1),
                             admin_badge.resource_address()
                         )
                     );
-                    metadata_admin => rule!(
-                        require(
-                            admin_badge.resource_address()
-                        )
-                    );
                 )
             )
             .globalize();
-
-
-
-            
     
             return (vesting_component, admin_badge);
         }
