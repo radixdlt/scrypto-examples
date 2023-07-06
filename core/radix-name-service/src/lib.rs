@@ -35,7 +35,6 @@ mod radix_name_service {
     }
     struct RadixNameService {
         admin_badge: ResourceAddress,
-        minter: Vault,
         name_resource: ResourceManager,
         deposits: Vault,
         fees: Vault,
@@ -56,10 +55,6 @@ mod radix_name_service {
                 Runtime::allocate_component_address(Runtime::blueprint_id());
 
             let admin_badge = ResourceBuilder::new_fungible(OwnerRole::None)
-                .divisibility(DIVISIBILITY_NONE)
-                .mint_initial_supply(1);
-
-            let minter = ResourceBuilder::new_fungible(OwnerRole::None)
                 .divisibility(DIVISIBILITY_NONE)
                 .mint_initial_supply(1);
 
@@ -85,7 +80,6 @@ mod radix_name_service {
 
             let component = RadixNameService {
                 admin_badge: admin_badge.resource_address(),
-                minter: Vault::with_bucket(minter),
                 name_resource,
                 deposits: Vault::new(RADIX_TOKEN),
                 fees: Vault::new(RADIX_TOKEN),
@@ -182,7 +176,7 @@ mod radix_name_service {
                 total_deposit_amount += nft.data().deposit_amount;
             }
 
-            self.minter.authorize(|| name_nft.burn());
+            name_nft.burn();
 
             self.deposits.take(total_deposit_amount)
         }

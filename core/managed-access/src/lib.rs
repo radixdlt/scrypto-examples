@@ -56,7 +56,7 @@ mod managed_access {
         }
 
         pub fn withdraw_all(&mut self) -> Bucket {
-            self.protected_vault.take_all
+            self.protected_vault.take_all()
         }
 
         pub fn deposit(&mut self, to_deposit: Bucket) {

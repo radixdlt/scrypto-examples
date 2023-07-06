@@ -30,21 +30,14 @@ mod sporting_event {
         collected_xrd: Vault,
         price_field: Decimal,
         price_luxury: Decimal,
-        admin_authority: Vault,
     }
 
     impl SportingEvent {
         pub fn instantiate_sporting_event() -> Global<SportingEvent> {
             // For simplicity's sake, we will just use all fixed values for our numbers of tickets and their prices, though all of those could be parameterized
 
-            // We'll start by creating our admin badge which is able to create and modify our NFT
-            let my_admin = ResourceBuilder::new_fungible(OwnerRole::None)
-                .divisibility(DIVISIBILITY_NONE)
-                .mint_initial_supply(1);
-
-            // Putting the admin badge in the component auth zone as it will be used throughout this function multiple
-            // times. After we're done using it, we will take it back and drop the proof
-            LocalAuthZone::push(my_admin.create_proof());
+            let (address_reservation, component_address) =
+                Runtime::allocate_component_address(Runtime::blueprint_id());
 
             // Create our NFT
             let my_non_fungible_address = ResourceBuilder::new_integer_non_fungible::<Ticket>(OwnerRole::None)
@@ -54,11 +47,11 @@ mod sporting_event {
                     }
                 ))
                 .mint_roles(mint_roles! (
-                    minter => rule!(require(my_admin.resource_address()));
+                    minter => rule!(require(global_caller(component_address)));
                     minter_updater => rule!(deny_all); 
                 ))
                 .non_fungible_data_update_roles(non_fungible_data_update_roles!(
-                    non_fungible_data_updater => rule!(require(my_admin.resource_address()));
+                    non_fungible_data_updater => rule!(require(global_caller(component_address)));
                     non_fungible_data_updater_updater => rule!(deny_all);
                 ))
                 .create_with_no_initial_supply();
@@ -100,19 +93,16 @@ mod sporting_event {
                 );
             }
 
-            // Dropping the my admin proof
-            LocalAuthZone::pop().drop();
-
             // Instantiate our component with our supply of sellable tickets
             Self {
                 tickets: Vault::with_bucket(ticket_bucket),
                 collected_xrd: Vault::new(RADIX_TOKEN),
                 price_field: 10.into(),
                 price_luxury: 100.into(),
-                admin_authority: Vault::with_bucket(my_admin),
             }
             .instantiate()
             .prepare_to_globalize(OwnerRole::None)
+            .with_address(address_reservation)
             .globalize()
         }
 
@@ -140,21 +130,18 @@ mod sporting_event {
             nft_data.prediction = Team::Away;
 
             // Then commit our updated data to our NFT
-            self.admin_authority
-                .authorize(|| { 
 
-                    let resource_manger: ResourceManager = 
-                    ResourceManager::from_address(nft_bucket.resource_address());
-                    
-                    let non_fungible_local_id: NonFungibleLocalId = nft_bucket.as_non_fungible().non_fungible_local_id();
+            let resource_manger: ResourceManager = 
+            ResourceManager::from_address(nft_bucket.resource_address());
+            
+            let non_fungible_local_id: NonFungibleLocalId = nft_bucket.as_non_fungible().non_fungible_local_id();
 
-                    resource_manger.update_non_fungible_data(
-                        &non_fungible_local_id, 
-                        "prediction", 
-                        Team::Away
-                    );
-                }
-            );   
+            resource_manger.update_non_fungible_data(
+                &non_fungible_local_id, 
+                "prediction", 
+                Team::Away
+            );
+
 
             // All done, send it back
             nft_bucket
