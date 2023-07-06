@@ -2,13 +2,12 @@ use scrypto::prelude::*;
 
 #[blueprint]
 mod english_auction {
+    // Setting up the access rules for the component methods such that only the owner of the ownership badge can
+    // make calls to the protected methods.
     enable_method_auth! {
-        roles {
-            admin
-        },
         methods {
-            cancel_auction => admin;
-            withdraw_payment => admin;
+            cancel_auction => restrict_to: [OWNER];
+            withdraw_payment => restrict_to: [OWNER];
             bid => PUBLIC;
             increase_bid => PUBLIC;
             cancel_bid => PUBLIC;
@@ -134,13 +133,15 @@ mod english_auction {
             // from them and they're given an ownership NFT which is used to authenticate them and as proof of ownership
             // of the NFTs. This ownership badge can be used to either withdraw the funds from the token sale or the
             // NFTs if the seller is no longer interested in selling their tokens.
-            let ownership_badge: Bucket = ResourceBuilder::new_fungible()
-                .metadata("name", "Ownership Badge")
-                .metadata(
-                    "description",
-                    "An ownership badge used to authenticate the owner of the NFT(s).",
-                )
-                .metadata("symbol", "OWNER")
+            let ownership_badge: Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
+                .metadata(metadata!(
+                    init {
+                        "name" => "Ownership Badge".to_owned(), locked;
+                        "description" => 
+                        "An ownership badge used to authenticate the owner of the NFT(s).".to_owned(), locked;
+                        "symbol" => "OWNER".to_owned(), locked;
+                    }
+                ))
                 .mint_initial_supply(1);
 
             // Creating the internal admin badge which will be used to manager the bidder badges
@@ -149,29 +150,30 @@ mod english_auction {
 
             // Creating the bidder's badge which will be used to track the bidder's information and bids.
             let bidder_badge_resource_address: ResourceManager =
-                ResourceBuilder::new_ruid_non_fungible::<BidderBadge>()
-                    .metadata("name", "Bidder Badge")
-                    .metadata(
-                        "description",
-                        "A badge provided to bidders to keep track of the amount they've bid",
-                    )
-                    .metadata("symbol", "BIDDER")
-                    .mintable(
-                        rule!(require(global_caller(component_address))),
-                        LOCKED,
-                    )
-                    .burnable(
-                        rule!(require(global_caller(component_address))),
-                        LOCKED,
-                    )
-                    .updateable_non_fungible_data(
-                        rule!(require(global_caller(component_address))),
-                        LOCKED,
-                    )
+                ResourceBuilder::new_ruid_non_fungible::<BidderBadge>(OwnerRole::None)
+                    .metadata(metadata!(
+                        init {
+                            "name" => "Bidder Badge".to_owned(), locked;
+                            "description" => 
+                            "A badge provided to bidders to keep track of the amount they've bid".to_owned(), locked;
+                            "symbol" => "BIDDER".to_owned(), locked;
+                        }
+                    ))
+                    .mint_roles(mint_roles!(
+                        minter => rule!(require(global_caller(component_address)));
+                        minter_updater => rule!(deny_all);
+                    ))
+                    .burn_roles(burn_roles!(
+                        burner => rule!(require(global_caller(component_address)));
+                        burner_updater => rule!(deny_all);
+                    ))
+                    .non_fungible_data_update_roles(non_fungible_data_update_roles!(
+                        non_fungible_data_updater => rule!(require(global_caller(component_address)));
+                        non_fungible_data_updater_updater => rule!(deny_all);
+                    ))
                     .create_with_no_initial_supply();
 
-            // Setting up the access rules for the component methods such that only the owner of the ownership badge can
-            // make calls to the protected methods.
+
             // let access_rule: AccessRule = rule!(require(ownership_badge.resource_address()));
             // let access_rules = AccessRulesConfig::new()
             //     .method("cancel_auction", access_rule.clone(), AccessRule::DenyAll)
@@ -189,7 +191,12 @@ mod english_auction {
                 state: AuctionState::Open,
             }
             .instantiate()
-            .prepare_to_globalize(OwnerRole::None)
+            .prepare_to_globalize(
+                OwnerRole::Updatable(
+                    rule!(require(ownership_badge.resource_address()))
+                )
+            )
+            .with_address(address_reservation)
             .globalize();
 
             return (english_auction, ownership_badge);
@@ -302,7 +309,7 @@ mod english_auction {
                 matches!(self.state, AuctionState::Open),
                 "[Bid]: Bids may only be added while the auction is open."
             );
-
+            
             // At this point we know that a bid can be added.
 
             // Issuing a bidder's NFT to this bidder with information on the amount that they're bidding
@@ -356,7 +363,7 @@ mod english_auction {
                 "[Increase Bid]: Invalid tokens were provided as bid. Bids are only allowed in {:?}",
                 self.accepted_payment_token
             );
-            let bidders_badge = bidders_badge.check(self.bidders_badge.resource_address());
+            let bidders_badge = bidders_badge.check(self.bidders_badge.address());
 
             assert_eq!(
                 bidders_badge.amount(), Decimal::one(),

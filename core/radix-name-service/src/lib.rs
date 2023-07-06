@@ -7,7 +7,7 @@ struct DomainName {
     address: ComponentAddress,
 
     #[mutable]
-    last_valid_epoch: u64,
+    last_valid_epoch: Epoch,
 
     #[mutable]
     deposit_amount: Decimal,
@@ -19,11 +19,24 @@ const EPOCHS_PER_YEAR: u64 = 15_000;
 
 #[blueprint]
 mod radix_name_service {
-
+    enable_method_auth! {
+        roles {
+            admin => updatable_by: [];
+        },
+        methods {
+            burn_expired_names => restrict_to: [admin];
+            withdraw_fees => restrict_to: [admin];
+            lookup_address => PUBLIC;
+            register_name => PUBLIC;
+            unregister_name => PUBLIC;
+            update_address => PUBLIC;
+            renew_name => PUBLIC;
+        }
+    }
     struct RadixNameService {
         admin_badge: ResourceAddress,
         minter: Vault,
-        name_resource: ResourceAddress,
+        name_resource: ResourceManager,
         deposits: Vault,
         fees: Vault,
         deposit_per_year: Decimal,
@@ -37,34 +50,38 @@ mod radix_name_service {
             deposit_per_year: Decimal,
             fee_address_update: Decimal,
             fee_renewal_per_year: Decimal,
-        ) -> (ComponentAddress, Bucket) {
-            let admin_badge = ResourceBuilder::new_fungible()
-                .divisibility(DIVISIBILITY_NONE)
-                .mint_initial_supply(dec!("1"));
+        ) -> (Global<RadixNameService>, Bucket) {
 
-            let minter = ResourceBuilder::new_fungible()
-                .divisibility(DIVISIBILITY_NONE)
-                .mint_initial_supply(dec!("1"));
+            let (address_reservation, component_address) =
+                Runtime::allocate_component_address(Runtime::blueprint_id());
 
-            let name_resource = ResourceBuilder::new_bytes_non_fungible::<DomainName>()
-                .metadata("name", "DomainName")
-                .mintable(rule!(require(minter.resource_address())), LOCKED)
-                .burnable(rule!(require(minter.resource_address())), LOCKED)
-                .updateable_non_fungible_data(rule!(require(minter.resource_address())), LOCKED)
+            let admin_badge = ResourceBuilder::new_fungible(OwnerRole::None)
+                .divisibility(DIVISIBILITY_NONE)
+                .mint_initial_supply(1);
+
+            let minter = ResourceBuilder::new_fungible(OwnerRole::None)
+                .divisibility(DIVISIBILITY_NONE)
+                .mint_initial_supply(1);
+
+            let name_resource = ResourceBuilder::new_bytes_non_fungible::<DomainName>(OwnerRole::None)
+                .metadata(metadata!(
+                    init {
+                        "name" => "Domain Name".to_owned(), locked;
+                    }
+                ))
+                .mint_roles(mint_roles!{
+                    minter => rule!(require(global_caller(component_address)));
+                    minter_updater => rule!(deny_all); 
+                })
+                .burn_roles(burn_roles! {
+                    burner => rule!(require(global_caller(component_address)));
+                    burner_updater => rule!(deny_all);
+                })
+                .non_fungible_data_update_roles(non_fungible_data_update_roles! {
+                    non_fungible_data_updater => rule!(require(global_caller(component_address)));
+                    non_fungible_data_updater_updater => rule!(deny_all);
+                })
                 .create_with_no_initial_supply();
-
-            let rules = AccessRulesConfig::new()
-                .method(
-                    "burn_expired_names",
-                    rule!(require(admin_badge.resource_address())),
-                    LOCKED,
-                )
-                .method(
-                    "withdraw_fees",
-                    rule!(require(admin_badge.resource_address())),
-                    LOCKED,
-                )
-                .default(rule!(allow_all), AccessRule::DenyAll);
 
             let component = RadixNameService {
                 admin_badge: admin_badge.resource_address(),
@@ -76,10 +93,12 @@ mod radix_name_service {
                 fee_address_update,
                 fee_renewal_per_year,
             }
-            .instantiate();
-            let component_address = component.globalize_with_access_rules(rules);
+            .instantiate()
+            .prepare_to_globalize(OwnerRole::None)
+            .with_address(address_reservation)
+            .globalize();
 
-            (component_address, admin_badge)
+            (component, admin_badge)
         }
 
         /// Lookup the address for a given `name`.
@@ -87,7 +106,7 @@ mod radix_name_service {
         pub fn lookup_address(&self, name: String) -> String {
             let hash = Self::hash_name(name);
 
-            let resource_manager = borrow_resource_manager!(self.name_resource);
+            let resource_manager = self.name_resource;
             let name_data: DomainName =
                 resource_manager.get_non_fungible_data(&NonFungibleLocalId::Bytes(
                     BytesNonFungibleLocalId::new(hash.to_be_bytes().to_vec()).unwrap(),
@@ -121,7 +140,7 @@ mod radix_name_service {
             let hash = Self::hash_name(name);
             let deposit_amount = self.deposit_per_year * Decimal::from(reserve_years);
             let last_valid_epoch =
-                Runtime::current_epoch() + EPOCHS_PER_YEAR * u64::from(reserve_years);
+                Runtime::current_epoch().number() + EPOCHS_PER_YEAR * u64::from(reserve_years);
 
             assert!(
                 deposit.amount() >= deposit_amount,
@@ -131,19 +150,16 @@ mod radix_name_service {
 
             let name_data = DomainName {
                 address: target_address,
-                last_valid_epoch,
+                last_valid_epoch: Epoch::of(last_valid_epoch),
                 deposit_amount,
             };
 
-            let name_nft = self.minter.authorize(|| {
-                let resource_manager = borrow_resource_manager!(self.name_resource);
-                resource_manager.mint_non_fungible(
+            let name_nft = self.name_resource.mint_non_fungible(
                     &NonFungibleLocalId::Bytes(
                         BytesNonFungibleLocalId::new(hash.to_be_bytes().to_vec()).unwrap(),
                     ),
                     name_data,
-                )
-            });
+                );
 
             self.deposits.put(deposit.take(deposit_amount));
 
@@ -156,13 +172,13 @@ mod radix_name_service {
         /// The supplied `name_nft` is burned.
         pub fn unregister_name(&mut self, name_nft: Bucket) -> Bucket {
             assert!(
-                name_nft.resource_address() == self.name_resource,
+                name_nft.resource_address() == self.name_resource.address(),
                 "The supplied bucket does not contain a domain name NFT"
             );
             assert!(!name_nft.is_empty(), "The supplied bucket is empty");
 
             let mut total_deposit_amount = Decimal::zero();
-            for nft in name_nft.non_fungibles::<DomainName>() {
+            for nft in name_nft.as_non_fungible().non_fungibles::<DomainName>() {
                 total_deposit_amount += nft.data().deposit_amount;
             }
 
@@ -185,12 +201,8 @@ mod radix_name_service {
                 fee.resource_address() == RADIX_TOKEN,
                 "The fee must be payed in XRD"
             );
-            let name_nft: ValidatedProof = name_nft
-                .validate_proof(ProofValidationMode::ValidateContainsAmount(
-                    self.name_resource,
-                    dec!("1"),
-                ))
-                .expect("The provided badge is either of an invalid resource address or amount.");
+
+            let name_nft = name_nft.check(self.name_resource.address());
 
             let fee_amount = self.fee_address_update;
             assert!(
@@ -199,21 +211,17 @@ mod radix_name_service {
                 fee_amount
             );
 
-            let mut resource_manager = borrow_resource_manager!(self.name_resource);
+            let resource_manager = self.name_resource;
 
-            let non_fungible: NonFungible<DomainName> = name_nft.non_fungible();
+            let non_fungible: NonFungible<DomainName> = name_nft.as_non_fungible().non_fungible();
             let id = non_fungible.local_id();
 
             let old_name_data = resource_manager.get_non_fungible_data::<DomainName>(&id);
 
-
-            self.minter
-                .authorize(|| {
-                        resource_manager.update_non_fungible_data(&id, "address", new_address);
-                        resource_manager.update_non_fungible_data(&id, "last_valid_epoch", old_name_data.last_valid_epoch);
-                        resource_manager.update_non_fungible_data(&id, "deposit_amount", old_name_data.deposit_amount);
-                    }
-                );
+            resource_manager.update_non_fungible_data(&id, "address", new_address);
+            resource_manager.update_non_fungible_data(&id, "last_valid_epoch", old_name_data.last_valid_epoch);
+            resource_manager.update_non_fungible_data(&id, "deposit_amount", old_name_data.deposit_amount);
+        
             self.fees.put(fee.take(fee_amount));
 
             fee
@@ -232,12 +240,8 @@ mod radix_name_service {
                 renew_years > 0,
                 "The name must be renewed for at least one year"
             );
-            let name_nft: ValidatedProof = name_nft
-                .validate_proof(ProofValidationMode::ValidateContainsAmount(
-                    self.name_resource,
-                    dec!("1"),
-                ))
-                .expect("The provided badge is either of an invalid resource address or amount.");
+
+            let name_nft = name_nft.check(self.name_resource.address());
 
             let fee_amount = self.fee_renewal_per_year * renew_years;
             assert!(
@@ -246,17 +250,16 @@ mod radix_name_service {
                 fee_amount
             );
 
-            let mut resource_manager = borrow_resource_manager!(self.name_resource);
+            let resource_manager = self.name_resource;
 
-            let non_fungible: NonFungible<DomainName> = name_nft.non_fungible();
+            let non_fungible: NonFungible<DomainName> = name_nft.as_non_fungible().non_fungible();
             let id = non_fungible.local_id();
 
             let name_data = resource_manager.get_non_fungible_data::<DomainName>(&id);
 
-            let new_last_valid_epoch = name_data.last_valid_epoch + EPOCHS_PER_YEAR * u64::from(renew_years);
+            let new_last_valid_epoch = name_data.last_valid_epoch.number() + EPOCHS_PER_YEAR * u64::from(renew_years);
 
-            self.minter
-                .authorize(|| resource_manager.update_non_fungible_data(&id, "name_data", new_last_valid_epoch));
+            resource_manager.update_non_fungible_data(&id, "name_data", Epoch::of(new_last_valid_epoch));
             self.fees.put(fee.take(fee_amount));
 
             fee

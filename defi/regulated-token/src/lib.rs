@@ -4,13 +4,13 @@ use scrypto::prelude::*;
 mod regulated_token {
     enable_method_auth!{
         roles {
-            super_admin,
-            general_admin
+            super_admin => updatable_by: [];
+            general_admin => updatable_by: [super_admin];
         },
         methods {
-            toggle_transfer_freeze => super_admin;
-            collect_payments => general_admin;
-            advance_stage => general_admin;
+            toggle_transfer_freeze => restrict_to: [super_admin];
+            collect_payments => restrict_to: [general_admin];
+            advance_stage => restrict_to: [general_admin];
             get_current_stage => PUBLIC;
             buy_token => PUBLIC;
         }
@@ -27,41 +27,71 @@ mod regulated_token {
     impl RegulatedToken {
         pub fn instantiate_regulated_token() -> (Global<RegulatedToken>, Bucket, Bucket) {
             // We will start by creating two tokens we will use as badges and return to our instantiator
-            let general_admin: Bucket = ResourceBuilder::new_fungible()
+            let general_admin: Bucket = ResourceBuilder::new_fungible(OwnerRole::Non)
                 .divisibility(DIVISIBILITY_NONE)
-                .metadata("name", "RegulatedToken general admin badge")
-                .burnable(rule!(allow_all), LOCKED)
+                .metadata(metadata! (
+                    init {
+                        "name" => "RegulatedToken general admin badge".to_string(), locked;
+                    }
+                ))
+                .burn_roles(burn_roles!(
+                    burner => rule!(allow_all);
+                    burner_updater => rule!(deny_all);
+                ))
                 .mint_initial_supply(1);
 
-            let freeze_admin: Bucket = ResourceBuilder::new_fungible()
+            let freeze_admin: Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
                 .divisibility(DIVISIBILITY_NONE)
-                .metadata("name", "RegulatedToken freeze-only badge")
-                .burnable(rule!(allow_all), LOCKED)
+                .metadata(metadata! (
+                    init {
+                        "name" => "RegulatedToken freeze-only badge".to_string(), locked;
+                    }
+                ))
+                .burn_roles(burn_roles!(
+                    burner => rule!(allow_all);
+                    burner_updater => rule!(deny_all);
+                ))
                 .mint_initial_supply(1);
 
             // Next we will create a badge we'll hang on to for minting & transfer authority
-            let internal_admin: Bucket = ResourceBuilder::new_fungible()
+            let internal_admin: Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
                 .divisibility(DIVISIBILITY_NONE)
-                .metadata("name", "RegulatedToken internal authority badge")
-                .burnable(rule!(allow_all), LOCKED)
+                .metadata(metadata! (
+                    init {
+                        "name" => "RegulatedToken internal authority badge".to_string(), locked;
+                    }
+                ))
+                .burn_roles(burn_roles!(
+                    burner => rule!(allow_all);
+                    burner_updater => rule!(deny_all);
+                ))
                 .mint_initial_supply(1);
+
+            
 
             // Next we will create our regulated token with an initial fixed supply of 100 and the appropriate permissions
             let access_rule: AccessRule = rule!(
                 require(general_admin.resource_address())
                     || require(internal_admin.resource_address())
             );
-            let my_bucket: Bucket = ResourceBuilder::new_fungible()
+            let my_bucket: Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
                 .divisibility(DIVISIBILITY_MAXIMUM)
-                .metadata("name", "Regulo")
-                .metadata("symbol", "REG")
-                .metadata(
-                    "stage",
-                    "Stage 1 - Fixed supply, may be restricted transfer",
-                )
+                .metadata(metadata! (
+                    init {
+                        "name" => "Regulo".to_string(), locked;
+                        "symbol" => "REG".to_string(), locked;
+                        "stage" => "Stage 1 - Fixed supply, may be restricted transfer".to_string(), updatable;
+                    }
+                ))
                 .updateable_metadata(access_rule.clone(), access_rule.clone())
-                .restrict_withdraw(access_rule.clone(), access_rule.clone())
-                .mintable(access_rule.clone(), access_rule.clone())
+                .withdraw_roles(withdraw_roles!(
+                    withdrawer => access_rule.clone();
+                    withdrawer_updater => access_rule.clone();
+                ))
+                .mint_roles(mint_roles!(
+                    minter => access_rule.clone();
+                    minter_updater => access_rule.clone();
+                ))
                 .mint_initial_supply(100);
 
             // Next we need to setup the access rules for the methods of the component
@@ -163,8 +193,7 @@ mod regulated_token {
 
                 // Update token's metadata to reflect the current stage
                 token_resource_manager
-                    .metadata()
-                    .set(
+                    .set_metadata(
                         "stage",
                         "Stage 2 - Unlimited supply, may be restricted transfer".to_string(),
                     );
@@ -184,8 +213,7 @@ mod regulated_token {
 
                 // Update token's metadata to reflect the final stage
                 token_resource_manager
-                    .metadata()
-                    .set(
+                    .set_metadata(
                         "stage",
                         "Stage 3 - Unregulated token, fixed supply".to_string(),
                     );

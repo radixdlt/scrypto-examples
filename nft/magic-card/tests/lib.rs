@@ -35,7 +35,7 @@ fn test_magic_card() {
 
     let transaction2 = ManifestBuilder::new()
         .withdraw_from_account(account_component, RADIX_TOKEN,  dec!("666"))
-        .take_from_worktop(RADIX_TOKEN, |builder, bucket| {
+        .take_from_worktop(RADIX_TOKEN, dec!("666"), |builder, bucket| {
             builder.call_method(
                 component,
                 "buy_special_card",
@@ -61,7 +61,7 @@ fn test_magic_card() {
 
     let transaction3 = ManifestBuilder::new()
         .withdraw_from_account(account_component, RADIX_TOKEN, dec!("500"))
-        .take_from_worktop(RADIX_TOKEN, |builder, bucket| {
+        .take_from_worktop(RADIX_TOKEN, dec!("500"), |builder, bucket| {
             builder.call_method(component, "buy_random_card", manifest_args!(bucket))
         })
         .call_method(

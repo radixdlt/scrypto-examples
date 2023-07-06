@@ -4,10 +4,10 @@ use scrypto::prelude::*;
 mod flat_admin {
     enable_method_auth! {
         roles {
-            admin
+            admin => updatable_by: [admin];
         },
         methods {
-            create_additional_admin => admin;
+            create_additional_admin => restrict_to: [admin];
             destroy_admin_badge => PUBLIC;
             get_admin_badge_address => PUBLIC;
         }
@@ -20,14 +20,25 @@ mod flat_admin {
         pub fn instantiate_flat_admin(badge_name: String) -> (Global<FlatAdmin>, Bucket) {
 
             let blueprint_id = Runtime::blueprint_id();
-            let (_global_address_reservation, component_address) = Runtime::allocate_component_address(blueprint_id);
+            let (address_reservation, component_address) = Runtime::allocate_component_address(blueprint_id);
 
             // Create the ResourceManager for a mutable supply admin badge
-            let first_admin_badge = ResourceBuilder::new_fungible()
+            let first_admin_badge = ResourceBuilder::new_fungible(OwnerRole::None)
                 .divisibility(DIVISIBILITY_NONE)
-                .metadata("name", badge_name)
-                .mintable(rule!(require(global_caller(component_address))), LOCKED)
-                .burnable(rule!(require(global_caller(component_address))), LOCKED)
+                .metadata(metadata!(
+                        init {
+                            "name" => badge_name, locked;
+                        }
+                    )
+                )
+                .mint_roles(mint_roles!(
+                    minter => rule!(require(global_caller(component_address)));
+                    minter_updater => rule!(deny_all);
+                ))
+                .burn_roles(burn_roles!(
+                    burner => rule!(require(global_caller(component_address)));
+                    burner_updater => rule!(deny_all);
+                ))
                 .mint_initial_supply(1);
 
             // Initialize our component, placing the minting authority badge within its vault, where it will remain forever
@@ -35,12 +46,13 @@ mod flat_admin {
                 first_admin_badge: first_admin_badge.resource_manager(),
             }
             .instantiate()
-            .prepare_to_globalize(OwnerRole::Updateable(rule!(require(first_admin_badge.resource_address()))))
+            .prepare_to_globalize(OwnerRole::Updatable(rule!(require(first_admin_badge.resource_address()))))
             .roles(
                 roles!(
-                    admin => rule!(require(first_admin_badge.resource_address())), mutable_by: admin;
+                    admin => rule!(require(first_admin_badge.resource_address()));
                 )
             )
+            .with_address(address_reservation)
             .globalize();
 
             // Return the instantiated component and the admin badge we just minted
@@ -55,14 +67,16 @@ mod flat_admin {
 
         pub fn destroy_admin_badge(&mut self, to_destroy: Bucket) {
             assert!(
-                to_destroy.resource_address() == self.first_admin_badge.resource_address(),
+                to_destroy.resource_address() == self.first_admin_badge.address(),
                 "Can not destroy the contents of this bucket!"
             );
             to_destroy.burn();
         }
 
         pub fn get_admin_badge_address(&self) -> ResourceAddress {
-            return self.first_admin_badge.resource_address();
+            return self.first_admin_badge.address();
         }
     }
 }
+
+

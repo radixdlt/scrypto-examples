@@ -21,18 +21,30 @@ mod basic_flash_loan {
         /// https://github.com/radixdlt/scrypto-examples/tree/main/defi/radiswap
         pub fn instantiate_default(initial_liquidity: Bucket) -> Global<BasicFlashLoan> {
 
-            let (_, component_address) = 
+            let (address_reservation, component_address) = 
                 Runtime::allocate_component_address(Runtime::blueprint_id());
 
             // Define a "transient" resource which can never be deposited once created, only burned
-            let transient_token_manager = ResourceBuilder::new_uuid_non_fungible::<LoanDue>()
-                .metadata(
-                    "name",
-                    "Promise token for BasicFlashLoan - must be returned to be burned!",
-                )
-                .mintable(rule!(require(global_caller(component_address))), LOCKED)
-                .burnable(rule!(require(global_caller(component_address))), LOCKED)
-                .restrict_deposit(rule!(deny_all), LOCKED)
+            let transient_token_manager = ResourceBuilder::new_ruid_non_fungible::<LoanDue>(OwnerRole::None)
+                .metadata(metadata!(
+                    init {
+                        "name" => 
+                        "Promise token for BasicFlashLoan - must be returned to be burned!".to_owned(), locked;
+                    }
+                ))
+                .mint_roles(mint_roles!(
+                    minter => rule!(require(global_caller(component_address)));
+                    minter_updater => rule!(deny_all);
+                ))
+                .burn_roles(burn_roles!(
+                    burner => rule!(require(global_caller(component_address)));
+                    burner_updater => rule!(deny_all);
+                ))
+                .deposit_roles(deposit_roles!(
+                    depositor => rule!(deny_all);
+                    depositor_updater => rule!(deny_all);
+                ))
+                    
                 .create_with_no_initial_supply();
 
             Self {
@@ -41,6 +53,7 @@ mod basic_flash_loan {
             }
             .instantiate()
             .prepare_to_globalize(OwnerRole::None)
+            .with_address(address_reservation)
             .globalize()
         }
 
@@ -69,7 +82,7 @@ mod basic_flash_loan {
             // a loan must call our repay_loan() method with an appropriate reimbursement, at which point we will
             // burn the NFT and allow the TX to complete.
             let loan_terms = self.transient_resource_manager
-                .mint_uuid_non_fungible(
+                .mint_ruid_non_fungible(
                         LoanDue {
                             amount_due: amount_due,
                         },
@@ -80,7 +93,7 @@ mod basic_flash_loan {
         pub fn repay_loan(&mut self, loan_repayment: Bucket, loan_terms: Bucket) {
             assert!(
                 loan_terms.resource_address() 
-                == self.transient_resource_manager.resource_address(),
+                == self.transient_resource_manager.address(),
                 "Incorrect resource passed in for loan terms"
             );
 

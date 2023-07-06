@@ -34,29 +34,39 @@ mod sporting_event {
     }
 
     impl SportingEvent {
-        pub fn instantiate_sporting_event() -> ComponentAddress {
+        pub fn instantiate_sporting_event() -> Global<SportingEvent> {
             // For simplicity's sake, we will just use all fixed values for our numbers of tickets and their prices, though all of those could be parameterized
 
             // We'll start by creating our admin badge which is able to create and modify our NFT
-            let my_admin = ResourceBuilder::new_fungible()
+            let my_admin = ResourceBuilder::new_fungible(OwnerRole::None)
                 .divisibility(DIVISIBILITY_NONE)
                 .mint_initial_supply(1);
 
             // Putting the admin badge in the component auth zone as it will be used throughout this function multiple
             // times. After we're done using it, we will take it back and drop the proof
-            ComponentAuthZone::push(my_admin.create_proof());
+            LocalAuthZone::push(my_admin.create_proof());
 
             // Create our NFT
-            let my_non_fungible_address = ResourceBuilder::new_integer_non_fungible::<Ticket>()
-                .metadata("name", "Ticket to the big game")
-                .mintable(rule!(require(my_admin.resource_address())), LOCKED)
-                .updateable_non_fungible_data(rule!(require(my_admin.resource_address())), LOCKED)
+            let my_non_fungible_address = ResourceBuilder::new_integer_non_fungible::<Ticket>(OwnerRole::None)
+                .metadata(metadata! (
+                    init {
+                        "name" => "Ticket to the big game".to_string(), locked;
+                    }
+                ))
+                .mint_roles(mint_roles! (
+                    minter => rule!(require(my_admin.resource_address()));
+                    minter_updater => rule!(deny_all); 
+                ))
+                .non_fungible_data_update_roles(non_fungible_data_update_roles!(
+                    non_fungible_data_updater => rule!(require(my_admin.resource_address()));
+                    non_fungible_data_updater_updater => rule!(deny_all);
+                ))
                 .create_with_no_initial_supply();
 
             // Currently, Scrypto requires manual assignment of NFT IDs
-            let mut ticket_bucket = Bucket::new(my_non_fungible_address);
+            let mut ticket_bucket = Bucket::new(my_non_fungible_address.address());
             let ticket_resource_manager =
-                borrow_resource_manager!(ticket_bucket.resource_address());
+                ResourceManager::from_address(ticket_bucket.resource_address());
             let mut manual_id = 1u64;
 
             // Mint the Luxury seat tokens.  These seats have an assigned seat number
@@ -91,7 +101,7 @@ mod sporting_event {
             }
 
             // Dropping the my admin proof
-            ComponentAuthZone::pop().drop();
+            LocalAuthZone::pop().drop();
 
             // Instantiate our component with our supply of sellable tickets
             Self {
@@ -102,12 +112,13 @@ mod sporting_event {
                 admin_authority: Vault::with_bucket(my_admin),
             }
             .instantiate()
+            .prepare_to_globalize(OwnerRole::None)
             .globalize()
         }
 
         /// Helper function to look for a matching ticket
-        fn get_ticket(&mut self, section: Section, seat: Option<String>) -> Bucket {
-            let nfts = self.tickets.non_fungibles::<Ticket>();
+        fn get_ticket(&mut self, section: Section, seat: Option<String>) -> NonFungibleBucket {
+            let nfts = self.tickets.as_non_fungible().non_fungibles::<Ticket>();
             // Currently, there is no way to search for particular NFT characteristics within a bucket/vault other than iterating through all of them.
             // A better implementation of this simple use case would be to provide a way to map Luxury seat numbers to an ID deterministically,
             // and likely keep them in a separate vault from the Field tokens so that the semi-fungible Field tokens can be immediately grabbed.
@@ -115,7 +126,7 @@ mod sporting_event {
             for nft in &nfts {
                 let ticket: Ticket = nft.data();
                 if ticket.section == section && ticket.seat == seat {
-                    return self.tickets.take_non_fungible(&nft.local_id());
+                    return self.tickets.as_non_fungible().take_non_fungible(&nft.local_id());
                 }
             }
 
@@ -123,19 +134,19 @@ mod sporting_event {
         }
 
         /// Passing an NFT into this function will switch it from the default Home team prediction to an Away team prediction
-        fn switch_nft_prediction(&mut self, nft_bucket: Bucket) -> Bucket {
+        fn switch_nft_prediction(&mut self, nft_bucket: NonFungibleBucket) -> NonFungibleBucket {
             // First, get the current data and change it to the desired state locally
-            let mut nft_data: Ticket = nft_bucket.non_fungible().data();
+            let mut nft_data: Ticket = nft_bucket.as_non_fungible().non_fungible().data();
             nft_data.prediction = Team::Away;
 
             // Then commit our updated data to our NFT
             self.admin_authority
                 .authorize(|| { 
 
-                    let mut resource_manger: ResourceManager = 
-                    borrow_resource_manager!(nft_bucket.resource_address());
+                    let resource_manger: ResourceManager = 
+                    ResourceManager::from_address(nft_bucket.resource_address());
                     
-                    let non_fungible_local_id: NonFungibleLocalId = nft_bucket.non_fungible_local_id();
+                    let non_fungible_local_id: NonFungibleLocalId = nft_bucket.as_non_fungible().non_fungible_local_id();
 
                     resource_manger.update_non_fungible_data(
                         &non_fungible_local_id, 
@@ -154,7 +165,7 @@ mod sporting_event {
             &mut self,
             will_home_team_win: bool,
             mut payment: Bucket,
-        ) -> (Bucket, Bucket) {
+        ) -> (NonFungibleBucket, Bucket) {
             self.collected_xrd.put(payment.take(self.price_field));
             let nft_bucket = self.get_ticket(Section::Field, None);
             if !will_home_team_win {
@@ -170,7 +181,7 @@ mod sporting_event {
             seat: String,
             will_home_team_win: bool,
             mut payment: Bucket,
-        ) -> (Bucket, Bucket) {
+        ) -> (NonFungibleBucket, Bucket) {
             self.collected_xrd.put(payment.take(self.price_luxury));
             let nft_bucket = self.get_ticket(Section::Luxury, Some(seat));
             if !will_home_team_win {

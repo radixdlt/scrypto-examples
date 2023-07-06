@@ -4,11 +4,11 @@ use scrypto::prelude::*;
 mod dutch_auction {
     enable_method_auth! {
         roles {
-            admin
+            admin => updatable_by: [];
         },
         methods {
-            cancel_sale => admin;
-            withdraw_payment => admin;
+            cancel_sale => restrict_to: [admin];
+            withdraw_payment => restrict_to: [admin];
             buy => PUBLIC;
             price => PUBLIC;
             is_sold => PUBLIC;
@@ -139,13 +139,14 @@ mod dutch_auction {
             // from them and they're given an ownership NFT which is used to authenticate them and as proof of ownership
             // of the NFTs. This ownership badge can be used to either withdraw the funds from the token sale or the
             // NFTs if the seller is no longer interested in selling their tokens.
-            let ownership_badge: Bucket = ResourceBuilder::new_fungible()
-                .metadata("name", "Ownership Badge")
-                .metadata(
-                    "description",
-                    "An ownership badge used to authenticate the owner of the NFT(s).",
-                )
-                .metadata("symbol", "OWNER")
+            let ownership_badge: Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
+                .metadata(metadata!(
+                    init {
+                        "name" => "Ownership Badge".to_owned(), locked;
+                        "description" => "An ownership badge used to authenticate the owner of the NFT(s).".to_owned(), locked;
+                        "symbol" => "OWNER".to_owned(), locked;
+                    }
+                ))
                 .mint_initial_supply(1);
 
             // Setting up the access rules for the component methods such that only the owner of the ownership badge can
@@ -167,7 +168,11 @@ mod dutch_auction {
                 ending_epoch: Runtime::current_epoch().after(relative_ending_epoch),
             }
             .instantiate()
-            .prepare_to_globalize(OwnerRole::None)
+            .prepare_to_globalize(
+                OwnerRole::Updatable(
+                    rule!(require(ownership_badge.resource_address()))
+                )
+            )
             .globalize();
 
             return (dutch_auction, ownership_badge);

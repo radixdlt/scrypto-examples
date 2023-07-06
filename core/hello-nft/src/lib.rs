@@ -31,8 +31,12 @@ mod hello_nft {
             }
 
             // Creates a fixed supply of NFTs.
-            let ticket_bucket = ResourceBuilder::new_string_non_fungible()
-                .metadata("name", "Ticket")
+            let ticket_bucket = ResourceBuilder::new_string_non_fungible(OwnerRole::None)
+                .metadata(metadata!( 
+                    init {
+                        "name" => "Ticket".to_owned(), locked;
+                    }
+                ))
                 .mint_initial_supply(tickets);
 
             // Instantiate our component

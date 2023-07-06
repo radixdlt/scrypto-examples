@@ -25,9 +25,13 @@ mod airdrop {
 
             return Self {
                 tokens: Vault::with_bucket(
-                    ResourceBuilder::new_fungible()
+                    ResourceBuilder::new_fungible(OwnerRole::None)
                         .divisibility(DIVISIBILITY_MAXIMUM)
-                        .metadata("name", "FreeToken")
+                        .metadata(metadata!(
+                            init {
+                                "name" => "Free Token".to_string(), locked;
+                            }
+                        ))
                         .mint_initial_supply(1000),
                 ),
             }

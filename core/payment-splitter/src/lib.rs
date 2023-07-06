@@ -10,11 +10,11 @@ struct Shareholder {
 mod payment_splitter {
     enable_method_auth! {
         roles {
-            admin
+            admin => updatable_by: [];
         },
         methods {
-            add_shareholder => admin;
-            lock_splitter => admin;
+            add_shareholder => restrict_to: [admin];
+            lock_splitter => restrict_to: [admin];
             withdraw => PUBLIC;
             withdraw_of_amount => PUBLIC;
             withdraw_and_giveup_shares => PUBLIC;
@@ -95,14 +95,16 @@ mod payment_splitter {
             }
 
             // Creating the admin badge which will allow for adding shareholders and locking of the payment splitter
-            let admin_badge: Bucket = ResourceBuilder::new_fungible()
+            let admin_badge: Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
                 .divisibility(DIVISIBILITY_NONE)
-                .metadata("name", "Admin Badge")
-                .metadata(
-                    "description",
-                    "This is a PaymentSplitter admin badge used to authenticate the admin.",
-                )
-                .mint_initial_supply(dec!("1"));
+                .metadata(metadata!(
+                    init {
+                        "name" => "Admin Badge".to_owned(), locked;
+                        "description" => 
+                        "This is a PaymentSplitter admin badge used to authenticate the admin.".to_owned(), locked;
+                    }
+                ))
+                .mint_initial_supply(1);
 
             // Creating the component itself through the `instantiate_custom_access_payment_splitter` function on the
             // blueprint which allows for the creation of payment-splitters which have custom access rules on them
@@ -167,20 +169,22 @@ mod payment_splitter {
             // the auth of the shareholder badge such that it can be moved around but can only be minted and burned by
             // the internal admin badge.
             let shareholder_badge: ResourceManager =
-                ResourceBuilder::new_ruid_non_fungible::<Shareholder>()
-                    .metadata("name", "Shareholder Badge")
-                    .metadata(
-                        "description",
-                        "A non-fungible-token used to authenticate shareholders.",
-                    )
-                    .mintable(
-                        rule!(require(global_caller(component_address))),
-                        Mutability::LOCKED,
-                    )
-                    .burnable(
-                        rule!(require(global_caller(component_address))),
-                        Mutability::LOCKED,
-                    )
+                ResourceBuilder::new_ruid_non_fungible::<Shareholder>(OwnerRole::None)
+                    .metadata(metadata!(
+                        init {
+                            "name" => "Shareholder Badge".to_owned(), locked;
+                            "description" => 
+                            "A non-fungible-token used to authenticate shareholders.".to_owned(), locked;
+                        }
+                    ))
+                    .mint_roles(mint_roles!(
+                        minter => rule!(require(global_caller(component_address)));
+                        minter_updater => rule!(deny_all); 
+                    ))
+                    .burn_roles(burn_roles!(
+                        burner => rule!(require(global_caller(component_address)));
+                        burner_updater => rule!(deny_all);
+                    ))
                     .create_with_no_initial_supply();
 
             let payment_splitter = Self {
@@ -285,7 +289,7 @@ mod payment_splitter {
         pub fn withdraw(&mut self, shareholder_badge: Proof) -> Bucket {
             // Checking the type and quantity of the resource in the proof
             let shareholder_badge = shareholder_badge.check(
-                self.shareholder_badge_resource_manager.resource_address()
+                self.shareholder_badge_resource_manager.address()
             );
             
             // At this point we have verified that the caller has presented a valid shareholder badge. We may now begin
@@ -321,7 +325,7 @@ mod payment_splitter {
         pub fn withdraw_of_amount(&mut self, amount: Decimal, shareholder_badge: Proof) -> Bucket {
             // Checking the type and quantity of the resource in the proof
             let shareholder_badge = shareholder_badge.check(
-                self.shareholder_badge_resource_manager.resource_address()
+                self.shareholder_badge_resource_manager.address()
             );
 
             // At this point we have verified that the caller has presented a valid shareholder badge. We may now begin
@@ -369,7 +373,7 @@ mod payment_splitter {
             // Checking the type and quantity of the resource in the bucket
             assert_eq!(
                 shareholder_badge.resource_address(),
-                self.shareholder_badge_resource_manager.resource_address(),
+                self.shareholder_badge_resource_manager.address(),
                 "[Withdraw Give-up Shares]: Invalid badge type presented"
             );
             assert!(

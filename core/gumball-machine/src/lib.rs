@@ -12,12 +12,17 @@ mod gumball_machine {
         // given a price in XRD, creates a ready-to-use gumball machine
         pub fn instantiate_gumball_machine(price: Decimal) -> Global<GumballMachine> {
             // create a new Gumball resource, with a fixed quantity of 100
-            let bucket_of_gumballs = ResourceBuilder::new_fungible()
-                .metadata("name", "Gumball")
-                .metadata("symbol", "GUM")
-                .metadata("description", "A delicious gumball")
+            let bucket_of_gumballs = 
+                ResourceBuilder::new_fungible(OwnerRole::None)
+                .metadata(metadata!(
+                    init {
+                        "name" => "Gumball".to_owned(), locked;
+                        "symbol" => "GUM".to_owned(), locked;
+                        "description" => "A delicious gumball".to_owned(), locked;
+                    }
+                ))
                 .mint_initial_supply(100);
-
+            
             // populate a GumballMachine struct and instantiate a new component
             Self {
                 gumballs: Vault::with_bucket(bucket_of_gumballs),

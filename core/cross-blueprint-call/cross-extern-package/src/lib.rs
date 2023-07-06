@@ -12,11 +12,6 @@ mod extern_blueprint_call {
         }
     );
 
-    const AIRDROP: Global<Airdrop> = global_component!(
-        Airdrop,
-        "component_sim1cpz9230mp9jp2e5fqxg6p2700txlude7mk5genwyk6ktaxxgfwmz7c"
-    );
-
     struct ExternBlueprintCall {}
 
     impl ExternBlueprintCall {
@@ -29,8 +24,13 @@ mod extern_blueprint_call {
         }
 
         pub fn free_token(&self) -> Bucket {
+            // Retrieving Airdrop component
+            let mut airdrop_component: Global<Airdrop> = global_component!(
+                Airdrop,
+                "component_sim1cpz9230mp9jp2e5fqxg6p2700txlude7mk5genwyk6ktaxxgfwmz7c"
+            );
             // Calling a method on a component using `.free_token()`.
-            return AIRDROP.free_token();
+            return airdrop_component.free_token()
         }
     }
 }

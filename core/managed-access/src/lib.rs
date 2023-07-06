@@ -19,10 +19,10 @@ mod managed_access {
 
     enable_method_auth! {
         roles {
-            admin
+            admin => updatable_by: [admin];
         },
         methods {
-            withdraw_all => admin;
+            withdraw_all => restrict_to: [admin];
             deposit => PUBLIC;
             get_admin_badge_address => PUBLIC;
             get_flat_admin_controller_address => PUBLIC;
@@ -52,7 +52,7 @@ mod managed_access {
             .prepare_to_globalize(OwnerRole::None)
             .roles(
                 roles!(
-                    admin => rule!(require(admin_badge.resource_address())), mutable_by: admin;
+                    admin => rule!(require(admin_badge.resource_address()));
                 )
             )
             .globalize();

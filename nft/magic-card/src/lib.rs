@@ -45,8 +45,12 @@ mod magic_card_nft {
     impl MagicCardNft {
         pub fn instantiate_component() -> Global<MagicCardNft> {
             // Creates a fixed set of NFTs
-            let special_cards_bucket = ResourceBuilder::new_integer_non_fungible()
-                .metadata("name", "Russ' Magic Card Collection")
+            let special_cards_bucket = ResourceBuilder::new_integer_non_fungible(OwnerRole::None)
+                .metadata(metadata!(
+                    init {
+                        "name" => "Russ' Magic Card Collection".to_owned(), locked;
+                    }
+                ))
                 .mint_initial_supply([
                     (
                         IntegerNonFungibleLocalId::new(1u64),
@@ -79,20 +83,24 @@ mod magic_card_nft {
                     Runtime::allocate_component_address(Runtime::blueprint_id());
 
             let random_card_resource_manager =
-                ResourceBuilder::new_integer_non_fungible::<MagicCard>()
-                    .metadata("name", "Random Cards")
-                    .mintable(
-                        rule!(require(global_caller(component_address))),
-                        LOCKED,
-                    )
-                    .burnable(
-                        rule!(require(global_caller(component_address))),
-                        LOCKED,
-                    )
-                    .updateable_non_fungible_data(
-                        rule!(require(global_caller(component_address))),
-                        LOCKED,
-                    )
+                ResourceBuilder::new_integer_non_fungible::<MagicCard>(OwnerRole::None)
+                    .metadata(metadata!(
+                        init {
+                            "name" => "Random Cards".to_owned(), locked;
+                        }
+                    ))
+                    .mint_roles(mint_roles!(
+                        minter => rule!(require(global_caller(component_address)));
+                        minter_updater => rule!(deny_all);
+                    ))
+                    .burn_roles(burn_roles!(
+                        burner => rule!(require(global_caller(component_address)));
+                        burner_updater => rule!(deny_all);
+                    ))
+                    .non_fungible_data_update_roles(non_fungible_data_update_roles!(
+                        non_fungible_data_updater => rule!(require(global_caller(component_address)));
+                        non_fungible_data_updater_updater => rule!(deny_all);
+                    ))
                     .create_with_no_initial_supply();
 
             // Instantiate our component
@@ -110,6 +118,7 @@ mod magic_card_nft {
             }
             .instantiate()
             .prepare_to_globalize(OwnerRole::None)
+            .with_address(address_reservation)
             .globalize()
         }
 
@@ -175,7 +184,7 @@ mod magic_card_nft {
                 "You need to pass 2 NFTs for fusion"
             );
             assert!(
-                nft_bucket.resource_address() == self.random_card_resource_manager.resource_address(),
+                nft_bucket.resource_address() == self.random_card_resource_manager.address(),
                 "Only random cards can be fused"
             );
 
