@@ -1,6 +1,7 @@
 {
     "rust-analyzer.linkedProjects": [
-        "core/cross-blueprint-call/Cargo.toml",
+        "core/cross-blueprint-call/cross-extern-package/Cargo.toml",
+        "core/cross-blueprint-call/cross-intra-package/Cargo.toml",
         "core/flat-admin/Cargo.toml",
         "core/gumball-machine/Cargo.toml",
         "core/hello-nft/Cargo.toml",
@@ -8,18 +9,14 @@
         "core/managed-access/Cargo.toml",
         "core/payment-splitter/Cargo.toml",
         "core/radix-name-service/Cargo.toml",
-        "core/resource-creation/Cargo.toml",
         "core/vesting/Cargo.toml",
         "defi/basic-flash-loan/Cargo.toml",
-        "defi/mutual-farm/Cargo.toml",
-        "defi/price-oracle/Cargo.toml",
         "defi/radiswap/Cargo.toml",
         "defi/regulated-token/Cargo.toml",
-        "defi/synthetics/Cargo.toml",
-        "defi/x-perp-futures/Cargo.toml",
         "nft/magic-card/Cargo.toml",
         "nft/nft-marketplace/Cargo.toml",
         "nft/sporting-event/Cargo.toml",
-        "full-stack/dapp-toolkit-gumball-machine/scrypto/Cargo.toml"
+        "full-stack/dapp-toolkit-gumball-machine/scrypto/Cargo.toml",
+        "full-stack/rcnet-radiswap/scrypto/Cargo.toml"
     ]
 }
