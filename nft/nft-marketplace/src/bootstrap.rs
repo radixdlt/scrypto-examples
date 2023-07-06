@@ -9,13 +9,14 @@ mod bootstrap {
         /// Creates a number of NFT collections used for testing of the NFT marketplace blueprints.
         pub fn bootstrap() -> Vec<Bucket> {
             // Creating the resources used for our non-fungible tokens
-            let cars: Bucket = ResourceBuilder::new_uuid_non_fungible()
-                .metadata("name", "Cars NFT")
-                .metadata(
-                    "description",
-                    "An NFT of the fastest cars known to mankind!",
-                )
-                .metadata("symbol", "FAST")
+            let cars: Bucket = ResourceBuilder::new_ruid_non_fungible(OwnerRole::None)
+                .metadata(metadata!(
+                    init {
+                        "name" => "Cars NFT".to_owned(), locked;
+                        "description" => "An NFT of the fastest cars known to mankind!".to_owned(), locked;
+                        "symbol" => "FAST".to_owned(), locked;
+                    }
+                ))
                 .mint_initial_supply([
                     Car {
                         name: "Camry".to_string(),
@@ -36,13 +37,14 @@ mod bootstrap {
                     },
                 ]);
 
-            let phones: Bucket = ResourceBuilder::new_uuid_non_fungible()
-                .metadata("name", "Phones NFT")
-                .metadata(
-                    "description",
-                    "Do you really want me to describe to you what a phone is?",
-                )
-                .metadata("symbol", "PHONE")
+            let phones: Bucket = ResourceBuilder::new_ruid_non_fungible(OwnerRole::None)
+                .metadata(metadata!(
+                    init {
+                        "name" => "Phones NFT".to_owned(), locked;
+                        "description" => "Do you really want me to describe to you what a phone is?".to_owned(), locked;
+                        "symbol" => "PHONE".to_owned(), locked;
+                    }
+                ))
                 .mint_initial_supply([
                     Phone {
                         name: "iPhone".to_string(),
@@ -62,10 +64,15 @@ mod bootstrap {
                     },
                 ]);
 
-            let laptops: Bucket = ResourceBuilder::new_uuid_non_fungible()
-                .metadata("name", "Laptops NFT")
-                .metadata("description", "Do you really want me to describe to you what a laptop is? I'm a bit concerned...")
-                .metadata("symbol", "LTOP")
+            let laptops: Bucket = ResourceBuilder::new_ruid_non_fungible(OwnerRole::None)
+                .metadata(metadata!(
+                    init {
+                        "name" => "Laptops NFT".to_owned(), locked;
+                        "description" => 
+                        "Do you really want me to describe to you what a laptop is? I'm a bit concerned...".to_owned(), locked;
+                        "symbol" => "LTOP".to_owned(), locked;
+                    }
+                ))
                 .mint_initial_supply([
                     Laptop {
                         name: "MacBook".to_string(),

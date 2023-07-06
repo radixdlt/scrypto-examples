@@ -2,112 +2,140 @@ use scrypto::prelude::*;
 
 #[blueprint]
 mod regulated_token {
+    enable_method_auth!{
+        roles {
+            freeze_admin => updatable_by: [];
+            general_admin => updatable_by: [];
+        },
+        methods {
+            toggle_transfer_freeze => restrict_to: [freeze_admin];
+            collect_payments => restrict_to: [general_admin];
+            advance_stage => restrict_to: [general_admin];
+            get_current_stage => PUBLIC;
+            buy_token => PUBLIC;
+        }
+    }
     struct RegulatedToken {
         token_supply: Vault,
-        internal_authority: Vault,
         collected_xrd: Vault,
         current_stage: u8,
-        admin_badge_resource_address: ResourceAddress,
-        freeze_badge_resource_address: ResourceAddress,
+        admin_badge_address: ResourceAddress,
+        freeze_admin_badge_address: ResourceAddress,
     }
 
     impl RegulatedToken {
-        pub fn instantiate_regulated_token() -> (ComponentAddress, Bucket, Bucket) {
-            // We will start by creating two tokens we will use as badges and return to our instantiator
-            let general_admin: Bucket = ResourceBuilder::new_fungible()
+        pub fn instantiate_regulated_token() -> (Global<RegulatedToken>, Bucket, Bucket) {
+
+            // We are allocating a ComponentAddress used for our actor virtual badge and provide 
+            // minting & transfer authority to our component.
+        let (address_reservation, component_address) =
+            Runtime::allocate_component_address(Runtime::blueprint_id());
+            
+            // Creating two resources we will use as badges and return to our instantiator
+            let general_admin: Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
                 .divisibility(DIVISIBILITY_NONE)
-                .metadata("name", "RegulatedToken general admin badge")
-                .burnable(rule!(allow_all), LOCKED)
+                .metadata(metadata! (
+                    init {
+                        "name" => "RegulatedToken general admin badge".to_string(), locked;
+                    }
+                ))
+                .burn_roles(burn_roles!(
+                    burner => rule!(allow_all);
+                    burner_updater => rule!(deny_all);
+                ))
                 .mint_initial_supply(1);
 
-            let freeze_admin: Bucket = ResourceBuilder::new_fungible()
+            let freeze_admin: Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
                 .divisibility(DIVISIBILITY_NONE)
-                .metadata("name", "RegulatedToken freeze-only badge")
-                .burnable(rule!(allow_all), LOCKED)
-                .mint_initial_supply(1);
-
-            // Next we will create a badge we'll hang on to for minting & transfer authority
-            let internal_admin: Bucket = ResourceBuilder::new_fungible()
-                .divisibility(DIVISIBILITY_NONE)
-                .metadata("name", "RegulatedToken internal authority badge")
-                .burnable(rule!(allow_all), LOCKED)
+                .metadata(metadata! (
+                    init {
+                        "name" => "RegulatedToken freeze-only badge".to_string(), locked;
+                    }
+                ))
+                .burn_roles(burn_roles!(
+                    burner => rule!(allow_all);
+                    burner_updater => rule!(deny_all);
+                ))
                 .mint_initial_supply(1);
 
             // Next we will create our regulated token with an initial fixed supply of 100 and the appropriate permissions
             let access_rule: AccessRule = rule!(
                 require(general_admin.resource_address())
-                    || require(internal_admin.resource_address())
+                    || require(global_caller(component_address))
             );
-            let my_bucket: Bucket = ResourceBuilder::new_fungible()
+            let regulated_tokens: Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
                 .divisibility(DIVISIBILITY_MAXIMUM)
-                .metadata("name", "Regulo")
-                .metadata("symbol", "REG")
-                .metadata(
-                    "stage",
-                    "Stage 1 - Fixed supply, may be restricted transfer",
-                )
-                .updateable_metadata(access_rule.clone(), access_rule.clone())
-                .restrict_withdraw(access_rule.clone(), access_rule.clone())
-                .mintable(access_rule.clone(), access_rule.clone())
+                .metadata(metadata! (
+                    roles {
+                        metadata_setter => access_rule.clone();
+                        metadata_setter_updater => access_rule.clone();
+                        metadata_locker => access_rule.clone();
+                        metadata_locker_updater => access_rule.clone();
+                    },
+                    init {
+                        "name" => "Regulo".to_string(), locked;
+                        "symbol" => "REG".to_string(), locked;
+                        "stage" => "Stage 1 - Fixed supply, may be restricted transfer".to_string(), updatable;
+                    }
+                ))
+                .freeze_roles(freeze_roles!(
+                    freezer => rule!(require(freeze_admin.resource_address()));
+                    freezer_updater => access_rule.clone();
+                ))
+                .withdraw_roles(withdraw_roles!(
+                    withdrawer => rule!(require(freeze_admin.resource_address()));
+                    withdrawer_updater => access_rule.clone();
+                ))
+                .recall_roles(recall_roles!(
+                    recaller => access_rule.clone();
+                    recaller_updater => access_rule.clone();
+                ))
+                .mint_roles(mint_roles!(
+                    minter => rule!(deny_all);
+                    minter_updater => access_rule.clone();
+                ))
                 .mint_initial_supply(100);
 
-            // Next we need to setup the access rules for the methods of the component
-            let access_rules_config = AccessRulesConfig::new()
-                .method(
-                    "toggle_transfer_freeze",
-                    rule!(
-                        require(general_admin.resource_address())
-                            || require(freeze_admin.resource_address())
-                    ),
-                    AccessRule::DenyAll,
-                )
-                .method(
-                    "collect_payments",
-                    rule!(require(general_admin.resource_address())),
-                    AccessRule::DenyAll,
-                )
-                .method(
-                    "advance_stage",
-                    rule!(require(general_admin.resource_address())),
-                    AccessRule::DenyAll,
-                )
-                .default(rule!(allow_all), AccessRule::DenyAll);
-
             let component = Self {
-                token_supply: Vault::with_bucket(my_bucket),
-                internal_authority: Vault::with_bucket(internal_admin),
+                token_supply: Vault::with_bucket(regulated_tokens),
                 collected_xrd: Vault::new(RADIX_TOKEN),
                 current_stage: 1,
-                admin_badge_resource_address: general_admin.resource_address(),
-                freeze_badge_resource_address: freeze_admin.resource_address(),
+                admin_badge_address: general_admin.resource_address(),
+                freeze_admin_badge_address: freeze_admin.resource_address(),
             }
-            .instantiate();
+            .instantiate()
+            .prepare_to_globalize(OwnerRole::None)
+            .roles(
+                roles!(
+                    freeze_admin => rule!(require(freeze_admin.resource_address()));
+                    general_admin => rule!(require(general_admin.resource_address()));
+                )
+            )
+            .with_address(address_reservation)
+            .globalize();
 
             (
-                component.globalize_with_access_rules(access_rules_config),
+                component,
                 general_admin,
                 freeze_admin,
             )
         }
 
-        /// Either the general admin or freeze admin badge may be used to freeze or unfreeze consumer transfers of the supply
+        /// The freeze admin badge may be used to freeze or unfreeze consumer transfers of the supply
         pub fn toggle_transfer_freeze(&self, set_frozen: bool) {
             // Note that this operation will fail if the token has reached stage 3 and the token behavior has been locked
-            let token_resource_manager =
-                borrow_resource_manager!(self.token_supply.resource_address());
-
-            self.internal_authority.authorize(|| {
-                if set_frozen {
-                    token_resource_manager.set_withdrawable(rule!(
-                        require(self.admin_badge_resource_address)
-                            || require(self.internal_authority.resource_address())
-                    ));
-                    info!("Token transfer is now RESTRICTED");
-                } else {
-                    token_resource_manager.set_withdrawable(rule!(allow_all));
-                    info!("Token is now freely transferrable");
-                }
-            })
+            let token_resource_manager = 
+                self.token_supply.resource_manager();
+  
+            if set_frozen {
+                token_resource_manager.set_withdrawable(rule!(
+                    require(self.freeze_admin_badge_address)
+                ));
+                info!("Token transfer is now RESTRICTED");
+            } else {
+                token_resource_manager.set_withdrawable(rule!(allow_all));
+                info!("Token is now freely transferrable");
+            }
         }
 
         pub fn get_current_stage(&self) -> u8 {
@@ -121,12 +149,10 @@ mod regulated_token {
         }
 
         pub fn advance_stage(&mut self) {
-            // Adding the internal admin badge to the component auth zone to allow for the operations below
-            ComponentAuthZone::push(self.internal_authority.create_proof());
 
             assert!(self.current_stage <= 2, "Already at final stage");
             let token_resource_manager =
-                borrow_resource_manager!(self.token_supply.resource_address());
+                self.token_supply.resource_manager();
 
             if self.current_stage == 1 {
                 // Advance to stage 2
@@ -135,19 +161,19 @@ mod regulated_token {
 
                 // Update token's metadata to reflect the current stage
                 token_resource_manager
-                    .metadata()
-                    .set(
+                    .set_metadata(
                         "stage",
                         "Stage 2 - Unlimited supply, may be restricted transfer".to_string(),
                     );
 
                 // Enable minting for the token
                 token_resource_manager
-                    .set_mintable(rule!(require(self.internal_authority.resource_address())));
+                    .set_mintable(rule!(
+                        require(self.admin_badge_address)
+                            || require(global_caller(Runtime::global_address()))
+                    ));
                 info!("Advanced to stage 2");
 
-                // Drop the last added proof to the component auth zone which is the internal admin badge
-                ComponentAuthZone::pop().drop();
             } else {
                 // Advance to stage 3
                 // Token will no longer be regulated
@@ -156,30 +182,29 @@ mod regulated_token {
 
                 // Update token's metadata to reflect the final stage
                 token_resource_manager
-                    .metadata()
-                    .set(
+                    .set_metadata(
                         "stage",
                         "Stage 3 - Unregulated token, fixed supply".to_string(),
                     );
 
                 // Set our behavior appropriately now that the regulated period has ended
                 token_resource_manager.set_mintable(rule!(deny_all));
+                token_resource_manager.set_freezeable(rule!(deny_all));
+                token_resource_manager.set_recallable(rule!(deny_all));
                 token_resource_manager.set_withdrawable(rule!(allow_all));
-                token_resource_manager.set_updateable_metadata(rule!(deny_all));
+                token_resource_manager.set_metadata_role("metadata_setter", rule!(deny_all));
+                token_resource_manager.set_metadata_role("metadata_setter_updater", rule!(deny_all));
 
                 // Permanently prevent the behavior of the token from changing
                 token_resource_manager.lock_mintable();
                 token_resource_manager.lock_withdrawable();
-                token_resource_manager.lock_updateable_metadata();
+                token_resource_manager.lock_freezeable();
+                token_resource_manager.lock_recallable();
+                token_resource_manager.lock_updatable_metadata();
 
                 // With the resource behavior forever locked, our internal authority badge no longer has any use
                 // We will burn our internal badge, and the holders of the other badges may burn them at will
                 // Our badge has the allows everybody to burn, so there's no need to provide a burning authority
-
-                // Drop the last added proof to the component auth zone which is the internal admin badge
-                ComponentAuthZone::pop().drop();
-
-                self.internal_authority.take_all().burn();
 
                 info!("Advanced to stage 3");
             }
@@ -192,8 +217,6 @@ mod regulated_token {
                 quantity > dec!("0"),
                 "Can't sell you nothing or less than nothing"
             );
-            // Adding the internal admin badge to the component auth zone to allow for the operations below
-            ComponentAuthZone::push(self.internal_authority.create_proof());
 
             // Early birds who buy during stage 1 get a discounted rate
             let price: Decimal = if self.current_stage == 1 {
@@ -212,22 +235,17 @@ mod regulated_token {
                 // The token may currently be under restricted transfer, so we will authorize our withdrawal
                 let tokens = self.token_supply.take(quantity);
 
-                // Drop the last added proof to the component auth zone which is the internal admin badge
-                ComponentAuthZone::pop().drop();
                 return (tokens, payment);
             } else {
                 // We will attempt to mint the shortfall
                 // If we are in stage 1 or 3, this action will fail, and it would probably be a good idea to tell the user this
                 // For the purposes of example, we will blindly attempt to mint
-                let mut tokens = borrow_resource_manager!(self.token_supply.resource_address())
+                let mut tokens = self.token_supply.resource_manager()
                     .mint(extra_demand);
 
                 // Combine the new tokens with whatever was left in supply to meet the full quantity
                 let existing_tokens = self.token_supply.take_all();
                 tokens.put(existing_tokens);
-
-                // Drop the last added proof to the component auth zone which is the internal admin badge
-                ComponentAuthZone::pop().drop();
 
                 // Return the tokens, along with any change
                 return (tokens, payment);

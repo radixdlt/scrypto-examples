@@ -2,6 +2,20 @@ use scrypto::prelude::*;
 
 #[blueprint]
 mod english_auction {
+    // Setting up the access rules for the component methods such that only the owner of the ownership badge can
+    // make calls to the protected methods.
+    enable_method_auth! {
+        methods {
+            cancel_auction => restrict_to: [OWNER];
+            withdraw_payment => restrict_to: [OWNER];
+            bid => PUBLIC;
+            increase_bid => PUBLIC;
+            cancel_bid => PUBLIC;
+            claim_nfts => PUBLIC;
+            ensure_auction_settlement => PUBLIC;
+            has_bids => PUBLIC;
+        }
+    }
     /// This blueprint defines the state and logic involved in a english auction non-fungible token sale. People who
     /// instantiate components from this blueprint, signify their intent at selling their NFT(s) to the highest bidder
     /// within a specific time period.
@@ -13,7 +27,7 @@ mod english_auction {
         /// These are the vaults where the NFTs will be stored. Since this blueprint allows for multiple NFTs to be sold
         /// at once, this HashMap is used to store all of these NFTs with the lazymap key being the resource address of
         /// these NFTs if they are not all of the same _kind_.
-        nft_vaults: HashMap<ResourceAddress, Vault>,
+        nft_vaults: HashMap<ResourceAddress, NonFungibleVault>,
 
         /// Since this is an English Auction, it means that there will be multiple people bidding on the same NFT(s) at
         /// the same time. This lazymaps maps the bidder's badge to a vault which contains the funds that they bid.
@@ -27,11 +41,7 @@ mod english_auction {
         /// component and with a proof of the amount of funds owed to them. If they wish to then cancel their bid or
         /// terminate it, they must present their bidder's badge to the appropriate methods on the an EnglishAuction
         /// component.
-        bidders_badge: ResourceAddress,
-
-        /// This is a vault which contains an internal admin badge. This badge is used to manager the bidder badges and
-        /// is given the authority to mint more of them, burn them, and update their non-fungible metadata.
-        internal_admin_badge: Vault,
+        bidders_badge: ResourceManager,
 
         /// This blueprint accepts XRD as well as non-XRD payments. This variable here is the resource address of the
         /// fungible token that will be used for payments to the component.
@@ -39,7 +49,7 @@ mod english_auction {
 
         /// This is the ending epoch. When this epoch is reached or exceeded, the auction will be considered done and
         /// if the minimum automatic sale price is reached, each parties will be given their tokens.
-        ending_epoch: u64,
+        ending_epoch: Epoch,
 
         /// The English Auction is stateful and at different states of the auction different actions may or may not be
         /// possible.
@@ -82,27 +92,27 @@ mod english_auction {
         /// * `Bucket` - A bucket containing an ownership badge which entitles the holder to the assets in this
         /// component.
         pub fn instantiate_english_auction(
-            non_fungible_tokens: Vec<Bucket>,
+            non_fungible_tokens: Vec<NonFungibleBucket>,
             accepted_payment_token: ResourceAddress,
             relative_ending_epoch: u64,
-        ) -> (ComponentAddress, Bucket) {
+        ) -> (Global<EnglishAuction>, Bucket) {
             // Performing checks to ensure that the creation of the component can go through
-            assert!(
-                !non_fungible_tokens.iter().any(|x| !matches!(
-                    borrow_resource_manager!(x.resource_address()).resource_type(),
-                    ResourceType::NonFungible { id_type: _ }
-                )),
-                "[Instantiation]: Can not perform a sale for fungible tokens."
-            );
+            // assert!(
+            //     !non_fungible_tokens.iter().any(|x| !matches!(
+            //         ResourceManager::from_address(x.resource_address()).resource_type(),
+            //         ResourceType::NonFungible { id_type: _ }
+            //     )),
+            //     "[Instantiation]: Can not perform a sale for fungible tokens."
+            // );
             assert!(
                 !matches!(
-                    borrow_resource_manager!(accepted_payment_token).resource_type(),
+                    ResourceManager::from_address(accepted_payment_token).resource_type(),
                     ResourceType::NonFungible { id_type: _ }
                 ),
                 "[Instantiation]: Only payments of fungible resources are accepted."
             );
             assert!(
-                relative_ending_epoch > Runtime::current_epoch(),
+                Runtime::current_epoch().after(relative_ending_epoch) > Runtime::current_epoch(),
                 "[Instantiation]: The ending epoch has already passed."
             );
 
@@ -111,11 +121,11 @@ mod english_auction {
             // Create a new HashMap of vaults and aggregate all of the tokens in the buckets into the vaults of this
             // HashMap. This means that if somebody passes multiple buckets of the same resource, then they would end
             // up in the same vault.
-            let mut nft_vaults: HashMap<ResourceAddress, Vault> = HashMap::new();
+            let mut nft_vaults: HashMap<ResourceAddress, NonFungibleVault> = HashMap::new();
             for bucket in non_fungible_tokens.into_iter() {
                 nft_vaults
                     .entry(bucket.resource_address())
-                    .or_insert(Vault::new(bucket.resource_address()))
+                    .or_insert(NonFungibleVault::new(bucket.resource_address()))
                     .put(bucket)
             }
 
@@ -123,68 +133,71 @@ mod english_auction {
             // from them and they're given an ownership NFT which is used to authenticate them and as proof of ownership
             // of the NFTs. This ownership badge can be used to either withdraw the funds from the token sale or the
             // NFTs if the seller is no longer interested in selling their tokens.
-            let ownership_badge: Bucket = ResourceBuilder::new_fungible()
-                .metadata("name", "Ownership Badge")
-                .metadata(
-                    "description",
-                    "An ownership badge used to authenticate the owner of the NFT(s).",
-                )
-                .metadata("symbol", "OWNER")
+            let ownership_badge: Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
+                .metadata(metadata!(
+                    init {
+                        "name" => "Ownership Badge".to_owned(), locked;
+                        "description" => 
+                        "An ownership badge used to authenticate the owner of the NFT(s).".to_owned(), locked;
+                        "symbol" => "OWNER".to_owned(), locked;
+                    }
+                ))
                 .mint_initial_supply(1);
 
             // Creating the internal admin badge which will be used to manager the bidder badges
-            let internal_admin_badge: Bucket = ResourceBuilder::new_fungible()
-                .divisibility(DIVISIBILITY_NONE)
-                .metadata("name", "Internal Admin Badge")
-                .metadata("description", "A badge used to manage the bidder badges")
-                .metadata("symbol", "IADMIN")
-                .mint_initial_supply(1);
+            let (address_reservation, component_address) = 
+                Runtime::allocate_component_address(Runtime::blueprint_id());
 
             // Creating the bidder's badge which will be used to track the bidder's information and bids.
-            let bidder_badge_resource_address: ResourceAddress =
-                ResourceBuilder::new_uuid_non_fungible::<BidderBadge>()
-                    .metadata("name", "Bidder Badge")
-                    .metadata(
-                        "description",
-                        "A badge provided to bidders to keep track of the amount they've bid",
-                    )
-                    .metadata("symbol", "BIDDER")
-                    .mintable(
-                        rule!(require(internal_admin_badge.resource_address())),
-                        LOCKED,
-                    )
-                    .burnable(
-                        rule!(require(internal_admin_badge.resource_address())),
-                        LOCKED,
-                    )
-                    .updateable_non_fungible_data(
-                        rule!(require(internal_admin_badge.resource_address())),
-                        LOCKED,
-                    )
+            let bidder_badge_resource_address: ResourceManager =
+                ResourceBuilder::new_ruid_non_fungible::<BidderBadge>(OwnerRole::None)
+                    .metadata(metadata!(
+                        init {
+                            "name" => "Bidder Badge".to_owned(), locked;
+                            "description" => 
+                            "A badge provided to bidders to keep track of the amount they've bid".to_owned(), locked;
+                            "symbol" => "BIDDER".to_owned(), locked;
+                        }
+                    ))
+                    .mint_roles(mint_roles!(
+                        minter => rule!(require(global_caller(component_address)));
+                        minter_updater => rule!(deny_all);
+                    ))
+                    .burn_roles(burn_roles!(
+                        burner => rule!(require(global_caller(component_address)));
+                        burner_updater => rule!(deny_all);
+                    ))
+                    .non_fungible_data_update_roles(non_fungible_data_update_roles!(
+                        non_fungible_data_updater => rule!(require(global_caller(component_address)));
+                        non_fungible_data_updater_updater => rule!(deny_all);
+                    ))
                     .create_with_no_initial_supply();
 
-            // Setting up the access rules for the component methods such that only the owner of the ownership badge can
-            // make calls to the protected methods.
-            let access_rule: AccessRule = rule!(require(ownership_badge.resource_address()));
-            let access_rules = AccessRulesConfig::new()
-                .method("cancel_auction", access_rule.clone(), AccessRule::DenyAll)
-                .method("withdraw_payment", access_rule.clone(), AccessRule::DenyAll)
-                .default(rule!(allow_all), AccessRule::DenyAll);
+
+            // let access_rule: AccessRule = rule!(require(ownership_badge.resource_address()));
+            // let access_rules = AccessRulesConfig::new()
+            //     .method("cancel_auction", access_rule.clone(), AccessRule::DenyAll)
+            //     .method("withdraw_payment", access_rule.clone(), AccessRule::DenyAll)
+            //     .default(rule!(allow_all), AccessRule::DenyAll);
 
             // Instantiating the english auction sale component
-            let english_auction: EnglishAuctionComponent = Self {
+            let english_auction = Self {
                 nft_vaults,
                 bid_vaults: HashMap::new(),
                 payment_vault: Vault::new(accepted_payment_token),
                 bidders_badge: bidder_badge_resource_address,
-                internal_admin_badge: Vault::with_bucket(internal_admin_badge),
                 accepted_payment_token,
-                ending_epoch: Runtime::current_epoch() + relative_ending_epoch,
+                ending_epoch: Runtime::current_epoch().after(relative_ending_epoch),
                 state: AuctionState::Open,
             }
-            .instantiate();
-            let english_auction: ComponentAddress =
-                english_auction.globalize_with_access_rules(access_rules);
+            .instantiate()
+            .prepare_to_globalize(
+                OwnerRole::Updatable(
+                    rule!(require(ownership_badge.resource_address()))
+                )
+            )
+            .with_address(address_reservation)
+            .globalize();
 
             return (english_auction, ownership_badge);
         }
@@ -202,7 +215,7 @@ mod english_auction {
         /// # Note:
         ///
         /// * This is an authenticated method which may only be called by the holder of the `ownership_badge`.
-        pub fn cancel_auction(&mut self) -> Vec<Bucket> {
+        pub fn cancel_auction(&mut self) -> Vec<NonFungibleBucket> {
             // Mandatory call to ensure that the `ensure_auction_settlement` method to ensure that if the conditions are
             // met, that the auction will proceed to the next stage/state.
             self.ensure_auction_settlement();
@@ -220,7 +233,7 @@ mod english_auction {
 
             let resource_addresses: Vec<ResourceAddress> =
                 self.nft_vaults.keys().cloned().collect();
-            let mut tokens: Vec<Bucket> = Vec::new();
+            let mut tokens: Vec<NonFungibleBucket> = Vec::new();
             for resource_address in resource_addresses.into_iter() {
                 tokens.push(
                     self.nft_vaults
@@ -296,22 +309,19 @@ mod english_auction {
                 matches!(self.state, AuctionState::Open),
                 "[Bid]: Bids may only be added while the auction is open."
             );
-
+            
             // At this point we know that a bid can be added.
 
             // Issuing a bidder's NFT to this bidder with information on the amount that they're bidding
 
-            let bidders_badge: Bucket = self.internal_admin_badge.authorize(|| {
-                let bidders_resource_manager = borrow_resource_manager!(self.bidders_badge);
-                bidders_resource_manager.mint_uuid_non_fungible(
+            let bidders_badge: Bucket = self.bidders_badge.mint_ruid_non_fungible(
                     BidderBadge {
                         bid_amount: funds.amount(),
                         is_winner: false,
                     },
-                )
-            });
+                );
 
-            let non_fungible_local_id: NonFungibleLocalId = bidders_badge.non_fungible_local_id();
+            let non_fungible_local_id: NonFungibleLocalId = bidders_badge.as_non_fungible().non_fungible_local_id();
 
             // Taking the bidder's funds and depositing them into a newly created vault where their funds will now live
             self.bid_vaults
@@ -353,18 +363,8 @@ mod english_auction {
                 "[Increase Bid]: Invalid tokens were provided as bid. Bids are only allowed in {:?}",
                 self.accepted_payment_token
             );
-            let bidders_badge: ValidatedProof = bidders_badge
-                .validate_proof(ProofValidationMode::ValidateContainsAmount(
-                    self.bidders_badge,
-                    dec!("1"),
-                ))
-                .expect("[Increase Bid]: Invalid proof provided");
+            let bidders_badge = bidders_badge.check(self.bidders_badge.address());
 
-            assert_eq!(
-                bidders_badge.resource_address(),
-                self.bidders_badge,
-                "[Increase Bid]: Badge provided is not a valid bidder's badge"
-            );
             assert_eq!(
                 bidders_badge.amount(), Decimal::one(),
                 "[Increase Bid]: This method requires that exactly one bidder's badge is passed to the method"
@@ -373,22 +373,18 @@ mod english_auction {
             // At this point we know that the bidder's bid can be increased.
 
             // Updating the metadata of the bidder's badge to reflect on the update of the bidder's bid
-            self.internal_admin_badge.authorize(|| {
-                let mut bidders_badge_data: BidderBadge = bidders_badge.non_fungible().data();
-                let non_fungible_local_id: NonFungibleLocalId = bidders_badge.non_fungible_local_id();
-                let mut resource_manager = borrow_resource_manager!(self.bidders_badge);
-                resource_manager.update_non_fungible_data(
-                    &non_fungible_local_id, 
-                    "bid_amount", 
-                    bidders_badge_data.bid_amount += funds.amount()
-                );
-
-            
-            });
+            let mut bidders_badge_data: BidderBadge = bidders_badge.as_non_fungible().non_fungible().data();
+            let non_fungible_local_id: NonFungibleLocalId = bidders_badge.as_non_fungible().non_fungible_local_id();
+            let resource_manager = self.bidders_badge;
+            resource_manager.update_non_fungible_data(
+                &non_fungible_local_id, 
+                "bid_amount", 
+                bidders_badge_data.bid_amount += funds.amount()
+            );
 
             // Adding the funds to the vault of the bidder
             self.bid_vaults
-                .get_mut(&bidders_badge.non_fungible::<BidderBadge>().local_id())
+                .get_mut(&bidders_badge.as_non_fungible().non_fungible::<BidderBadge>().local_id())
                 .unwrap()
                 .put(funds);
         }
@@ -422,28 +418,28 @@ mod english_auction {
             self.ensure_auction_settlement();
 
             // Checking if the bid can be canceled or not.
-            assert_eq!(
-                bidders_badge.resource_address(),
-                self.bidders_badge,
-                "[Cancel Bid]: Badge provided is not a valid bidder's badge"
-            );
+            // assert_eq!(
+            //     bidders_badge.resource_address(),
+            //     self.bidders_badge,
+            //     "[Cancel Bid]: Badge provided is not a valid bidder's badge"
+            // );
             assert_eq!(
                 bidders_badge.amount(), Decimal::one(),
                 "[Cancel Bid]: This method requires that exactly one bidder's badge is passed to the method"
             );
             assert!(
-                !bidders_badge.non_fungible::<BidderBadge>().data().is_winner,
+                !bidders_badge.as_non_fungible().non_fungible::<BidderBadge>().data().is_winner,
                 "[Cancel Bid]: You can not cancel your bid after winning the auction."
             );
             // At this point we know that the bid cancellation can go on.
             // Take out the bidder's funds from their vault
             let funds: Bucket = self
                 .bid_vaults
-                .get_mut(&bidders_badge.non_fungible::<BidderBadge>().local_id())
+                .get_mut(&bidders_badge.as_non_fungible().non_fungible::<BidderBadge>().local_id())
                 .unwrap()
                 .take_all();
             // This bidder will no longer need their badge. We can now safely burn the badge.
-            self.internal_admin_badge.authorize(|| bidders_badge.burn());
+            bidders_badge.burn();
             // The bidder's funds may now be returned to them
             return funds;
         }
@@ -468,7 +464,7 @@ mod english_auction {
         /// # Returns:
         ///
         /// * `Vec<Bucket>` - A vector of buckets of the non-fungible tokens which were being auctioned.
-        pub fn claim_nfts(&mut self, bidders_badge: Bucket) -> Vec<Bucket> {
+        pub fn claim_nfts(&mut self, bidders_badge: Bucket) -> Vec<NonFungibleBucket> {
             // Mandatory call to ensure that the `ensure_auction_settlement` method to ensure that if the conditions are
             // met, that the auction will proceed to the next stage/state.
             self.ensure_auction_settlement();
@@ -479,29 +475,29 @@ mod english_auction {
                 "[Claim NFTs]: NFTs can only be claimed when the auction has settled."
             );
 
-            assert_eq!(
-                bidders_badge.resource_address(),
-                self.bidders_badge,
-                "[Claim NFTs]: Badge provided is not a valid bidder's badge"
-            );
+            // assert_eq!(
+            //     bidders_badge.resource_address(),
+            //     self.bidders_badge,
+            //     "[Claim NFTs]: Badge provided is not a valid bidder's badge"
+            // );
             assert_eq!(
                 bidders_badge.amount(), Decimal::one(),
                 "[Claim NFTs]: This method requires that exactly one bidder's badge is passed to the method"
             );
             assert!(
-                bidders_badge.non_fungible::<BidderBadge>().data().is_winner,
+                bidders_badge.as_non_fungible().non_fungible::<BidderBadge>().data().is_winner,
                 "[Claim NFTs]: Badge provided is not the winner's badge."
             );
 
             // At this point we know that the NFTs can be claimed from the component
 
             // We can safely burn the bidder's badge at this point as it is no longer needed by the bidder.
-            self.internal_admin_badge.authorize(|| bidders_badge.burn());
+            bidders_badge.burn();
 
             // Getting all of the NFTs from the auction and returning them to the caller
             let resource_addresses: Vec<ResourceAddress> =
                 self.nft_vaults.keys().cloned().collect();
-            let mut tokens: Vec<Bucket> = Vec::new();
+            let mut tokens: Vec<NonFungibleBucket> = Vec::new();
             for resource_address in resource_addresses.into_iter() {
                 tokens.push(
                     self.nft_vaults
@@ -543,18 +539,15 @@ mod english_auction {
 
                         // Update the bidder's badge associated with the above non-fungible id to reflect that this is
                         // the winner of the bid.
-                        self.internal_admin_badge.authorize(|| {
-                            let mut resource_manager = borrow_resource_manager!(self.bidders_badge);                    
+                        let resource_manager = self.bidders_badge;                    
 
-                            // Setting the new data as the data of that badge
-
-                            resource_manager.update_non_fungible_data(
-                                &non_fungible_local_id, 
-                                "is_winner", 
-                                true
-                            );
-                        }
-                    );
+                        // Setting the new data as the data of that badge
+                        resource_manager.update_non_fungible_data(
+                            &non_fungible_local_id, 
+                            "is_winner", 
+                            true
+                        );
+                        
 
                         // Take the funds from the winner's vault and put them in the payment vault so that the seller
                         // can now withdraw them

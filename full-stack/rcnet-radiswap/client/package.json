@@ -1,0 +1,20 @@
+{
+    "name": "client",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview"
+    },
+    "devDependencies": {
+        
+        "vite": "^4.1.0"
+    },
+    "dependencies": {
+        "@radixdlt/babylon-gateway-api-sdk": "^1.0.0-birch.1",
+        "@radixdlt/radix-dapp-toolkit": "^0.3.0-birch.1",
+        "@radixdlt/radix-engine-toolkit": "0.2.0-birch.2"
+    }
+}

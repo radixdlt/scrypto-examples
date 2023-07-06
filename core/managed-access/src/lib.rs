@@ -1,51 +1,56 @@
 use scrypto::prelude::*;
 
-external_blueprint! {
-  FlatAdminPackageTarget {
-    fn instantiate_flat_admin(badge_name: String) -> (ComponentAddress, Bucket);
-  }
-}
-
-external_component! {
-    FlatAdminComponentTarget {
-        fn create_additional_admin(&mut self) -> Bucket;
-        fn destroy_admin_badge(&mut self, to_destroy: Bucket);
-        fn get_admin_badge_address(&self) -> ResourceAddress;
-    }
-}
-
 #[blueprint]
 mod managed_access {
+    extern_blueprint!(
+        "package_sim1p4kwg8fa7ldhwh8exe5w4acjhp9v982svmxp3yqa8ncruad4rv980g",
+        FlatAdmin {
+            fn instantiate_flat_admin(badge_name: String) -> (Global<FlatAdmin>, Bucket);
+            fn create_additional_admin(&mut self) -> Bucket;
+            fn destroy_admin_badge(&mut self, to_destroy: Bucket);
+            fn get_admin_badge_address(&self) -> ResourceAddress;
+        }
+    );
+
+    enable_method_auth! {
+        roles {
+            admin => updatable_by: [];
+        },
+        methods {
+            withdraw_all => restrict_to: [admin];
+            deposit => PUBLIC;
+            get_admin_badge_address => PUBLIC;
+            get_flat_admin_controller_address => PUBLIC;
+        }
+    }
     struct ManagedAccess {
         admin_badge: ResourceAddress,
-        flat_admin_controller: ComponentAddress,
+        flat_admin_controller: Global<FlatAdmin>,
         protected_vault: Vault,
     }
 
     impl ManagedAccess {
         pub fn instantiate_managed_access(
-            flat_admin_package_address: PackageAddress,
-        ) -> (ComponentAddress, Bucket) {
-            let (flat_admin_component, admin_badge) =
-                FlatAdminPackageTarget::at(flat_admin_package_address, "FlatAdmin")
-                    .instantiate_flat_admin("My Managed Access Badge".into());
+            badge_name: String
+        ) -> (Global<ManagedAccess>, Bucket) {
+            
+            let 
+            (flat_admin_component, admin_badge): (Global<FlatAdmin>, Bucket) = 
+            Blueprint::<FlatAdmin>::instantiate_flat_admin(badge_name);
 
-            let rules = AccessRulesConfig::new()
-                .method(
-                    "withdraw_all",
-                    rule!(require(admin_badge.resource_address())),
-                    AccessRule::DenyAll,
-                )
-                .default(rule!(allow_all), AccessRule::DenyAll);
-
-            let component = Self {
-                admin_badge: admin_badge.resource_address(),
-                flat_admin_controller: flat_admin_component,
-                protected_vault: Vault::new(RADIX_TOKEN),
-            }
-            .instantiate();
-            // component.add_access_check(rules);
-            let component = component.globalize_with_access_rules(rules);
+        let component = Self {
+            admin_badge: admin_badge.resource_address(),
+            flat_admin_controller: flat_admin_component,
+            protected_vault: Vault::new(RADIX_TOKEN),
+        }
+        .instantiate()
+        .prepare_to_globalize(OwnerRole::None)
+        .roles(
+            roles!(
+                admin => rule!(require(admin_badge.resource_address()));
+            )
+        )
+        .globalize();
 
             (component, admin_badge)
         }
@@ -62,7 +67,7 @@ mod managed_access {
             self.admin_badge
         }
 
-        pub fn get_flat_admin_controller_address(&self) -> ComponentAddress {
+        pub fn get_flat_admin_controller_address(&self) -> Global<FlatAdmin> {
             self.flat_admin_controller
         }
     }

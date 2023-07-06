@@ -18,7 +18,7 @@ mod hello_nft {
     }
 
     impl HelloNft {
-        pub fn instantiate_hello_nft(price: Decimal) -> ComponentAddress {
+        pub fn instantiate_hello_nft(price: Decimal) -> Global<HelloNft> {
             // Prepare ticket NFT data
             let mut tickets: Vec<(StringNonFungibleLocalId, Ticket)> = Vec::new();
             for row in 1..5 {
@@ -31,17 +31,22 @@ mod hello_nft {
             }
 
             // Creates a fixed supply of NFTs.
-            let ticket_bucket = ResourceBuilder::new_string_non_fungible()
-                .metadata("name", "Ticket")
+            let ticket_bucket = ResourceBuilder::new_string_non_fungible(OwnerRole::None)
+                .metadata(metadata!( 
+                    init {
+                        "name" => "Ticket".to_owned(), locked;
+                    }
+                ))
                 .mint_initial_supply(tickets);
 
             // Instantiate our component
-            Self {
+            return Self {
                 available_tickets: Vault::with_bucket(ticket_bucket),
                 ticket_price: price,
                 collected_xrd: Vault::new(RADIX_TOKEN),
             }
             .instantiate()
+            .prepare_to_globalize(OwnerRole::None)
             .globalize()
         }
 
@@ -56,13 +61,14 @@ mod hello_nft {
             (ticket, payment)
         }
 
-        pub fn buy_ticket_by_id(&mut self, id: String, mut payment: Bucket) -> (Bucket, Bucket) {
+        pub fn buy_ticket_by_id(&mut self, id: String, mut payment: Bucket) -> (NonFungibleBucket, Bucket) {
             // Take our price out of the payment bucket
             self.collected_xrd.put(payment.take(self.ticket_price));
 
             // Take the specific ticket
             let ticket = self
                 .available_tickets
+                .as_non_fungible()
                 .take_non_fungible(&NonFungibleLocalId::String(
                     StringNonFungibleLocalId::new(id).unwrap(),
                 ));
@@ -72,7 +78,7 @@ mod hello_nft {
         }
 
         pub fn available_ticket_ids(&self) -> BTreeSet<NonFungibleLocalId> {
-            self.available_tickets.non_fungible_local_ids()
+            self.available_tickets.as_non_fungible().non_fungible_local_ids()
         }
     }
 }

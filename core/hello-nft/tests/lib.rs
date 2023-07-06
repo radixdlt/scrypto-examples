@@ -40,7 +40,7 @@ fn test_create_additional_admin() {
 
     let manifest2 = ManifestBuilder::new()
         .withdraw_from_account(account_component, RADIX_TOKEN, dec!("10"))
-        .take_from_worktop(RADIX_TOKEN, |builder, bucket| {
+        .take_from_worktop(RADIX_TOKEN, dec!("10"),|builder, bucket| {
             builder.call_method(component, "buy_ticket", manifest_args!(bucket))
         })
         .call_method(
