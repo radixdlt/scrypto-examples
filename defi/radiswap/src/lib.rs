@@ -19,6 +19,7 @@ mod radiswap {
         /// Creates a Radiswap component for token pair A/B and returns the component address
         /// along with the initial LP tokens.
         pub fn instantiate_pool(
+            owner_role: OwnerRole,
             token_a: ResourceAddress,
             token_b: ResourceAddress,
         ) -> Global<Radiswap> {
@@ -33,8 +34,9 @@ mod radiswap {
             // 1. That both resources are not the same.
             // 2. That none of the resources are non-fungible
             let liquidity_pool_component = Blueprint::<TwoResourcePool>::instantiate(
-                (token_a, token_b),
+                owner_role.clone(),
                 rule!(require(global_component_caller_badge)),
+                (token_a, token_b),
             );
 
             // Instantiate our Radiswap component
