@@ -2,22 +2,11 @@ use scrypto::prelude::*;
 
 #[blueprint]
 mod radiswap {
-    enable_package_royalties! {
-        instantiate_pool => Xrd(5.into());
-        add_liquidity => Xrd(1.into());
-        remove_liquidity => Xrd(1.into());
-        swap => Xrd(2.into());
-        deposit => Free;
-        vault_reserves => Free;
-        withdraw => Free;
-    }
     struct Radiswap {
         liquidity_pool_component: Global<TwoResourcePool>
     }
 
     impl Radiswap {
-        /// Creates a Radiswap component for token pair A/B and returns the component address
-        /// along with the initial LP tokens.
         pub fn instantiate_pool(
             owner_role: OwnerRole,
             token_a: ResourceAddress,
@@ -87,6 +76,9 @@ mod radiswap {
             let output_amount = 
                 (input_amount * output_reserves) / (input_reserves + input_amount);
 
+            // NOTE: It's the responsibility of the user of the pool to do the appropriate rounding
+            // before calling the withdraw method.
+
             self.deposit(input_bucket);
             self.withdraw(output_resource_address, output_amount)
         }
@@ -101,7 +93,11 @@ mod radiswap {
 
         pub fn withdraw(&mut self, token_address: ResourceAddress, amount: Decimal) -> Bucket {
             self.liquidity_pool_component
-                .protected_withdraw(token_address, amount, WithdrawStrategy::Exact)
+                .protected_withdraw(
+                    token_address, 
+                    amount, 
+                    WithdrawStrategy::Rounded(RoundingMode::ToZero)
+                )
         }
     }
 }
