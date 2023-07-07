@@ -15,16 +15,16 @@ use std::cmp;
 pub struct BeneficiaryVestingSchedule {
     /// This variable denotes the epoch which the beneficiary was first enrolled in the vesting schedule. This variable
     /// may be smaller than or equal to the `cliff_epoch` as the cliff can't happen before the enrollment epoch.
-    enrollment_epoch: u64,
+    enrollment_epoch: Epoch,
 
     /// In vesting schedules, there is a concept of a "cliff period" which is a period of time where the assets do not
     /// vest. Only after the cliff date does the vesting actually begin. This variable defines when the cliff begins
     /// for the vesting schedule of the beneficiary.
-    cliff_epoch: u64,
+    cliff_epoch: Epoch,
 
     /// This is the epoch by which the vesting ends. By this epoch, the beneficiary should have received all the funds
     /// that is owed to them.
-    end_epoch: u64,
+    end_epoch: Epoch,
 
     /// This is the total amount of funds that will be vested by the end of the `ending_epoch`, the beneficiary should
     /// have been given this amount by the contract.
@@ -58,7 +58,7 @@ impl BeneficiaryVestingSchedule {
     /// # Note:
     ///
     /// The `relative_cliff_epoch` and `relative_ending_epoch` arguments are both relative arguments. Saying that
-    /// `relative_cliff_epoch = 10` means that the cliff beings after 10 epochs from the current epoch. It does
+    /// `relative_cliff_epoch = 10` means that the cliff being after 10 epochs from the current epoch. It does
     /// **NOT** mean that the cliff begins in epoch 10. Similarity, a `relative_ending_epoch = 100` means that the
     /// ending of the vesting period is 100 epochs from the current epoch. It does **NOT** mean that the end epoch
     /// is epoch 100.
@@ -79,9 +79,9 @@ impl BeneficiaryVestingSchedule {
         );
 
         // Converting the relative epochs to absolute epochs
-        let enrollment_epoch: u64 = Runtime::current_epoch();
-        let cliff_epoch: u64 = enrollment_epoch + relative_cliff_epoch;
-        let end_epoch: u64 = enrollment_epoch + relative_ending_epoch;
+        let enrollment_epoch: Epoch = Runtime::current_epoch();
+        let cliff_epoch: Epoch = enrollment_epoch.after(relative_cliff_epoch);
+        let end_epoch: Epoch = enrollment_epoch.after(relative_ending_epoch);
 
         // Creating the vesting schedule
         return Self {
@@ -103,7 +103,7 @@ impl BeneficiaryVestingSchedule {
     /// * `Decimal` - A decimal of the gradient of the vesting schedule.
     pub fn vesting_gradient(&self) -> Decimal {
         return (self.total_vesting_amount - self.amount_available_on_cliff)
-            / (self.end_epoch - self.cliff_epoch);
+            / (self.end_epoch.number() - self.cliff_epoch.number());
     }
 
     /// Calculates and returns the total amount vested by a given epoch
@@ -118,11 +118,11 @@ impl BeneficiaryVestingSchedule {
     pub fn get_vested_amount(&self, epoch: u64) -> Decimal {
         // If the cliff epoch has not come yet, then the amount vested is zero. Otherwise the amount is the minimum of
         // the linear vesting equation and the total vesting amount.
-        return if epoch < self.cliff_epoch {
+        return if epoch < self.cliff_epoch.number() {
             dec!("0")
         } else {
             cmp::min(
-                self.vesting_gradient() * (epoch - self.cliff_epoch)
+                self.vesting_gradient() * (epoch - self.cliff_epoch.number())
                     + self.amount_available_on_cliff,
                 self.total_vesting_amount,
             )

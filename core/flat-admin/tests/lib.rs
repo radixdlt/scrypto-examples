@@ -42,7 +42,7 @@ fn test_create_additional_admin() {
         .expect_commit(true).new_resource_addresses()[1];
     
     let manifest2 = ManifestBuilder::new()
-        .create_proof_from_account_by_amount(account_component, admin_badge, dec!("1"))
+        .create_proof_from_account_of_amount(account_component, admin_badge, dec!("1"))
         .call_method(flat_admin, "create_additional_admin", manifest_args!())
         .call_method(
             account_component,

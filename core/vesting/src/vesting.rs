@@ -3,6 +3,26 @@ use scrypto::prelude::*;
 
 #[blueprint]
 mod vesting {
+    // Setting up the auth for the vesting component. With v0.4.0 of Scrypto we can now make the authentication
+    // and authorization to happen automatically without us needing to care about them. We can use this to
+    // impose quite a number of rules on who is authorized to access what.
+    // let rules = AccessRulesConfig::new()
+    enable_method_auth! {
+        roles {
+            admin => updatable_by: [SELF]; 
+        },
+        methods {
+            // Only people who have at least 1 admin badge in their auth zone may make calls to these methods.
+            add_beneficiary => restrict_to: [admin];
+            // Only transactions where a minimum of `min_admins_required_for_multi_admin` admin badges are present
+            // in the auth zone are allowed to make calls to these methods. This makes these methods dynamic as this
+            // value will change as admins are added.
+            terminate_beneficiary => restrict_to: [admin];
+            add_admin => restrict_to: [admin];
+            disable_termination => restrict_to: [admin];
+            withdraw_funds => PUBLIC;
+        }
+    }
     /// The vesting blueprint allows for a vesting schedule to be setup whereby "beneficiaries" are given tokens over a
     /// period of time with a specific cliff and vesting period. The vesting blueprint follows a linear graph to vesting
     /// whereby no tokens are vested between the enrollment and the cliff epoch. Then, from the cliff epoch all the way
@@ -16,7 +36,7 @@ mod vesting {
     /// * A Beneficiary: Any party which has a valid vesting schedule non-fungible token provided by the vesting
     /// component. The vesting schedule provides the beneficiaries with the right to withdraw their tokens from the
     /// vesting component, authenticates them, and keeps track of the important information used to track their amount
-    /// of vested tokens .The vesting blueprint allows for the existence of multiple beneficiaries enrolled in the same
+    /// of vested tokens. The vesting blueprint allows for the existence of multiple beneficiaries enrolled in the same
     /// component.
     ///
     /// The termination of the vesting of tokens at any point of time without prior notice can be of worry especially
@@ -36,15 +56,11 @@ mod vesting {
         /// The beneficiary is given a badge to be able to authenticate them later on and to keep track of the amount of
         /// funds owed to them by the component at a given epoch. The badge given to beneficiaries is a vesting schedule
         /// badge which keeps track of their vesting schedule.
-        beneficiary_vesting_badge: ResourceAddress,
+        beneficiary_vesting_badge: ResourceManager,
 
         /// An admin badge which is returned after the vesting component is created. The admin badge has the right to
         /// terminate the vesting schedule at any point of time for any external reason.
-        admin_badge: ResourceAddress,
-
-        /// An internal admin badge is required as it controls the burning of the admin badge as well as the minting of
-        /// the beneficiary badges.
-        internal_admin_badge: Vault,
+        admin_badge: ResourceManager,
 
         /// A vector of the dead vaults which are no longer being used by the vesting component. The dead vaults are
         /// usually there after a beneficiary has been terminated and we need to take their empty vault and put it away.
@@ -75,102 +91,70 @@ mod vesting {
         ///
         /// * `ComponentAddress` - The address of the newly instantiated vesting component.
         /// * `Bucket` - A bucket containing the admin badge for the vesting component.
-        pub fn instantiate_vesting() -> (ComponentAddress, Bucket) {
-            // Creating the internal admin badge which we will give authority to mint and burn the admin and beneficiary
+        pub fn instantiate_vesting() -> (Global<Vesting>, Bucket) {
+            // Creating the Actor Virtual Badge which we will give authority to mint and burn the admin and beneficiary
             // badges.
-            let internal_admin_badge: Bucket = ResourceBuilder::new_fungible()
-                .divisibility(DIVISIBILITY_NONE)
-                .metadata("name", "Vesting Internal Admin Badge")
-                .metadata(
-                    "description",
-                    "A badge used by vesting components to ensure mint and burn other badges.",
-                )
-                .mint_initial_supply(dec!("1"));
+            let (address_reservation, component_address) = 
+                Runtime::allocate_component_address(Runtime::blueprint_id());
 
             // Creating the admin badge and setting its auth. The admin badge may be burned by the internal admin badge
             // in the caste of the admin giving up their termination rights
-            let admin_badge: Bucket = ResourceBuilder::new_fungible()
+            let admin_badge: Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
                 .divisibility(DIVISIBILITY_NONE)
-                .metadata("name", "Vesting Admin Badge")
-                .metadata(
-                    "description",
-                    "An admin badge with the authority to terminate the vesting of tokens",
-                )
-                .mintable(
-                    rule!(require(internal_admin_badge.resource_address())),
-                    Mutability::LOCKED,
+                .metadata(metadata!(
+                    init {
+                        "name" => "Vesting Admin Badge".to_owned(), locked;
+                        "description" => 
+                        "An admin badge with the authority to terminate the vesting of tokens".to_owned(), locked;
+                    }
+                ))
+                .mint_roles(mint_roles! {
+                        minter => rule!(require(global_caller(component_address)));
+                        minter_updater => rule!(deny_all);
+                    }
                 )
                 .mint_initial_supply(dec!("1"));
+            
 
             // Creating the beneficiary's badge which is used to keep track of their vesting schedule.
-            let beneficiary_vesting_badge: ResourceAddress = ResourceBuilder::new_integer_non_fungible::<BeneficiaryVestingSchedule>()
-                .metadata("name", "Beneficiary Badge")
-                .metadata(
-                    "description",
-                    "A badge provided to beneficiaries by the vesting component for authentication",
-                )
-                .mintable(
-                    rule!(require(internal_admin_badge.resource_address())),
-                    Mutability::LOCKED,
-                )
+            let beneficiary_vesting_badge: ResourceManager = ResourceBuilder::new_integer_non_fungible::<BeneficiaryVestingSchedule>(OwnerRole::None)
+                .metadata(metadata!(
+                    init {
+                        "name" => "Beneficiary Badge".to_string(), locked;
+                        "description" => 
+                        "A badge provided to beneficiaries by the vesting component for authentication".to_string(), locked;
+                    }
+                ))
+                .mint_roles(mint_roles!(
+                    minter => rule!(require(global_caller(component_address)));
+                    minter_updater => rule!(deny_all); 
+                ))
                 .create_with_no_initial_supply();
 
-            // Setting up the auth for the vesting component. With v0.4.0 of Scrypto we can now make the authentication
-            // and authorization to happen automatically without us needing to care about them. We can use this to
-            // impose quite a number of rules on who is authorized to access what.
-            let rules = AccessRulesConfig::new()
-                // Only people who have at least 1 admin badge in their auth zone may make calls to these methods.
-                .method(
-                    "add_beneficiary",
-                    rule!(require(admin_badge.resource_address())),
-                    AccessRule::DenyAll,
-                )
-                // Only transactions where a minimum of `min_admins_required_for_multi_admin` admin badges are present
-                // in the auth zone are allowed to make calls to these methods. This makes these methods dynamic as this
-                // value will change as admins are added.
-                .method(
-                    "terminate_beneficiary",
-                    rule!(require_amount(
-                        "min_admins_required_for_multi_admin",
-                        admin_badge.resource_address()
-                    )),
-                    AccessRule::DenyAll,
-                )
-                .method(
-                    "add_admin",
-                    rule!(require_amount(
-                        "min_admins_required_for_multi_admin",
-                        admin_badge.resource_address()
-                    )),
-                    AccessRule::DenyAll,
-                )
-                .method(
-                    "disable_termination",
-                    rule!(require_amount(
-                        "min_admins_required_for_multi_admin",
-                        admin_badge.resource_address()
-                    )),
-                    AccessRule::DenyAll,
-                )
-                // We do not want to handle the authentication of other methods through the auth zone. Instead, we would
-                // like to handle them all on our own.
-                .default(rule!(allow_all), AccessRule::DenyAll);
-
-            let vesting_component: VestingComponent = Self {
+            let vesting_component = Self {
                 funds: HashMap::new(),
                 beneficiary_vesting_badge: beneficiary_vesting_badge,
-                admin_badge: admin_badge.resource_address(),
-                internal_admin_badge: Vault::with_bucket(internal_admin_badge),
+                admin_badge: admin_badge.resource_manager(),
                 dead_vaults: Vec::new(),
                 admin_may_terminate: true,
                 min_admins_required_for_multi_admin: dec!("1"),
             }
-            .instantiate();
-            // vesting_component.add_access_check(rules);
-            let vesting_component_address: ComponentAddress =
-                vesting_component.globalize_with_access_rules(rules);
-
-            return (vesting_component_address, admin_badge);
+            .instantiate()
+            .prepare_to_globalize(OwnerRole::None)
+            .with_address(address_reservation)
+            .roles(
+                roles!(
+                    admin => rule!(
+                        require_amount(
+                            dec!(1),
+                            admin_badge.resource_address()
+                        )
+                    );
+                )
+            )
+            .globalize();
+    
+            return (vesting_component, admin_badge);
         }
 
         /// Adds a new beneficiary to to the vesting component.
@@ -202,7 +186,7 @@ mod vesting {
             percentage_available_on_cliff: Decimal,
         ) -> Bucket {
             // Performing checks to ensure that the beneficiary may be added.
-            match borrow_resource_manager!(funds.resource_address()).resource_type() {
+            match ResourceManager::from_address(funds.resource_address()).resource_type() {
                 ResourceType::NonFungible { id_type: _ } => {
                     panic!("[Add Beneficiary]: Can't vest non-fungible tokens for the beneficiary.")
                 }
@@ -218,8 +202,7 @@ mod vesting {
             let beneficiary_id: NonFungibleLocalId = NonFungibleLocalId::Integer(
                 ((self.funds.len() + self.dead_vaults.len()) as u64 + 1u64).into(),
             );
-            let beneficiary_badge: Bucket = self.internal_admin_badge.authorize(|| {
-                borrow_resource_manager!(self.beneficiary_vesting_badge).mint_non_fungible(
+            let beneficiary_badge: Bucket = self.beneficiary_vesting_badge.mint_non_fungible(
                     &beneficiary_id,
                     BeneficiaryVestingSchedule::new(
                         relative_cliff_epoch,
@@ -227,8 +210,7 @@ mod vesting {
                         funds.amount(),
                         percentage_available_on_cliff,
                     ),
-                )
-            });
+                );
 
             // Putting the funds in a vault to store them int the component
             self.funds.insert(beneficiary_id, Vault::with_bucket(funds));
@@ -288,25 +270,35 @@ mod vesting {
         /// * `Bucket` - A bucket of admin badges.
         pub fn add_admin(&mut self, admin_badges_to_mint: Decimal) -> Bucket {
             // Getting the resource manager of the admin badge
-            let admin_resource_manager = borrow_resource_manager!(self.admin_badge);
+            let admin_resource_manager = self.admin_badge;
 
             // Minting a new admin badge for the caller
-            let admin_badge: Bucket = self
-                .internal_admin_badge
-                .authorize(|| admin_resource_manager.mint(admin_badges_to_mint));
+            let admin_badge: Bucket = admin_resource_manager.mint(admin_badges_to_mint);
 
             // Determining the amount of admins required for a multi-admin call to be made. This number will always be
             // 50% or more depending on the total amount of admin badges.
             self.min_admins_required_for_multi_admin =
-                if admin_resource_manager.total_supply() <= dec!("2") {
-                    admin_resource_manager.total_supply()
+                if admin_resource_manager.total_supply().unwrap() <= dec!("2") {
+                    admin_resource_manager.total_supply().unwrap()
                 } else {
-                    (admin_resource_manager.total_supply() / dec!("2")).ceiling()
+                    (admin_resource_manager.total_supply().unwrap() / dec!("2")).ceiling()
                 };
             info!(
                 "[Add Admin]: Minimum required admins is: {}",
                 self.min_admins_required_for_multi_admin
             );
+
+            // Updating the "admin" Role's AccessRule
+            Runtime::global_component()
+                .set_role(
+                    "admin",
+                    rule!(
+                        require_amount(
+                            self.min_admins_required_for_multi_admin, 
+                            admin_badge.resource_address()
+                        )
+                    )
+                );
 
             // Returning the newly created admin badge back to the caller
             return admin_badge;
@@ -332,14 +324,11 @@ mod vesting {
         /// * `Bucket` - A bucket of the vested tokens.
         pub fn withdraw_funds(&mut self, beneficiary_badge: Proof) -> Bucket {
             // Checking that the funds may be withdrawn from the component
-            let beneficiary_badge: ValidatedProof = beneficiary_badge
-                .validate_proof(ProofValidationMode::ValidateContainsAmount(
-                    self.beneficiary_vesting_badge,
-                    dec!("1"),
-                ))
-                .expect("[Withdraw Funds]: Invalid badge resource address or amount");
-
+            let beneficiary_badge = beneficiary_badge
+                .check(self.beneficiary_vesting_badge.address());
+                
             let beneficiary_ids: Vec<NonFungibleLocalId> = beneficiary_badge
+                .as_non_fungible()
                 .non_fungible_local_ids()
                 .into_iter()
                 .collect::<Vec<NonFungibleLocalId>>();
@@ -353,14 +342,14 @@ mod vesting {
 
             // At this point we're sure that the withdraw may go through
             let beneficiary_vesting_schedule: BeneficiaryVestingSchedule =
-                borrow_resource_manager!(self.beneficiary_vesting_badge)
+                self.beneficiary_vesting_badge
                     .get_non_fungible_data::<BeneficiaryVestingSchedule>(&beneficiary_id);
 
             // The amount that we should return back is the difference between the amount of funds in the vault right
             // now and the amount that should have not have vested yet.
             let beneficiary_vault: &mut Vault = self.funds.get_mut(&beneficiary_id).unwrap();
             let claim_amount: Decimal = beneficiary_vault.amount()
-                - beneficiary_vesting_schedule.get_unvested_amount(Runtime::current_epoch());
+                - beneficiary_vesting_schedule.get_unvested_amount(Runtime::current_epoch().number());
             info!(
                 "[Withdraw Funds]: Withdraw successful. Withdrawing {} tokens",
                 claim_amount
@@ -377,3 +366,5 @@ mod vesting {
         }
     }
 }
+
+

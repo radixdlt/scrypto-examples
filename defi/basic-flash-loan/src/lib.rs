@@ -9,8 +9,7 @@ pub struct LoanDue {
 mod basic_flash_loan {
     struct BasicFlashLoan {
         loan_vault: Vault,
-        auth_vault: Vault,
-        transient_resource_address: ResourceAddress,
+        transient_resource_manager: ResourceManager,
     }
 
     impl BasicFlashLoan {
@@ -20,29 +19,41 @@ mod basic_flash_loan {
         /// Does NOT reward liquidity providers in any way or provide a way to remove liquidity from the pool.
         /// Minting LP tokens for rewards, and removing liquidity, is covered in other examples, such as:
         /// https://github.com/radixdlt/scrypto-examples/tree/main/defi/radiswap
-        pub fn instantiate_default(initial_liquidity: Bucket) -> ComponentAddress {
-            let auth_token = ResourceBuilder::new_fungible()
-                .divisibility(DIVISIBILITY_NONE)
-                .metadata("name", "Admin authority for BasicFlashLoan")
-                .mint_initial_supply(1);
+        pub fn instantiate_default(initial_liquidity: Bucket) -> Global<BasicFlashLoan> {
+
+            let (address_reservation, component_address) = 
+                Runtime::allocate_component_address(Runtime::blueprint_id());
 
             // Define a "transient" resource which can never be deposited once created, only burned
-            let address = ResourceBuilder::new_uuid_non_fungible::<LoanDue>()
-                .metadata(
-                    "name",
-                    "Promise token for BasicFlashLoan - must be returned to be burned!",
-                )
-                .mintable(rule!(require(auth_token.resource_address())), LOCKED)
-                .burnable(rule!(require(auth_token.resource_address())), LOCKED)
-                .restrict_deposit(rule!(deny_all), LOCKED)
+            let transient_token_manager = ResourceBuilder::new_ruid_non_fungible::<LoanDue>(OwnerRole::None)
+                .metadata(metadata!(
+                    init {
+                        "name" => 
+                        "Promise token for BasicFlashLoan - must be returned to be burned!".to_owned(), locked;
+                    }
+                ))
+                .mint_roles(mint_roles!(
+                    minter => rule!(require(global_caller(component_address)));
+                    minter_updater => rule!(deny_all);
+                ))
+                .burn_roles(burn_roles!(
+                    burner => rule!(require(global_caller(component_address)));
+                    burner_updater => rule!(deny_all);
+                ))
+                .deposit_roles(deposit_roles!(
+                    depositor => rule!(deny_all);
+                    depositor_updater => rule!(deny_all);
+                ))
+                    
                 .create_with_no_initial_supply();
 
             Self {
                 loan_vault: Vault::with_bucket(initial_liquidity),
-                auth_vault: Vault::with_bucket(auth_token),
-                transient_resource_address: address,
+                transient_resource_manager: transient_token_manager,
             }
             .instantiate()
+            .prepare_to_globalize(OwnerRole::None)
+            .with_address(address_reservation)
             .globalize()
         }
 
@@ -70,24 +81,24 @@ mod basic_flash_loan {
             // Our component will control the only badge with the authority to burn the resource, so anyone taking
             // a loan must call our repay_loan() method with an appropriate reimbursement, at which point we will
             // burn the NFT and allow the TX to complete.
-            let loan_terms = self.auth_vault.authorize(|| {
-                borrow_resource_manager!(self.transient_resource_address).mint_uuid_non_fungible(
-                    LoanDue {
-                        amount_due: amount_due,
-                    },
-                )
-            });
+            let loan_terms = self.transient_resource_manager
+                .mint_ruid_non_fungible(
+                        LoanDue {
+                            amount_due: amount_due,
+                        },
+                    );
             (self.loan_vault.take(loan_amount), loan_terms)
         }
 
         pub fn repay_loan(&mut self, loan_repayment: Bucket, loan_terms: Bucket) {
             assert!(
-                loan_terms.resource_address() == self.transient_resource_address,
+                loan_terms.resource_address() 
+                == self.transient_resource_manager.address(),
                 "Incorrect resource passed in for loan terms"
             );
 
             // Verify we are being sent at least the amount due
-            let terms: LoanDue = loan_terms.non_fungible().data();
+            let terms: LoanDue = loan_terms.as_non_fungible().non_fungible().data();
             assert!(
                 loan_repayment.amount() >= terms.amount_due,
                 "Insufficient repayment given for your loan!"
@@ -98,7 +109,7 @@ mod basic_flash_loan {
             self.loan_vault.put(loan_repayment);
 
             // We have our payment; we can now burn the transient token
-            self.auth_vault.authorize(|| loan_terms.burn());
+            loan_terms.burn();
         }
     }
 }
