@@ -11,22 +11,9 @@ mod airdrop {
     }
 
     impl Airdrop {
-<<<<<<< Updated upstream:core/cross-blueprint-call/src/airdrop.rs
         pub fn instantiate_airdrop() -> ComponentAddress {
             // .globalize makes the component accessible globally through a public component address
             Self::instantiate_airdrop_local().globalize()
-=======
-        pub fn instantiate_airdrop() -> Global<Airdrop> {
-            
-            let (address_reservation, _component_address) =
-                Runtime::allocate_component_address(Runtime::blueprint_id());
-            
-            // .globalize makes the component accessible globally through a public component address
-            return Self::instantiate_airdrop_local()
-                .prepare_to_globalize(OwnerRole::None)
-                .with_address(address_reservation)
-                .globalize();
->>>>>>> Stashed changes:core/cross-blueprint-call/cross-intra-package/src/airdrop.rs
         }
 
         pub fn instantiate_airdrop_local() -> AirdropComponent {
