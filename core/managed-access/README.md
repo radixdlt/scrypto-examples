@@ -14,24 +14,46 @@ resim publish . <owner_badge_NFAddress>
 Currently, importing another blueprint requires a few manual steps.  We expect to simplify this process in the future, but for now here are the steps:
 
 1. Publish the package containing the blueprint you wish to import.
-2. Define the functions of the blueprint with a call to the `external_blueprint!` macro:
+2. Define the functions of the blueprint with a call to the `extern_blueprint!` macro:
 
 ```rust
-external_blueprint! {
-  FlatAdminPackageTarget {
-    fn instantiate_flat_admin(badge_name: String) -> (ComponentAddress, Bucket);
-  }
-}
+extern_blueprint!(
+    "package_sim1p4kwg8fa7ldhwh8exe5w4acjhp9v982svmxp3yqa8ncruad4rv980g",
+    FlatAdmin {
+        fn instantiate_flat_admin(badge_name: String) -> (Global<FlatAdmin>, Bucket);
+        fn create_additional_admin(&mut self) -> Bucket;
+        fn destroy_admin_badge(&mut self, to_destroy: Bucket);
+        fn get_admin_badge_address(&self) -> ResourceAddress;
+    }
+);
 ```
 
-Now you'll be able to call functions on that blueprint like so: `FlatAdminPackageTarget::at(<PackageAddress>, "FlatAdmin").some_function(<args>)`
+Now you'll be able to call functions on that blueprint like so: `Blueprint::<FlatAdmin>::instantiate_flat_admin(badge_name);`
+
+## Enabling Method Authozation
+
+We need to define our roles to specify who is allowed to withdraw funds from a managed access component. 
+
+```rust
+enable_method_auth! {
+    roles {
+        admin => updatable_by: [];
+    },
+    methods {
+        withdraw_all => restrict_to: [admin];
+        deposit => PUBLIC;
+        get_admin_badge_address => PUBLIC;
+        get_flat_admin_controller_address => PUBLIC;
+    }
+}
+```
 
 ## Resources and Data
 ```rust
 struct ManagedAccess {
-  admin_badge: ResourceAddress,
-  flat_admin_controller: ComponentAddress,
-  protected_vault: Vault,
+    admin_badge: ResourceAddress,
+    flat_admin_controller: Global<FlatAdmin>,
+    protected_vault: Vault,
 }
 ```
 
@@ -42,42 +64,37 @@ The only state we need to maintain is the aforementioned vault, and the `Resourc
 ## Getting Ready for Instantiation
 In order to instantiate, we'll require the caller to specify the addess of the package containing the `FlagAdmin` blueprint and return to the caller a tuple containing the address of the newly instantiated component, and a bucket containing the first admin badge created by our `FlatAdmin` badge manager:
 ```rust
-pub fn instantiate_managed_access(flat_admin_package_address: PackageAddress) -> (ComponentAddress, Bucket) {
+pub fn instantiate_managed_access(badge_name: String) -> (Global<ManagedAccess>, Bucket) {
 ```
 
 Our first step will be to instantiate a `FlatAdmin` component, and store the results of that instantiation.
 
 ```rust
-let (flat_admin_component, admin_badge) =
-  FlatAdminPackageTarget::at(flat_admin_package_address, "FlatAdmin")
-      .instantiate_flat_admin("My Managed Access Badge".into());
+let 
+(flat_admin_component, admin_badge): (Global<FlatAdmin>, Bucket) = 
+Blueprint::<FlatAdmin>::instantiate_flat_admin(badge_name);
 ```
 
-We then need to specify that only a holder of the admin badge may withdraw funds from a managed access component. 
-
-```rust
-let rules = AccessRules::new()
-  .method(
-      "withdraw_all",
-      rule!(require(admin_badge.resource_address())),
-      LOCKED
-  )
-  .default(rule!(allow_all), AccessRule::AllowAll);
-```
 
 That gives us everything we need to populate our `struct`, instantiate, and return the results to our caller:
 
 ```rust
-let mut component = Self {
-  admin_badge: admin_badge.resource_address(),
-  flat_admin_controller: flat_admin_component,
-  protected_vault: Vault::new(RADIX_TOKEN),
+let component = Self {
+    admin_badge: admin_badge.resource_address(),
+    flat_admin_controller: flat_admin_component,
+    protected_vault: Vault::new(RADIX_TOKEN),
 }
-.instantiate();
-component.add_access_check(rules);
-let component = component.globalize();
+.instantiate()
+.prepare_to_globalize(OwnerRole::None)
+.roles(
+    roles!(
+        admin => rule!(require(admin_badge.resource_address()));
+    )
+)
+.globalize();
 
 (component, admin_badge)
+}
 ```        
 
 ## Adding Methods

@@ -52,7 +52,8 @@ mod managed_access {
         )
         .globalize();
 
-            (component, admin_badge)
+        (component, admin_badge)
+        
         }
 
         pub fn withdraw_all(&mut self) -> Bucket {
