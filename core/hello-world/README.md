@@ -22,7 +22,8 @@ In this example, we have only one blueprint in the package called `Hello`, which
 ```rust
 use scrypto::prelude::*;
 
-blueprint! {
+#[blueprint]
+mod hello {
     struct Hello {
         sample_vault: Vault,
     }
@@ -48,6 +49,7 @@ Self {
     sample_vault: Vault::with_bucket(my_bucket),
 }
 .instantiate()
+.prepare_to_globalize(OwnerRole::None)
 .globalize()
 ```
 

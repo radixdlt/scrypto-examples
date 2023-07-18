@@ -15,8 +15,8 @@ mod hello {
             let my_bucket: Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
                 .metadata(metadata!(
                     init {
-                        "name" => "Hello Token".to_owned(), locked;
-                        "symbol" => "HT".to_owned(), locked;
+                        "name" => "Hello Token", locked;
+                        "symbol" => "HT", locked;
                     }
                 ))
                 .mint_initial_supply(1000);
