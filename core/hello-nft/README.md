@@ -30,7 +30,7 @@ In our example, the supply of NFT units are fixed, and we allocate the resource 
 First, we prepare the data for each NFT unit (every ticket is associated with a specific row and column number).
 
 ```rust
-let mut tickets = Vec::new();
+let mut tickets: Vec<(StringNonFungibleLocalId, Ticket)> = Vec::new();
 for row in 1..5 {
     for column in 1..5 {
         tickets.push((
@@ -44,8 +44,12 @@ for row in 1..5 {
 Then, the whole vector of NFT data is passed to `ResourceBuilder` as the initial supply.
 
 ```rust
-let ticket_bucket = ResourceBuilder::new_string_non_fungible()
-    .metadata("name", "Ticket")
+let ticket_bucket = ResourceBuilder::new_string_non_fungible(OwnerRole::None)
+    .metadata(metadata!( 
+        init {
+            "name" => "Ticket".to_owned(), locked;
+        }
+    ))
     .mint_initial_supply(tickets);
 ```
 
