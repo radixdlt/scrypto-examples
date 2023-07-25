@@ -20,21 +20,31 @@ mod gumball_machine {
             price: Decimal,
             flavor: String,
         ) -> (ComponentAddress, Bucket) {
-            let admin_badge: Bucket = ResourceBuilder::new_fungible()
-                .metadata("name", "admin badge")
+            let admin_badge: Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
+                .metadata(metadata!(init{"name"=>"admin badge", locked;}))
                 .divisibility(DIVISIBILITY_NONE)
                 .mint_initial_supply(1);
 
-            let staff_badge: ResourceAddress =
-                ResourceBuilder::new_uuid_non_fungible::<StaffBadge>()
-                    .metadata("name", "staff_badge")
-                    .mintable(rule!(require(admin_badge.resource_address())), LOCKED)
-                    .recallable(rule!(require(admin_badge.resource_address())), LOCKED)
-                    .burnable(rule!(require(admin_badge.resource_address())), LOCKED)
-                    .create_with_no_initial_supply();
+            let staff_badge = ResourceBuilder::new_ruid_non_fungible::<StaffBadge>(
+                OwnerRole::Updatable(rule!(require(admin_badge.resource_address()))),
+            )
+            .metadata(metadata!(init{"name" => "staff_badge", locked;}))
+            .mint_roles(mint_roles! (
+                     minter => rule!(require(admin_badge.resource_address()));
+                     minter_updater => OWNER;
+            ))
+            .burn_roles(burn_roles! (
+                burner => rule!(require(admin_badge.resource_address()));
+                burner_updater => OWNER;
+            ))
+            .recall_roles(recall_roles! {
+                recaller => rule!(require(admin_badge.resource_address()));
+                recaller_updater => OWNER;
+            })
+            .create_with_no_initial_supply();
 
             // create a new Gumball resource, with a fixed quantity of 100
-            let bucket_of_gumballs = ResourceBuilder::new_fungible()
+            let bucket_of_gumballs = ResourceBuilder::new_fungible(OwnerRole::None)
                 .metadata("name", "Gumball")
                 .metadata("symbol", flavor)
                 .metadata("description", "A delicious gumball")
