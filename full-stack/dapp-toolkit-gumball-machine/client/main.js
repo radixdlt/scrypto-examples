@@ -22,7 +22,7 @@ const rdt = RadixDappToolkit(
     })
   },
   {
-    networkId: 12, // 12 is for RCnet 01 for Mainnet
+    networkId: 13, // 13 is for RCnet-V2 Ansharnet 01 for Mainnet
     onDisconnect: () => {
       // clear your application state
     },
