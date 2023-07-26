@@ -11,7 +11,8 @@ mod gumball_machine {
         gumballs: Vault,
         collected_xrd: Vault,
         price: Decimal,
-        staff_badge_address: ResourceAddress,
+        gum_resource_manager: ResourceManager,
+        staff_badge_resource_manager: ResourceManager,
     }
 
     impl GumballMachine {
@@ -19,7 +20,7 @@ mod gumball_machine {
         pub fn instantiate_gumball_machine(
             price: Decimal,
             flavor: String,
-        ) -> (ComponentAddress, Bucket) {
+        ) -> (Global<GumballMachine>, Bucket) {
             let admin_badge: Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
                 .metadata(metadata!(init{"name"=>"admin badge", locked;}))
                 .divisibility(DIVISIBILITY_NONE)
@@ -45,58 +46,29 @@ mod gumball_machine {
 
             // create a new Gumball resource, with a fixed quantity of 100
             let bucket_of_gumballs = ResourceBuilder::new_fungible(OwnerRole::None)
-                .metadata("name", "Gumball")
-                .metadata("symbol", flavor)
-                .metadata("description", "A delicious gumball")
-                .mintable(
-                    rule!(require(admin_badge.resource_address()) || require(staff_badge)),
-                    LOCKED,
-                )
+                .metadata(metadata!(init{
+                    "name" => "staff_badge", locked;
+                    "symbol" => flavor, locked;
+                    "description" => "A delicious gumball", locked;
+                }))
+                .mint_roles(mint_roles! (
+                         minter => rule!(require(admin_badge.resource_address()));
+                         minter_updater => OWNER;
+                ))
                 .mint_initial_supply(100);
 
             // populate a GumballMachine struct and instantiate a new component
             let component = Self {
+                gum_resource_manager: bucket_of_gumballs.resource_manager(),
+                staff_badge_resource_manager: staff_badge,
                 gumballs: Vault::with_bucket(bucket_of_gumballs),
                 collected_xrd: Vault::new(RADIX_TOKEN),
                 price: price,
-                staff_badge_address: staff_badge,
             }
-            .instantiate();
-
-            let access_rules = AccessRulesConfig::new()
-                .method("get_price", AccessRule::AllowAll, LOCKED)
-                .method("buy_gumball", AccessRule::AllowAll, LOCKED)
-                .method(
-                    "set_price",
-                    rule!(require(admin_badge.resource_address()) || require(staff_badge)),
-                    LOCKED,
-                )
-                .method(
-                    "withdraw_earnings",
-                    rule!(require(admin_badge.resource_address())),
-                    LOCKED,
-                )
-                .method(
-                    "mint_staff_badge",
-                    rule!(require(admin_badge.resource_address())),
-                    LOCKED,
-                )
-                .method(
-                    "refill_gumball_machine",
-                    rule!(require(admin_badge.resource_address()) || require(staff_badge)),
-                    LOCKED,
-                )
-                .method(
-                    "recall_staff_badge",
-                    rule!(require(admin_badge.resource_address())),
-                    LOCKED,
-                )
-                .default(rule!(require(admin_badge.resource_address())), LOCKED);
-
-            (
-                component.globalize_with_access_rules(access_rules),
-                admin_badge,
-            )
+            .instantiate()
+            .prepare_to_globalize(OwnerRole::None)
+            .globalize();
+            return (component, admin_badge);
         }
 
         pub fn get_price(&self) -> Decimal {
@@ -108,10 +80,9 @@ mod gumball_machine {
         }
 
         pub fn mint_staff_badge(&mut self, employee_name: String) -> Bucket {
-            let staff_resource_manager: ResourceManager =
-                borrow_resource_manager!(self.staff_badge_address);
-            let staff_badge_bucket: Bucket =
-                staff_resource_manager.mint_uuid_non_fungible(StaffBadge {
+            let staff_badge_bucket: Bucket = self
+                .staff_badge_resource_manager
+                .mint_ruid_non_fungible(StaffBadge {
                     employee_name: employee_name,
                 });
             staff_badge_bucket
@@ -123,9 +94,7 @@ mod gumball_machine {
 
         pub fn refill_gumball_machine(&mut self) {
             // mint some more gumball tokens requires an admin or staff badge
-            let gumball_resource_manager =
-                borrow_resource_manager!(self.gumballs.resource_address());
-            self.gumballs.put(gumball_resource_manager.mint(100));
+            self.gumballs.put(self.gum_resource_manager.mint(100));
         }
 
         pub fn buy_gumball(&mut self, mut payment: Bucket) -> (Bucket, Bucket) {
