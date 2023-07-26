@@ -1,43 +1,18 @@
-import {
-  RadixDappToolkit,
-  ManifestBuilder,
-  Decimal,
-  Bucket,
-  Expression,
-  Address
-} from '@radixdlt/radix-dapp-toolkit'
-const dAppId = 'account_tdx_c_1pyu3svm9a63wlv6qyjuns98qjsnus0pzan68mjq2hatqejq9fr'
+import { RadixDappToolkit } from '@radixdlt/radix-dapp-toolkit'
+const dAppId = 'account_tdx_d_12805alyg3562gsphgeyc9re800qq0phlyz89cnu2tydmlp0gt947cw'
 
-const rdt = RadixDappToolkit(
-  { dAppDefinitionAddress: dAppId, dAppName: 'GumballMachine' },
-  (requestData) => {
-    requestData({
-      accounts: { quantifier: 'atLeast', quantity: 1 },
-    }).map(({ data: { accounts } }) => {
-      // add accounts to dApp application state
-      console.log("account data: ", accounts)
-      document.getElementById('accountName').innerText = accounts[0].label
-      document.getElementById('accountAddress').innerText = accounts[0].address
-      accountAddress = accounts[0].address
-    })
-  },
-  {
-    networkId: 13, // 13 is for RCnet-V2 Ansharnet 01 for Mainnet
-    onDisconnect: () => {
-      // clear your application state
-    },
-    onInit: ({ accounts }) => {
-      // set your initial application state
-      console.log("onInit accounts: ", accounts)
-      if (accounts.length > 0) {
-        document.getElementById('accountName').innerText = accounts[0].label
-        document.getElementById('accountAddress').innerText = accounts[0].address
-        accountAddress = accounts[0].address
-      }
-    },
-  }
-)
+const rdt = RadixDappToolkit({
+  dAppDefinitionAddress: dAppId,
+  networkId: 13,
+  // dAppName: 'GumballMachine'
+})
 console.log("dApp Toolkit: ", rdt)
+const subscription = rdt.walletApi.walletData$.subscribe((walletData) => {
+  console.log("subscription wallet data: ", walletData)
+})
+const result = await rdt.walletApi.getWalletData()
+console.log("Wallet Data: ", result)
+
 
 
 // There are four classes exported in the Gateway-SDK These serve as a thin wrapper around the gateway API
@@ -58,9 +33,8 @@ let resourceAddress // GUM resource address
 let xrdAddress = "resource_tdx_c_1qyqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq40v2wv"
 let admin_badge = "resource_tdx_c_1q83fknuu5g60rmu95xchgwzn7yaexexq5kclkqeesk3s3v2a6d"
 // You can use these addresses to skip steps
-// package_tdx_c_1qpj4des34yyxv8fqgf8az8rec2np6fycw69e2tljep0qpuzt9m
-// LAUNCH Gumball MAchine = component_tdx_c_1q03fknuu5g60rmu95xchgwzn7yaexexq5kclkqeesk3smdcnlk
-// LAUNCH admin_badge = resource_tdx_c_1q83fknuu5g60rmu95xchgwzn7yaexexq5kclkqeesk3s3v2a6d
+// package_tdx_d_1ph7a9wftd2pcxx0pf3hcfunjyhnqhvmxz7m599r0nc2cv465upjrgg
+
 
 // ************ Instantiate component and fetch component and resource addresses *************
 document.getElementById('instantiateComponent').onclick = async function () {
