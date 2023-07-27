@@ -1,4 +1,4 @@
-import { RadixDappToolkit } from '@radixdlt/radix-dapp-toolkit'
+import { RadixDappToolkit, DataRequestBuilder } from '@radixdlt/radix-dapp-toolkit'
 const dAppId = 'account_tdx_d_12805alyg3562gsphgeyc9re800qq0phlyz89cnu2tydmlp0gt947cw'
 
 const rdt = RadixDappToolkit({
@@ -7,11 +7,17 @@ const rdt = RadixDappToolkit({
   // dAppName: 'GumballMachine'
 })
 console.log("dApp Toolkit: ", rdt)
-const subscription = rdt.walletApi.walletData$.subscribe((walletData) => {
+
+// ************ Fetch the user's account address ************
+rdt.walletApi.setRequestData(DataRequestBuilder.accounts().atLeast(1))
+
+rdt.walletApi.walletData$.subscribe((walletData) => {
   console.log("subscription wallet data: ", walletData)
+  document.getElementById('accountName').innerText = walletData.accounts[0].label
+  document.getElementById('accountAddress').innerText = walletData.accounts[0].address
+  accountAddress = walletData.accounts[0].address
 })
-const result = await rdt.walletApi.getWalletData()
-console.log("Wallet Data: ", result)
+
 
 
 
