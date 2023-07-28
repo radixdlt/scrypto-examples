@@ -18,9 +18,6 @@ rdt.walletApi.walletData$.subscribe((walletData) => {
   accountAddress = walletData.accounts[0].address
 })
 
-
-
-
 // There are four classes exported in the Gateway-SDK These serve as a thin wrapper around the gateway API
 // API docs are available @ https://betanet-gateway.redoc.ly/
 // https://kisharnet-gateway.radixdlt.com/swagger/index.html
@@ -88,11 +85,13 @@ document.getElementById('instantiateComponent').onclick = async function () {
   console.log('Instantiate Committed Details Receipt', commitReceipt)
 
   // ****** Set componentAddress variable with gateway api commitReciept payload ******
-  componentAddress = commitReceipt.details.referenced_global_entities[0]
+  // componentAddress = commitReceipt.details.referenced_global_entities[0]
+  componentAddress = commitReceipt.transaction.receipt.output[1].programmatic_json.fields[0].value
   document.getElementById('componentAddress').innerText = componentAddress;
   // ****** Set resourceAddress variable with gateway api commitReciept payload ******
-  admin_badge = commitReceipt.details.referenced_global_entities[1]
-  document.getElementById('gumAddress').innerText = admin_badge;
+  // admin_badge = commitReceipt.details.referenced_global_entities[1]
+  // admin_badge = commitReceipt.transaction.receipt.output[1].programmatic_json.fields[1].value
+  // document.getElementById('gumAddress').innerText = admin_badge;
 }
 // *********** Buy Gumball ***********
 document.getElementById('buyGumball').onclick = async function () {
@@ -134,7 +133,7 @@ document.getElementById('buyGumball').onclick = async function () {
   console.log('Buy Gumball Committed Details Receipt', commitReceipt)
 
   // Show the receipt on the DOM
-  document.getElementById('receipt').innerText = JSON.stringify(commitReceipt.details.receipt, null, 2);
+  document.getElementById('receipt').innerText = JSON.stringify(commitReceipt);
 };
 // *********** Get Price ***********
 document.getElementById('getPrice').onclick = async function () {
