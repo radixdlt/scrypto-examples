@@ -33,7 +33,7 @@ const streamApi = new StreamApi();
 let accountAddress // User account address
 let componentAddress = "component_tdx_c_1q03fknuu5g60rmu95xchgwzn7yaexexq5kclkqeesk3smdcnlk" //GumballMachine component address
 let resourceAddress // GUM resource address
-let xrdAddress = "resource_tdx_c_1qyqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq40v2wv"
+let xrdAddress = "resource_tdx_d_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxepwmma"
 let admin_badge = "resource_tdx_c_1q83fknuu5g60rmu95xchgwzn7yaexexq5kclkqeesk3s3v2a6d"
 // You can use these addresses to skip steps
 // package_tdx_d_1phr4w84xpy82kl244278ak5l33uaw0w62egrqam29aph52nywgdlr8
@@ -50,7 +50,7 @@ document.getElementById('instantiateComponent').onclick = async function () {
     "GumballMachine"
     "instantiate_gumball_machine"
     Decimal("5")
-    "GUM";
+    "${flavor}";
   CALL_METHOD
     Address("${accountAddress}")
     "deposit_batch"
@@ -95,18 +95,29 @@ document.getElementById('instantiateComponent').onclick = async function () {
 }
 // *********** Buy Gumball ***********
 document.getElementById('buyGumball').onclick = async function () {
-  let manifest = new ManifestBuilder()
-    .callMethod(accountAddress, "withdraw", [Address(xrdAddress), Decimal("33")])
-    .takeFromWorktop(xrdAddress, "xrd_bucket")
-    .callMethod(componentAddress, "buy_gumball", [Bucket("xrd_bucket")])
-    .callMethod(accountAddress, "deposit_batch", [Expression("ENTIRE_WORKTOP")])
-    .build()
-    .toString();
+  let manifest = `
+  CALL_METHOD
+    Address("${accountAddress}")
+    "withdraw"    
+    Address("${xrdAddress}")
+    Decimal("33");
+  TAKE_ALL_FROM_WORKTOP
+    Address("${xrdAddress}")
+    Bucket("xrd");
+  CALL_METHOD
+    Address("${componentAddress}")
+    "buy_gumball"
+    Bucket("xrd");
+  CALL_METHOD
+    Address("${accountAddress}")
+    "deposit_batch"
+    Expression("ENTIRE_WORKTOP");
+    `
 
   console.log('buy_gumball manifest: ', manifest)
 
   // Send manifest to extension for signing
-  const result = await rdt
+  const result = await rdt.walletApi
     .sendTransaction({
       transactionManifest: manifest,
       version: 1,
