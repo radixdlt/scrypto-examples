@@ -7,7 +7,7 @@ CALL_METHOD
     "withdraw"    
     Address("${xrd}")
     Decimal("33");
-TAKE_FROM_WORKTOP
+TAKE_ALL_FROM_WORKTOP
     Address("${xrd}")
     Bucket("xrd");
 CALL_METHOD

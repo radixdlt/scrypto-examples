@@ -54,13 +54,13 @@ Store the returned component addres in the component environment variable `expor
 
 Run `resim show $account` and find the admin badge resource address and store it in the admin_badge environment variable `export admin_badge=<resource_address>`
 
-You can run `resim get_price.rtm` to fetch the current gumball price
+You can run `resim run get_price.rtm` to fetch the current gumball price
 
 You can also run the set_price.rtm transaction manifest to change the price of a gumball `resim run set_price.rtm`
 
 To mint an NFT Staff Member Badge run `resim run mint_staff_badge.rtm`
 
-and of course you can buy a gumball by running `resim run buy_gumball.rtm`
+and of course you can buy a gumball by running `resim run buy_gum.rtm`
 
 As the holder of the admin badge you can run `resim run withdraw_earnings.rtm` to collect your riches.
 

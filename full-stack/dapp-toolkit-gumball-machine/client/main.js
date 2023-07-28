@@ -39,7 +39,7 @@ let resourceAddress // GUM resource address
 let xrdAddress = "resource_tdx_c_1qyqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq40v2wv"
 let admin_badge = "resource_tdx_c_1q83fknuu5g60rmu95xchgwzn7yaexexq5kclkqeesk3s3v2a6d"
 // You can use these addresses to skip steps
-// package_tdx_d_1ph7a9wftd2pcxx0pf3hcfunjyhnqhvmxz7m599r0nc2cv465upjrgg
+// package_tdx_d_1phr4w84xpy82kl244278ak5l33uaw0w62egrqam29aph52nywgdlr8
 
 
 // ************ Instantiate component and fetch component and resource addresses *************
@@ -47,14 +47,21 @@ document.getElementById('instantiateComponent').onclick = async function () {
   let packageAddress = document.getElementById("packageAddress").value;
   let flavor = document.getElementById("flavor").value;
 
-  let manifest = new ManifestBuilder()
-    .callFunction(packageAddress, "GumballMachine", "instantiate_gumball_machine", [Decimal("1"), `"${flavor}"`])
-    .callMethod(accountAddress, "deposit_batch", [Expression("ENTIRE_WORKTOP")])
-    .build()
-    .toString();
+  let manifest = `
+  CALL_FUNCTION
+    Address("${packageAddress}")
+    "GumballMachine"
+    "instantiate_gumball_machine"
+    Decimal("5")
+    "GUM";
+  CALL_METHOD
+    Address("${accountAddress}")
+    "deposit_batch"
+    Expression("ENTIRE_WORKTOP");
+    `
   console.log("Instantiate Manifest: ", manifest)
   // Send manifest to extension for signing
-  const result = await rdt
+  const result = await rdt.walletApi
     .sendTransaction({
       transactionManifest: manifest,
       version: 1,
