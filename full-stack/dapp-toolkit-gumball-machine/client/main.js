@@ -20,7 +20,7 @@ rdt.walletApi.walletData$.subscribe((walletData) => {
 
 // There are four classes exported in the Gateway-SDK These serve as a thin wrapper around the gateway API
 // API docs are available @ https://betanet-gateway.redoc.ly/
-// https://kisharnet-gateway.radixdlt.com/swagger/index.html
+// https://ansharnet-gateway.radixdlt.com/swagger/index.html
 import { TransactionApi, StateApi, StatusApi, StreamApi, Configuration } from "@radixdlt/babylon-gateway-api-sdk";
 
 // Instantiate Gateway SDK
@@ -31,10 +31,10 @@ const streamApi = new StreamApi();
 
 // Global states
 let accountAddress // User account address
-let componentAddress = "component_tdx_c_1q03fknuu5g60rmu95xchgwzn7yaexexq5kclkqeesk3smdcnlk" //GumballMachine component address
+let componentAddress = "component_tdx_d_1cr64u6v2uefcgtd53z4lxzaz0qfxrfujnpz0v9plx0t8eechym48an" //GumballMachine component address
 let resourceAddress // GUM resource address
 let xrdAddress = "resource_tdx_d_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxepwmma"
-let admin_badge = "resource_tdx_c_1q83fknuu5g60rmu95xchgwzn7yaexexq5kclkqeesk3s3v2a6d"
+let admin_badge = "resource_tdx_d_1t52muhjfleh0txcme77xy95gc453jtfkdsvcggcvu67yzvwyuxz4am"
 // You can use these addresses to skip steps
 // package_tdx_d_1phr4w84xpy82kl244278ak5l33uaw0w62egrqam29aph52nywgdlr8
 
@@ -79,19 +79,20 @@ document.getElementById('instantiateComponent').onclick = async function () {
   // ************ Fetch component address from gateway api and set componentAddress variable **************
   let commitReceipt = await transactionApi.transactionCommittedDetails({
     transactionCommittedDetailsRequest: {
-      intent_hash_hex: result.value.transactionIntentHash
+      intent_hash_hex: result.value.transactionIntentHash,
+      opt_ins: { affected_global_entities: true }
     }
   })
   console.log('Instantiate Committed Details Receipt', commitReceipt)
 
   // ****** Set componentAddress variable with gateway api commitReciept payload ******
-  // componentAddress = commitReceipt.details.referenced_global_entities[0]
-  componentAddress = commitReceipt.transaction.receipt.output[1].programmatic_json.fields[0].value
+  componentAddress = commitReceipt.transaction.affected_global_entities[5];
+  // componentAddress = commitReceipt.transaction.receipt.output[1].programmatic_json.fields[0].value
   document.getElementById('componentAddress').innerText = componentAddress;
   // ****** Set resourceAddress variable with gateway api commitReciept payload ******
-  // admin_badge = commitReceipt.details.referenced_global_entities[1]
+  admin_badge = commitReceipt.transaction.affected_global_entities[2];
   // admin_badge = commitReceipt.transaction.receipt.output[1].programmatic_json.fields[1].value
-  // document.getElementById('gumAddress').innerText = admin_badge;
+  document.getElementById('gumAddress').innerText = admin_badge;
 }
 // *********** Buy Gumball ***********
 document.getElementById('buyGumball').onclick = async function () {
