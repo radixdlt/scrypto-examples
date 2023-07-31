@@ -1,10 +1,10 @@
 import { RadixDappToolkit, DataRequestBuilder } from '@radixdlt/radix-dapp-toolkit'
 const dAppId = 'account_tdx_d_12805alyg3562gsphgeyc9re800qq0phlyz89cnu2tydmlp0gt947cw'
 
+// Instantiate DappToolkit
 const rdt = RadixDappToolkit({
   dAppDefinitionAddress: dAppId,
   networkId: 13,
-  // dAppName: 'GumballMachine'
 })
 console.log("dApp Toolkit: ", rdt)
 
@@ -18,16 +18,25 @@ rdt.walletApi.walletData$.subscribe((walletData) => {
   accountAddress = walletData.accounts[0].address
 })
 
+
+// Instantiate Gateway SDK
+import { GatewayApiClient } from '@radixdlt/babylon-gateway-api-sdk'
+
+const gatewayApi = GatewayApiClient.initialize({
+  basePath: 'https://rcnet-v2.radixdlt.com'
+})
+const { status, transaction, stream, state } = gatewayApi
+
 // There are four classes exported in the Gateway-SDK These serve as a thin wrapper around the gateway API
 // API docs are available @ https://betanet-gateway.redoc.ly/
 // https://ansharnet-gateway.radixdlt.com/swagger/index.html
-import { TransactionApi, StateApi, StatusApi, StreamApi, Configuration } from "@radixdlt/babylon-gateway-api-sdk";
+// import { TransactionApi, StateApi, StatusApi, StreamApi, Configuration } from "@radixdlt/babylon-gateway-api-sdk";
 
 // Instantiate Gateway SDK
-const transactionApi = new TransactionApi()
-const stateApi = new StateApi();
-const statusApi = new StatusApi();
-const streamApi = new StreamApi();
+// const transactionApi = new TransactionApi()
+// const stateApi = new StateApi();
+// const statusApi = new StatusApi();
+// const streamApi = new StreamApi();
 
 // Global states
 let accountAddress // User account address
@@ -69,28 +78,32 @@ document.getElementById('instantiateComponent').onclick = async function () {
   console.log("Intantiate WalletSDK Result: ", result.value)
 
   // ************ Fetch the transaction status from the Gateway API ************
-  let status = await transactionApi.transactionStatus({
-    transactionStatusRequest: {
-      intent_hash_hex: result.value.transactionIntentHash
-    }
-  });
-  console.log('Instantiate TransactionApi transaction/status:', status)
+  let transactionStatus = await transaction.getStatus(result.value.transactionIntentHash)
+  // let transactionStatus = await transactionApi.transactionStatus({
+  //   transactionStatusRequest: {
+  //     intent_hash_hex: result.value.transactionIntentHash
+  //   }
+  // });
+  console.log('Instantiate TransactionApi transaction/status:', transactionStatus)
 
   // ************ Fetch component address from gateway api and set componentAddress variable **************
-  let commitReceipt = await transactionApi.transactionCommittedDetails({
-    transactionCommittedDetailsRequest: {
-      intent_hash_hex: result.value.transactionIntentHash,
-      opt_ins: { affected_global_entities: true }
-    }
-  })
-  console.log('Instantiate Committed Details Receipt', commitReceipt)
+  let getCommitReceipt = await transaction.getCommittedDetails(result.value.transactionIntentHash)
+  console.log('Instantiate getCommittedDetails:', getCommitReceipt)
+
+  // let commitReceipt = await transactionApi.transactionCommittedDetails({
+  //   transactionCommittedDetailsRequest: {
+  //     intent_hash_hex: result.value.transactionIntentHash,
+  //     opt_ins: { affected_global_entities: true }
+  //   }
+  // })
+  // console.log('Instantiate Committed Details Receipt', commitReceipt)
 
   // ****** Set componentAddress variable with gateway api commitReciept payload ******
-  componentAddress = commitReceipt.transaction.affected_global_entities[5];
+  componentAddress = getCommitReceipt.transaction.affected_global_entities[5];
   // componentAddress = commitReceipt.transaction.receipt.output[1].programmatic_json.fields[0].value
   document.getElementById('componentAddress').innerText = componentAddress;
   // ****** Set resourceAddress variable with gateway api commitReciept payload ******
-  admin_badge = commitReceipt.transaction.affected_global_entities[2];
+  admin_badge = getCommitReceipt.transaction.affected_global_entities[2];
   // admin_badge = commitReceipt.transaction.receipt.output[1].programmatic_json.fields[1].value
   document.getElementById('gumAddress').innerText = admin_badge;
 }
@@ -129,26 +142,29 @@ document.getElementById('buyGumball').onclick = async function () {
   console.log("Buy Gumball sendTransaction Result: ", result)
 
   // Fetch the transaction status from the Gateway SDK
-  let status = await transactionApi.transactionStatus({
-    transactionStatusRequest: {
-      intent_hash_hex: result.value.transactionIntentHash
-    }
-  });
-  console.log('Buy Gumball TransactionAPI transaction/status: ', status)
+  let transactionStatus = await transaction.getStatus(result.value.transactionIntentHash)
+  // let status = await transactionApi.transactionStatus({
+  //   transactionStatusRequest: {
+  //     intent_hash_hex: result.value.transactionIntentHash
+  //   }
+  // });
+  console.log('Buy Gumball TransactionAPI transaction/status: ', transactionStatus)
 
   // fetch commit reciept from gateway api 
-  let commitReceipt = await transactionApi.transactionCommittedDetails({
-    transactionCommittedDetailsRequest: {
-      intent_hash_hex: result.value.transactionIntentHash
-    }
-  })
-  console.log('Buy Gumball Committed Details Receipt', commitReceipt)
+  let getCommitReceipt = await transaction.getCommittedDetails(result.value.transactionIntentHash)
+  // let commitReceipt = await transactionApi.transactionCommittedDetails({
+  //   transactionCommittedDetailsRequest: {
+  //     intent_hash_hex: result.value.transactionIntentHash
+  //   }
+  // })
+  console.log('Buy Gumball Committed Details Receipt', getCommitReceipt)
 
   // Show the receipt on the DOM
   document.getElementById('receipt').innerText = JSON.stringify(commitReceipt);
 };
 // *********** Get Price ***********
 document.getElementById('getPrice').onclick = async function () {
+  // TODO Refactor to use get state gateway api
   let manifest = new ManifestBuilder()
     .callMethod(componentAddress, "get_price", [])
     .build()
@@ -189,6 +205,7 @@ document.getElementById('getPrice').onclick = async function () {
 // *********** Set Price ***********
 document.getElementById('setPrice').onclick = async function () {
   let newPrice = document.getElementById('newPrice').value
+  // TODO Replace with String Manifest
   let manifest = new ManifestBuilder()
     .callMethod(accountAddress, "create_proof", [Address(admin_badge)])
     .callMethod(componentAddress, "set_price", [Decimal(newPrice)])
@@ -208,27 +225,32 @@ document.getElementById('setPrice').onclick = async function () {
   console.log("Set Price sendTransaction Result: ", result)
 
   // Fetch the transaction status from the Gateway SDK
-  let status = await transactionApi.transactionStatus({
-    transactionStatusRequest: {
-      intent_hash_hex: result.value.transactionIntentHash
-    }
-  });
-  console.log('Set Price status', status)
+  let transactionStatus = await transaction.getStatus(result.value.transactionIntentHash)
+  // let status = await transactionApi.transactionStatus({
+  //   transactionStatusRequest: {
+  //     intent_hash_hex: result.value.transactionIntentHash
+  //   }
+  // });
+  console.log('Set Price status', transactionStatus)
 
-  // fetch commit reciept from gateway api 
-  let commitReceipt = await transactionApi.transactionCommittedDetails({
-    transactionCommittedDetailsRequest: {
-      intent_hash_hex: result.value.transactionIntentHash
-    }
-  })
-  console.log('Set price commitReceipt', commitReceipt)
+  // fetch commit reciept from gateway api
+  let getCommitReceipt = await transaction.getCommittedDetails(result.value.transactionIntentHash)
+  // let commitReceipt = await transactionApi.transactionCommittedDetails({
+  //   transactionCommittedDetailsRequest: {
+  //     intent_hash_hex: result.value.transactionIntentHash
+  //   }
+  // })
+  console.log('Set price commitReceipt', getCommitReceipt)
 
   // Show the receipt on the DOM .data_struct.struct_data.data_json.fields[2].value
-  document.getElementById('price').innerText = JSON.stringify(commitReceipt.details.receipt.state_updates.updated_substates[0].substate_data.data_struct.struct_data.data_json.fields[2].value);
+  // TODO Refactor to use get state gateway api
+  // document.getElementById('price').innerText = JSON.stringify(commitReceipt.details.receipt.state_updates.updated_substates[0].substate_data.data_struct.struct_data.data_json.fields[2].value);
+  document.getElementById('price').innerText = JSON.stringify(getCommitReciept);
 
 }
 // *********** Withdraw Earnings ***********
 document.getElementById('withdrawEarnings').onclick = async function () {
+  // TODO Replace with String Manifest
   let manifest = new ManifestBuilder()
     .callMethod(accountAddress, "create_proof", [Address(admin_badge)])
     .callMethod(componentAddress, "withdraw_earnings", [])
@@ -249,27 +271,30 @@ document.getElementById('withdrawEarnings').onclick = async function () {
   console.log("Withdraw Earnings sendTransaction Result: ", result)
 
   // Fetch the transaction status from the Gateway SDK
-  let status = await transactionApi.transactionStatus({
-    transactionStatusRequest: {
-      intent_hash_hex: result.value.transactionIntentHash
-    }
-  });
-  console.log('Withdraw Earnings status', status)
+  let transactionStatus = await transaction.getStatus(result.value.transactionIntentHash)
+  // let status = await transactionApi.transactionStatus({
+  //   transactionStatusRequest: {
+  //     intent_hash_hex: result.value.transactionIntentHash
+  //   }
+  // });
+  console.log('Withdraw Earnings status', transactionStatus)
 
   // fetch commit reciept from gateway api 
-  let commitReceipt = await transactionApi.transactionCommittedDetails({
-    transactionCommittedDetailsRequest: {
-      intent_hash_hex: result.value.transactionIntentHash
-    }
-  })
-  console.log('Withdraw Earnings commitReceipt', commitReceipt)
+  let getCommitReceipt = await transaction.getCommittedDetails(result.value.transactionIntentHash)
+  // let commitReceipt = await transactionApi.transactionCommittedDetails({
+  //   transactionCommittedDetailsRequest: {
+  //     intent_hash_hex: result.value.transactionIntentHash
+  //   }
+  // })
+  console.log('Withdraw Earnings commitReceipt', getCommitReceipt)
 
   // Show the receipt on the DOM
-  document.getElementById('withdraw').innerText = JSON.stringify(commitReceipt.details.receipt);
-
+  // document.getElementById('withdraw').innerText = JSON.stringify(commitReceipt.details.receipt);
+  document.getElementById('withdraw').innerText = JSON.stringify(getCommitReceipt);
 }
 // *********** Mint NFT Staff Badge ***********
 document.getElementById('mintStaffBadge').onclick = async function () {
+  // TODO Replace with String Manifest
   let manifest = new ManifestBuilder()
     .callMethod(accountAddress, "create_proof", [Address(admin_badge)])
     .callMethod(componentAddress, "mint_staff_badge", [`"${"Number 2"}"`])
@@ -290,22 +315,24 @@ document.getElementById('mintStaffBadge').onclick = async function () {
   console.log("mintStaffBadge sendTransaction Result: ", result)
 
   // Fetch the transaction status from the Gateway SDK
-  let status = await transactionApi.transactionStatus({
-    transactionStatusRequest: {
-      intent_hash_hex: result.value.transactionIntentHash
-    }
-  });
-  console.log('mintStaffBadge status', status)
+  let transactionStatus = await transaction.getStatus(result.value.transactionIntentHash)
+  // let status = await transactionApi.transactionStatus({
+  //   transactionStatusRequest: {
+  //     intent_hash_hex: result.value.transactionIntentHash
+  //   }
+  // });
+  console.log('mintStaffBadge status', transactionStatus)
 
   // fetch commit reciept from gateway api 
-  let commitReceipt = await transactionApi.transactionCommittedDetails({
-    transactionCommittedDetailsRequest: {
-      intent_hash_hex: result.value.transactionIntentHash
-    }
-  })
-  console.log('mintStaffBadge commitReceipt', commitReceipt)
+  let getCommitReceipt = await transaction.getCommittedDetails(result.value.transactionIntentHash)
+  // let commitReceipt = await transactionApi.transactionCommittedDetails({
+  //   transactionCommittedDetailsRequest: {
+  //     intent_hash_hex: result.value.transactionIntentHash
+  //   }
+  // })
+  console.log('mintStaffBadge commitReceipt', getCommitReceipt)
 
   // Show the receipt on the DOM
-  document.getElementById('staffBadge').innerText = JSON.stringify(commitReceipt.details.receipt);
-
+  // document.getElementById('staffBadge').innerText = JSON.stringify(commitReceipt.details.receipt);
+  document.getElementById('staffBadge').innerText = JSON.stringify(getCommitReceipt);
 }
