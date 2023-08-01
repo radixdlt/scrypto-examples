@@ -11,7 +11,3 @@ CALL_METHOD
     Address("${component}")
     "set_price"
     Decimal("33");
-CALL_METHOD
-    Address("${account}")
-    "deposit_batch"
-    Expression("ENTIRE_WORKTOP");
