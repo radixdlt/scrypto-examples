@@ -7,6 +7,20 @@ struct StaffBadge {
 
 #[blueprint]
 mod gumball_machine {
+    enable_method_auth! {
+        roles {
+            admin => updatable_by: [OWNER];
+            staff => updatable_by: [admin, OWNER];
+        },
+        methods {
+            buy_gumball => PUBLIC;
+            get_price => PUBLIC;
+            set_price => restrict_to: [admin, OWNER];
+            withdraw_earnings => restrict_to: [OWNER];
+            refill_gumball_machine => restrict_to: [staff, admin, OWNER];
+            mint_staff_badge => restrict_to: [admin, OWNER];
+        }
+    }
     struct GumballMachine {
         gumballs: Vault,
         collected_xrd: Vault,
@@ -20,39 +34,55 @@ mod gumball_machine {
         pub fn instantiate_gumball_machine(
             price: Decimal,
             flavor: String,
-        ) -> (Global<GumballMachine>, Bucket) {
-            let admin_badge: Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
-                .metadata(metadata!(init{"name"=>"admin badge", locked;}))
+        ) -> (Global<GumballMachine>, Bucket, Bucket) {
+            let (address_reservation, component_address) =
+                Runtime::allocate_component_address(Runtime::blueprint_id());
+
+            let owner_badge: Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
+                .metadata(metadata!(init{"name"=>"owner badge", locked;}))
                 .divisibility(DIVISIBILITY_NONE)
                 .mint_initial_supply(1);
 
-            let staff_badge = ResourceBuilder::new_ruid_non_fungible::<StaffBadge>(
-                OwnerRole::Updatable(rule!(require(admin_badge.resource_address()))),
-            )
-            .metadata(metadata!(init{"name" => "staff_badge", locked;}))
+            let admin_badge: Bucket = ResourceBuilder::new_fungible(OwnerRole::Updatable(rule!(
+                require(owner_badge.resource_address())
+            )))
+            .metadata(metadata!(init{"name"=>"admin badge", locked;}))
             .mint_roles(mint_roles! (
-                     minter => rule!(require(admin_badge.resource_address()));
+                     minter => rule!(require(global_caller(component_address)));
                      minter_updater => OWNER;
             ))
-            .burn_roles(burn_roles! (
-                burner => rule!(require(admin_badge.resource_address()));
-                burner_updater => OWNER;
-            ))
-            .recall_roles(recall_roles! {
-                recaller => rule!(require(admin_badge.resource_address()));
-                recaller_updater => OWNER;
-            })
-            .create_with_no_initial_supply();
+            .divisibility(DIVISIBILITY_NONE)
+            .mint_initial_supply(1);
+
+            let staff_badge =
+                ResourceBuilder::new_ruid_non_fungible::<StaffBadge>(OwnerRole::Updatable(rule!(
+                    require(owner_badge.resource_address())
+                        || require(admin_badge.resource_address())
+                )))
+                .metadata(metadata!(init{"name" => "staff_badge", locked;}))
+                .mint_roles(mint_roles! (
+                         minter => rule!(require(global_caller(component_address)));
+                         minter_updater => OWNER;
+                ))
+                .burn_roles(burn_roles! (
+                    burner => rule!(require(admin_badge.resource_address()));
+                    burner_updater => OWNER;
+                ))
+                .recall_roles(recall_roles! {
+                    recaller => rule!(require(admin_badge.resource_address()));
+                    recaller_updater => OWNER;
+                })
+                .create_with_no_initial_supply();
 
             // create a new Gumball resource, with a fixed quantity of 100
             let bucket_of_gumballs = ResourceBuilder::new_fungible(OwnerRole::None)
                 .metadata(metadata!(init{
-                    "name" => "staff_badge", locked;
+                    "name" => "Gumball", locked;
                     "symbol" => flavor, locked;
                     "description" => "A delicious gumball", locked;
                 }))
                 .mint_roles(mint_roles! (
-                         minter => rule!(require(admin_badge.resource_address()));
+                         minter => rule!(require(global_caller(component_address)));
                          minter_updater => OWNER;
                 ))
                 .mint_initial_supply(100);
@@ -66,9 +96,16 @@ mod gumball_machine {
                 price: price,
             }
             .instantiate()
-            .prepare_to_globalize(OwnerRole::None)
+            .prepare_to_globalize(OwnerRole::Updatable(rule!(require(
+                owner_badge.resource_address()
+            ))))
+            .roles(roles!(
+                admin => rule!(require(admin_badge.resource_address()));
+                staff => rule!(require(staff_badge.address()));
+            ))
+            .with_address(address_reservation)
             .globalize();
-            return (component, admin_badge);
+            return (component, admin_badge, owner_badge);
         }
 
         pub fn get_price(&self) -> Decimal {
