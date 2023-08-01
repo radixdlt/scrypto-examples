@@ -9,30 +9,49 @@ In this example, we demonstrate two ways of calling a function or method defined
 If the function or method is from an already published package, we need to import the external package and component definition. e.g,
     
 ```rust
-external_blueprint! {
-    AirdropPackageTarget {
-        fn instantiate_airdrop() -> ComponentAddress;
-    }
-}
-
-external_component! {
-    AirdropComponentTarget {
+extern_blueprint!(
+    "package_sim1p40mzz4yg6n4gefzq5teg2gsts63wmez00826p8m5eslr864fr3648",
+    Airdrop {
+        fn instantiate_airdrop() -> Global<Airdrop>;
+        fn instantiate_airdrop_local() -> Owned<Airdrop>;
         fn free_token(&mut self) -> Bucket;
     }
-}
+);
 ```
 
 Once the package and component definition has been imported, we can then call functions on a blueprint of that package, for example,
 
 ```rust
-let airdrop_component = AirdropPackageTarget::at(airdrop_package_address, "Airdrop").instantiate_airdrop();
+Blueprint::<Airdrop>::instantiate_airdrop()
 ```
 
-To call a method, though, we need a component address, which can be parsed from string or taken from the method parameters.
+We will instantiate the component and save it in our blueprint struct like so:
+
 ```rust
-let address = ComponentAddress::from_str("01e9917332573b6332ffaaadc96bc1509cc24ef8aa69d1cd117d39").unwrap();
-let airdrop: AirdropComponentTarget = AirdropComponentTarget::at(address);
-let received_tokens = airdrop.free_token();
+struct ExternBlueprintCall {
+    airdrop: Global<Airdrop>,
+}
+
+impl ExternBlueprintCall {
+    pub fn instantiate_proxy() -> Global<ExternBlueprintCall> {
+        Self {
+            airdrop: Blueprint::<Airdrop>::instantiate_airdrop()
+        }
+        .instantiate()
+        .prepare_to_globalize(OwnerRole::None)
+        .globalize()
+    }
+}
+```
+
+We can now call methods from the `Global<Airdrop>` component:
+
+```rust
+pub fn free_token(&mut self) -> Bucket {
+    // Retrieving Airdrop component
+    // Calling a method on a component using `.free_token()`.
+    self.airdrop.free_token()
+}
 ```
 
 ## Callee Is From This Package
