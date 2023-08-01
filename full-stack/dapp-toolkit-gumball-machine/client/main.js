@@ -32,10 +32,11 @@ const { status, transaction, stream, state } = gatewayApi
 
 // Global states
 let accountAddress // User account address
-let componentAddress = "component_tdx_d_1cr64u6v2uefcgtd53z4lxzaz0qfxrfujnpz0v9plx0t8eechym48an" //GumballMachine component address
+let componentAddress = "component_tdx_d_1cra5mg4sqytsars70vjuc6uplnra0x5cww3gl490dyzd7aspqg3d74" //GumballMachine component address
 let resourceAddress // GUM resource address
 let xrdAddress = "resource_tdx_d_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxepwmma"
-let admin_badge = "resource_tdx_d_1t52muhjfleh0txcme77xy95gc453jtfkdsvcggcvu67yzvwyuxz4am"
+// You receive this badge(your resource address will be different) when you instantiate the component
+let admin_badge = "resource_tdx_d_1tkxua85yefeufppguwjrs2cwsdzeaq6w8y0jjp80mmw3h5dzc8pq8u"
 // You can use these addresses to skip package deployment steps
 // package_tdx_d_1phr4w84xpy82kl244278ak5l33uaw0w62egrqam29aph52nywgdlr8
 
@@ -76,13 +77,13 @@ document.getElementById('instantiateComponent').onclick = async function () {
   // ************ Fetch component address from gateway api and set componentAddress variable **************
   let getCommitReceipt = await transaction.getCommittedDetails(result.value.transactionIntentHash)
   console.log('Instantiate getCommittedDetails:', getCommitReceipt)
-  // ****** Set componentAddress variable with gateway api commitReciept payload ******
+
+  // ****** Set componentAddress variable with gateway api getCommitReciept payload ******
   componentAddress = getCommitReceipt.transaction.affected_global_entities[5];
-  // componentAddress = commitReceipt.transaction.receipt.output[1].programmatic_json.fields[0].value
   document.getElementById('componentAddress').innerText = componentAddress;
-  // ****** Set resourceAddress variable with gateway api commitReciept payload ******
+
+  // ****** Set admin_badge variable with gateway api getCommitReciept payload ******
   admin_badge = getCommitReceipt.transaction.affected_global_entities[2];
-  // admin_badge = commitReceipt.transaction.receipt.output[1].programmatic_json.fields[1].value
   document.getElementById('gumAddress').innerText = admin_badge;
 }
 
@@ -118,7 +119,6 @@ document.getElementById('buyGumball').onclick = async function () {
   if (result.isErr()) throw result.error
   console.log("Buy Gumball sendTransaction Result: ", result.value)
 
-
   // Fetch the transaction status from the Gateway SDK
   let transactionStatus = await transaction.getStatus(result.value.transactionIntentHash)
   console.log('Buy Gumball TransactionAPI transaction/status: ', transactionStatus)
@@ -127,69 +127,58 @@ document.getElementById('buyGumball').onclick = async function () {
   let getCommitReceipt = await transaction.getCommittedDetails(result.value.transactionIntentHash)
   console.log('Buy Gumball Committed Details Receipt', getCommitReceipt)
 
-  // Show the receipt on the DOM
+  // Show the receipt in the DOM
   document.getElementById('receipt').innerText = JSON.stringify(getCommitReceipt);
 }
 
 
 // *********** Get Price ***********
 document.getElementById('getPrice').onclick = async function () {
-  // TODO Refactor to use get state gateway api
+  // Use gateway state api to fetch component details including price field
   let getPrice = await state.getEntityDetailsVaultAggregated(componentAddress)
   console.log('getPrice', getPrice)
 
-  // Show the receipt on the DOM
+  // Show the price in the DOM
   document.getElementById('price').innerText = JSON.stringify(getPrice.details.state.programmatic_json.fields[2].value);
-
 }
 
 
 // *********** Set Price ***********
 document.getElementById('setPrice').onclick = async function () {
   let newPrice = document.getElementById('newPrice').value
-  // TODO Replace with String Manifest
-  let manifest = new ManifestBuilder()
-    .callMethod(accountAddress, "create_proof", [Address(admin_badge)])
-    .callMethod(componentAddress, "set_price", [Decimal(newPrice)])
-    .build()
-    .toString()
-  console.log("set price manifest", manifest)
+  let manifest = `
+  CALL_METHOD
+    Address("${accountAddress}")
+    "create_proof_of_amount"    
+    Address("${admin_badge}")
+    Decimal("1");
+CALL_METHOD
+    Address("${componentAddress}")
+    "set_price"
+    Decimal("${newPrice}");
+  `
+  console.log("Set Price manifest", manifest)
 
   // Send manifest to extension for signing
-  const result = await rdt
+  const result = await rdt.walletApi
     .sendTransaction({
       transactionManifest: manifest,
       version: 1,
     })
-
   if (result.isErr()) throw result.error
-
-  console.log("Set Price sendTransaction Result: ", result)
+  console.log("Set Price sendTransaction result: ", result.value)
 
   // Fetch the transaction status from the Gateway SDK
   let transactionStatus = await transaction.getStatus(result.value.transactionIntentHash)
-  // let status = await transactionApi.transactionStatus({
-  //   transactionStatusRequest: {
-  //     intent_hash_hex: result.value.transactionIntentHash
-  //   }
-  // });
-  console.log('Set Price status', transactionStatus)
+  console.log('Set Price transaction status', transactionStatus)
+  let getPrice = await state.getEntityDetailsVaultAggregated(componentAddress)
+  console.log('Set Price new value', getPrice)
 
-  // fetch commit reciept from gateway api
-  let getCommitReceipt = await transaction.getCommittedDetails(result.value.transactionIntentHash)
-  // let commitReceipt = await transactionApi.transactionCommittedDetails({
-  //   transactionCommittedDetailsRequest: {
-  //     intent_hash_hex: result.value.transactionIntentHash
-  //   }
-  // })
-  console.log('Set price commitReceipt', getCommitReceipt)
-
-  // Show the receipt on the DOM .data_struct.struct_data.data_json.fields[2].value
-  // TODO Refactor to use get state gateway api
-  // document.getElementById('price').innerText = JSON.stringify(commitReceipt.details.receipt.state_updates.updated_substates[0].substate_data.data_struct.struct_data.data_json.fields[2].value);
-  document.getElementById('price').innerText = JSON.stringify(getCommitReciept);
-
+  // Show the New Price in the DOM
+  document.getElementById('price').innerText = JSON.stringify(getPrice.details.state.programmatic_json.fields[2].value);
 }
+
+
 // *********** Withdraw Earnings ***********
 document.getElementById('withdrawEarnings').onclick = async function () {
   // TODO Replace with String Manifest
@@ -209,25 +198,14 @@ document.getElementById('withdrawEarnings').onclick = async function () {
     })
 
   if (result.isErr()) throw result.error
-
   console.log("Withdraw Earnings sendTransaction Result: ", result)
 
   // Fetch the transaction status from the Gateway SDK
   let transactionStatus = await transaction.getStatus(result.value.transactionIntentHash)
-  // let status = await transactionApi.transactionStatus({
-  //   transactionStatusRequest: {
-  //     intent_hash_hex: result.value.transactionIntentHash
-  //   }
-  // });
   console.log('Withdraw Earnings status', transactionStatus)
 
   // fetch commit reciept from gateway api 
   let getCommitReceipt = await transaction.getCommittedDetails(result.value.transactionIntentHash)
-  // let commitReceipt = await transactionApi.transactionCommittedDetails({
-  //   transactionCommittedDetailsRequest: {
-  //     intent_hash_hex: result.value.transactionIntentHash
-  //   }
-  // })
   console.log('Withdraw Earnings commitReceipt', getCommitReceipt)
 
   // Show the receipt on the DOM
