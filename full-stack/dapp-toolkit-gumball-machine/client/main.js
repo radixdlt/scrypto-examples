@@ -6,9 +6,10 @@ const rdt = RadixDappToolkit({
   networkId: 13,
 })
 console.log("dApp Toolkit: ", rdt)
+
 // ************ Fetch the user's account address ************
 rdt.walletApi.setRequestData(DataRequestBuilder.accounts().atLeast(1))
-
+// Subscribe to updates to the user's shared wallet data
 rdt.walletApi.walletData$.subscribe((walletData) => {
   console.log("subscription wallet data: ", walletData)
   document.getElementById('accountName').innerText = walletData.accounts[0].label
@@ -32,13 +33,14 @@ const { status, transaction, stream, state } = gatewayApi
 
 // Global states
 let accountAddress // User account address
-let componentAddress = "component_tdx_d_1cra5mg4sqytsars70vjuc6uplnra0x5cww3gl490dyzd7aspqg3d74" //GumballMachine component address
-let resourceAddress // GUM resource address
+let componentAddress = "component_tdx_d_1crxgtt64rxn90g9z5s5ssuyrgmtpza8zucac7gyyg83vdtce0d67r3" //GumballMachine component address
+let gum_resourceAddress // GUM resource address
 let xrdAddress = "resource_tdx_d_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxepwmma"
 // You receive this badge(your resource address will be different) when you instantiate the component
-let admin_badge = "resource_tdx_d_1tkxua85yefeufppguwjrs2cwsdzeaq6w8y0jjp80mmw3h5dzc8pq8u"
+let admin_badge = "resource_tdx_d_1t45mckag3sjufynut0848550pzugp806q6csm28zxawj6tnkmpwkze"
+let owner_badge = "resource_tdx_d_1tkyrx3hna6el9mpekxdnkmsywk4clvapeqhhuf38x8jtxvqfpwsqz9"
 // You can use these addresses to skip package deployment steps
-// package_tdx_d_1phr4w84xpy82kl244278ak5l33uaw0w62egrqam29aph52nywgdlr8
+// package_tdx_d_1ph7a0m0qwtea3p58t8ney6kt2xwmsp7js4welyswlljsctmhwmckra
 
 
 // ************ Instantiate component and fetch component and resource addresses *************
@@ -79,12 +81,20 @@ document.getElementById('instantiateComponent').onclick = async function () {
   console.log('Instantiate getCommittedDetails:', getCommitReceipt)
 
   // ****** Set componentAddress variable with gateway api getCommitReciept payload ******
-  componentAddress = getCommitReceipt.transaction.affected_global_entities[5];
+  componentAddress = getCommitReceipt.transaction.affected_global_entities[2];
   document.getElementById('componentAddress').innerText = componentAddress;
 
   // ****** Set admin_badge variable with gateway api getCommitReciept payload ******
-  admin_badge = getCommitReceipt.transaction.affected_global_entities[2];
-  document.getElementById('gumAddress').innerText = admin_badge;
+  admin_badge = getCommitReceipt.transaction.affected_global_entities[4];
+  document.getElementById('admin_badge').innerText = admin_badge;
+
+  // ****** Set owner_badge variable with gateway api getCommitReciept payload ******
+  owner_badge = getCommitReceipt.transaction.affected_global_entities[3];
+  document.getElementById('owner_badge').innerText = owner_badge;
+
+  // ****** Set gum_resourceAddress variable with gateway api getCommitReciept payload ******
+  gum_resourceAddress = getCommitReceipt.transaction.affected_global_entities[6];
+  document.getElementById('gum_resourceAddress').innerText = gum_resourceAddress;
 }
 
 
@@ -182,21 +192,28 @@ CALL_METHOD
 // *********** Withdraw Earnings ***********
 document.getElementById('withdrawEarnings').onclick = async function () {
   // TODO Replace with String Manifest
-  let manifest = new ManifestBuilder()
-    .callMethod(accountAddress, "create_proof", [Address(admin_badge)])
-    .callMethod(componentAddress, "withdraw_earnings", [])
-    .callMethod(accountAddress, "deposit_batch", [Expression("ENTIRE_WORKTOP")])
-    .build()
-    .toString()
+  let manifest = `
+  CALL_METHOD
+    Address("${accountAddress}")
+    "create_proof_of_amount"    
+    Address("${owner_badge}")
+    Decimal("1");
+  CALL_METHOD
+    Address("${componentAddress}")
+    "withdraw_earnings";
+  CALL_METHOD
+    Address("${accountAddress}")
+    "deposit_batch"
+    Expression("ENTIRE_WORKTOP");
+    `
   console.log("Withdraw Earnings manifest", manifest)
 
   // Send manifest to extension for signing
-  const result = await rdt
+  const result = await rdt.walletApi
     .sendTransaction({
       transactionManifest: manifest,
       version: 1,
     })
-
   if (result.isErr()) throw result.error
   console.log("Withdraw Earnings sendTransaction Result: ", result)
 
@@ -209,7 +226,6 @@ document.getElementById('withdrawEarnings').onclick = async function () {
   console.log('Withdraw Earnings commitReceipt', getCommitReceipt)
 
   // Show the receipt on the DOM
-  // document.getElementById('withdraw').innerText = JSON.stringify(commitReceipt.details.receipt);
   document.getElementById('withdraw').innerText = JSON.stringify(getCommitReceipt);
 }
 // *********** Mint NFT Staff Badge ***********
@@ -229,27 +245,16 @@ document.getElementById('mintStaffBadge').onclick = async function () {
       transactionManifest: manifest,
       version: 1,
     })
-
   if (result.isErr()) throw result.error
 
   console.log("mintStaffBadge sendTransaction Result: ", result)
 
   // Fetch the transaction status from the Gateway SDK
   let transactionStatus = await transaction.getStatus(result.value.transactionIntentHash)
-  // let status = await transactionApi.transactionStatus({
-  //   transactionStatusRequest: {
-  //     intent_hash_hex: result.value.transactionIntentHash
-  //   }
-  // });
   console.log('mintStaffBadge status', transactionStatus)
 
   // fetch commit reciept from gateway api 
   let getCommitReceipt = await transaction.getCommittedDetails(result.value.transactionIntentHash)
-  // let commitReceipt = await transactionApi.transactionCommittedDetails({
-  //   transactionCommittedDetailsRequest: {
-  //     intent_hash_hex: result.value.transactionIntentHash
-  //   }
-  // })
   console.log('mintStaffBadge commitReceipt', getCommitReceipt)
 
   // Show the receipt on the DOM

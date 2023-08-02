@@ -4,8 +4,9 @@ CALL_METHOD
     Decimal("100");
 CALL_METHOD
     Address("${account}")
-    "create_proof"
-    Address("${admin_badge}");
+    "create_proof_of_amount"    
+    Address("${owner_badge}")
+    Decimal("1");
 CALL_METHOD
     Address("${component}")
     "withdraw_earnings";
