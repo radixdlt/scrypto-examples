@@ -52,7 +52,9 @@ At this point we can instantiate our Gumball Machine locally `resim run instanti
 
 Store the returned component addres in the component environment variable `export component=<component_address>`
 
-Run `resim show $account` and find the admin badge resource address and store it in the admin_badge environment variable `export admin_badge=<resource_address>`
+Run `resim show $account` and find the admin badge resource address and store it in the admin_badge environment variable `export admin_badge=<resource_address>` and the owner_badge environment variable `export owner_badge=<resource_address>`
+
+Let's also set the xrd address as an environment variable `export xrd=resource_sim1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxakj8n3`
 
 You can run `resim run get_price.rtm` to fetch the current gumball price
 
