@@ -215,7 +215,7 @@ document.getElementById('withdrawEarnings').onclick = async function () {
       version: 1,
     })
   if (result.isErr()) throw result.error
-  console.log("Withdraw Earnings sendTransaction Result: ", result)
+  console.log("Withdraw Earnings sendTransaction Result: ", result.value)
 
   // Fetch the transaction status from the Gateway SDK
   let transactionStatus = await transaction.getStatus(result.value.transactionIntentHash)
@@ -231,23 +231,32 @@ document.getElementById('withdrawEarnings').onclick = async function () {
 // *********** Mint NFT Staff Badge ***********
 document.getElementById('mintStaffBadge').onclick = async function () {
   // TODO Replace with String Manifest
-  let manifest = new ManifestBuilder()
-    .callMethod(accountAddress, "create_proof", [Address(admin_badge)])
-    .callMethod(componentAddress, "mint_staff_badge", [`"${"Number 2"}"`])
-    .callMethod(accountAddress, "deposit_batch", [Expression("ENTIRE_WORKTOP")])
-    .build()
-    .toString()
+  let manifest = `
+  CALL_METHOD
+    Address("${accountAddress}")
+    "create_proof_of_amount"    
+    Address("${admin_badge}")
+    Decimal("1");
+CALL_METHOD
+    Address("${componentAddress}")
+    "mint_staff_badge"
+    "Number2";
+CALL_METHOD
+    Address("${accountAddress}")
+    "deposit_batch"
+    Expression("ENTIRE_WORKTOP");
+    `
   console.log("mintStaffBadge manifest", manifest)
 
   // Send manifest to extension for signing
-  const result = await rdt
+  const result = await rdt.walletApi
     .sendTransaction({
       transactionManifest: manifest,
       version: 1,
     })
   if (result.isErr()) throw result.error
 
-  console.log("mintStaffBadge sendTransaction Result: ", result)
+  console.log("mintStaffBadge sendTransaction Result: ", result.value)
 
   // Fetch the transaction status from the Gateway SDK
   let transactionStatus = await transaction.getStatus(result.value.transactionIntentHash)
@@ -258,6 +267,5 @@ document.getElementById('mintStaffBadge').onclick = async function () {
   console.log('mintStaffBadge commitReceipt', getCommitReceipt)
 
   // Show the receipt on the DOM
-  // document.getElementById('staffBadge').innerText = JSON.stringify(commitReceipt.details.receipt);
   document.getElementById('staffBadge').innerText = JSON.stringify(getCommitReceipt);
 }
