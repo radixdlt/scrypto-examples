@@ -22,12 +22,14 @@ mod hello {
                 .mint_initial_supply(1000);
 
             // Instantiate a Hello component, populating its vault with our supply of 1000 HelloToken
-            Self {
+            let hello = Self {
                 sample_vault: Vault::with_bucket(my_bucket),
             }
             .instantiate()
             .prepare_to_globalize(OwnerRole::None)
-            .globalize()
+            .globalize();
+
+            return hello
         }
 
         // This is a method, because it needs a reference to self.  Methods can only be called on components
