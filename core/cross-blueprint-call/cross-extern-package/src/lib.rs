@@ -4,15 +4,7 @@ use scrypto::prelude::*;
 #[blueprint]
 mod extern_blueprint_call {
     extern_blueprint!(
-<<<<<<< Updated upstream
         "package_sim1p40mzz4yg6n4gefzq5teg2gsts63wmez00826p8m5eslr864fr3648",
-=======
-<<<<<<< Updated upstream
-        "package_sim1p4kwg8fa7ldhwh8exe5w4acjhp9v982svmxp3yqa8ncruad4rv980g",
-=======
-        "package_tdx_d_1p44v8p7007a803avj3k6xpkl7aranfg3zcyfnrmttkggv8lnx7qa3z",
->>>>>>> Stashed changes
->>>>>>> Stashed changes
         Airdrop {
             fn instantiate_airdrop() -> Global<Airdrop>;
             fn instantiate_airdrop_local() -> Owned<Airdrop>;
