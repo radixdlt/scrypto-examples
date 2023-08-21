@@ -33,12 +33,12 @@ const { status, transaction, stream, state } = gatewayApi
 
 // Global states
 let accountAddress // User account address
-let componentAddress = "component_tdx_d_1crxgtt64rxn90g9z5s5ssuyrgmtpza8zucac7gyyg83vdtce0d67r3" //GumballMachine component address
-let gum_resourceAddress // GUM resource address
+let componentAddress = "component_tdx_d_1cq6y74zwdxcjrsn3uzs543au5upmtk3drgkw6hw8q06cccd6vsnpcd" //GumballMachine component address
+let gum_resourceAddress = "resource_tdx_d_1tk83nnrjj75mfgnltkqql0al052g295g8krxqnyuz7q232xss4cws8" // SCRYPTO GUM resource address
 let xrdAddress = "resource_tdx_d_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxepwmma"
 // You receive this badge(your resource address will be different) when you instantiate the component
-let admin_badge = "resource_tdx_d_1t45mckag3sjufynut0848550pzugp806q6csm28zxawj6tnkmpwkze"
-let owner_badge = "resource_tdx_d_1tkyrx3hna6el9mpekxdnkmsywk4clvapeqhhuf38x8jtxvqfpwsqz9"
+let admin_badge = "resource_tdx_d_1t4n8uen586jyv3texjtr0ezxzrsepg43rk5qc923zp8y22h9nu8f9h"
+let owner_badge = "resource_tdx_d_1t5pqpfa8wuauufgs020eks73x27zevr4q75qlwrjhefx8dvnepaau6"
 // You can use these addresses to skip package deployment steps
 // package_tdx_d_1ph7a0m0qwtea3p58t8ney6kt2xwmsp7js4welyswlljsctmhwmckra
 
