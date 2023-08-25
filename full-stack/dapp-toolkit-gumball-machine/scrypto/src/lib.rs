@@ -36,7 +36,7 @@ mod gumball_machine {
             flavor: String,
         ) -> (Global<GumballMachine>, Bucket, Bucket) {
             let (address_reservation, component_address) =
-                Runtime::allocate_component_address(Runtime::blueprint_id());
+                Runtime::allocate_component_address(GumballMachine::blueprint_id());
 
             let owner_badge: Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
                 .metadata(metadata!(init{"name"=>"owner badge", locked;}))
@@ -92,7 +92,7 @@ mod gumball_machine {
                 gum_resource_manager: bucket_of_gumballs.resource_manager(),
                 staff_badge_resource_manager: staff_badge,
                 gumballs: Vault::with_bucket(bucket_of_gumballs),
-                collected_xrd: Vault::new(RADIX_TOKEN),
+                collected_xrd: Vault::new(XRD),
                 price: price,
             }
             .instantiate()
