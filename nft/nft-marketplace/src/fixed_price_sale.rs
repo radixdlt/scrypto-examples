@@ -58,7 +58,7 @@ mod fixed_price_sale {
         ///
         /// # Arguments:
         ///
-        /// * `non_fungible_tokens` (Vec<Bucket>) - A vector of buckets of the non-fungible tokens that the instantiator
+        /// * `non_fungible_tokens` (Vec<NonFungibleBucket>) - A vector of buckets of the non-fungible tokens that the instantiator
         /// wishes to sell.
         /// * `accepted_payment_token` (ResourceAddress) - Payments may be accepted in XRD or non-XRD tokens. This
         /// argument specifies the resource address of the token the instantiator wishes to accept for payment.

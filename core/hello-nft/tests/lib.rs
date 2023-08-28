@@ -40,9 +40,16 @@ fn test_create_additional_admin() {
 
     let manifest2 = ManifestBuilder::new()
         .withdraw_from_account(account_component, RADIX_TOKEN, dec!("10"))
-        .take_from_worktop(RADIX_TOKEN, dec!("10"),|builder, bucket| {
-            builder.call_method(component, "buy_ticket", manifest_args!(bucket))
-        })
+        .take_all_from_worktop(
+            RADIX_TOKEN, 
+            "bucket"
+        )
+        .call_method_with_name_lookup(
+            component, 
+            "buy_ticket", 
+            |lookup| (
+                lookup.bucket("bucket"),
+            ))
         .call_method(
             account_component,
             "deposit_batch",

@@ -17,7 +17,7 @@ fn test_magic_card() {
     let transaction1 = ManifestBuilder::new()
         .call_function(
             package_address,
-            "HelloNft",
+            "MagicCardNft",
             "instantiate_component",
             manifest_args!(),
         )
@@ -34,14 +34,22 @@ fn test_magic_card() {
         .expect_commit(true).new_component_addresses()[0];
 
     let transaction2 = ManifestBuilder::new()
-        .withdraw_from_account(account_component, RADIX_TOKEN,  dec!("666"))
-        .take_from_worktop(RADIX_TOKEN, dec!("666"), |builder, bucket| {
-            builder.call_method(
-                component,
-                "buy_special_card",
-                manifest_args!(NonFungibleLocalId::integer(2u64), bucket),
-            )
-        })
+        .withdraw_from_account(
+            account_component, 
+            RADIX_TOKEN,  
+            dec!("666")
+        )
+        .take_all_from_worktop(
+            RADIX_TOKEN, 
+            "bucket"
+        )
+        .call_method_with_name_lookup(
+            component, 
+            "buy_special_card", 
+            |lookup| (
+                NonFungibleLocalId::integer(2u64),
+                lookup.bucket("bucket")
+            ))
         .call_method(
             account_component,
             "deposit_batch",
@@ -60,15 +68,22 @@ fn test_magic_card() {
         .expect_commit(true).new_component_addresses()[0];
 
     let transaction3 = ManifestBuilder::new()
-        .withdraw_from_account(account_component, RADIX_TOKEN, dec!("500"))
-        .take_from_worktop(RADIX_TOKEN, dec!("500"), |builder, bucket| {
-            builder.call_method(component, "buy_random_card", manifest_args!(bucket))
-        })
-        .call_method(
-            account_component,
-            "deposit_batch",
-            manifest_args!(ManifestExpression::EntireWorktop),
+        .withdraw_from_account(
+            account_component, 
+            RADIX_TOKEN, 
+            dec!("500")
         )
+        .take_all_from_worktop(
+            RADIX_TOKEN, 
+            "bucket"
+        )
+        .call_method_with_name_lookup(
+            component, 
+            "buy_random_card", 
+            |lookup| (
+                lookup.bucket("bucket"),
+            ))
+        .deposit_batch(account_component)
         .build();
     let receipt3 = test_runner.execute_manifest_ignoring_fee(
         transaction3,
