@@ -12,7 +12,6 @@
     "vite": "^4.1.0"
   },
   "dependencies": {
-    "@radixdlt/babylon-gateway-api-sdk": "^1.0.0-rc.2.5",
-    "@radixdlt/radix-dapp-toolkit": "^0.5.1"
+    "@radixdlt/radix-dapp-toolkit": "^0.6.0-grape.3"
   }
 }
