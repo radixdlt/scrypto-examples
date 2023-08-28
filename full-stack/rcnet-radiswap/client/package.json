@@ -13,8 +13,8 @@
         "vite": "^4.1.0"
     },
     "dependencies": {
-        "@radixdlt/babylon-gateway-api-sdk": "^1.0.0-birch.1",
-        "@radixdlt/radix-dapp-toolkit": "^0.3.0-birch.1",
-        "@radixdlt/radix-engine-toolkit": "0.2.0-birch.2"
+        "@radixdlt/babylon-gateway-api-sdk": "1.0.0-rc.2.5",
+        "@radixdlt/radix-dapp-toolkit": "0.4.0",
+        "@radixdlt/radix-engine-toolkit": "0.3.0-pre-release.1"
     }
 }

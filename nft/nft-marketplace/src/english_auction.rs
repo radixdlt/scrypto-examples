@@ -88,7 +88,7 @@ mod english_auction {
         /// # Returns:
         ///
         /// This function returns a tuple which has the following format:
-        /// * `ComponentAddress` - A component address of the instantiated `EnglishAuction` component.
+        /// * `Global<EnglishAuction>` - A Global<EnglishAuction> component object of the instantiated `EnglishAuction` component.
         /// * `Bucket` - A bucket containing an ownership badge which entitles the holder to the assets in this
         /// component.
         pub fn instantiate_english_auction(
