@@ -37,24 +37,26 @@ mod sporting_event {
             // For simplicity's sake, we will just use all fixed values for our numbers of tickets and their prices, though all of those could be parameterized
 
             let (address_reservation, component_address) =
-                Runtime::allocate_component_address(Runtime::blueprint_id());
+                Runtime::allocate_component_address(SportingEvent::blueprint_id());
 
             // Create our NFT
-            let my_non_fungible_address = ResourceBuilder::new_integer_non_fungible::<Ticket>(OwnerRole::None)
-                .metadata(metadata! (
-                    init {
-                        "name" => "Ticket to the big game".to_string(), locked;
-                    }
-                ))
-                .mint_roles(mint_roles! (
-                    minter => rule!(require(global_caller(component_address)));
-                    minter_updater => rule!(deny_all); 
-                ))
-                .non_fungible_data_update_roles(non_fungible_data_update_roles!(
-                    non_fungible_data_updater => rule!(require(global_caller(component_address)));
-                    non_fungible_data_updater_updater => rule!(deny_all);
-                ))
-                .create_with_no_initial_supply();
+            let my_non_fungible_address = ResourceBuilder::new_integer_non_fungible::<Ticket>(
+                OwnerRole::None,
+            )
+            .metadata(metadata! (
+                init {
+                    "name" => "Ticket to the big game".to_string(), locked;
+                }
+            ))
+            .mint_roles(mint_roles! (
+                minter => rule!(require(global_caller(component_address)));
+                minter_updater => rule!(deny_all);
+            ))
+            .non_fungible_data_update_roles(non_fungible_data_update_roles!(
+                non_fungible_data_updater => rule!(require(global_caller(component_address)));
+                non_fungible_data_updater_updater => rule!(deny_all);
+            ))
+            .create_with_no_initial_supply();
 
             // Currently, Scrypto requires manual assignment of NFT IDs
             let mut ticket_bucket = Bucket::new(my_non_fungible_address.address());
@@ -96,7 +98,7 @@ mod sporting_event {
             // Instantiate our component with our supply of sellable tickets
             Self {
                 tickets: Vault::with_bucket(ticket_bucket),
-                collected_xrd: Vault::new(RADIX_TOKEN),
+                collected_xrd: Vault::new(XRD),
                 price_field: 10.into(),
                 price_luxury: 100.into(),
             }
@@ -108,7 +110,7 @@ mod sporting_event {
 
         /// Helper function to look for a matching ticket
         fn get_ticket(&mut self, section: Section, seat: Option<String>) -> NonFungibleBucket {
-            let nfts = self.tickets.as_non_fungible().non_fungibles::<Ticket>();
+            let nfts = self.tickets.as_non_fungible().non_fungibles::<Ticket>(10);
             // Currently, there is no way to search for particular NFT characteristics within a bucket/vault other than iterating through all of them.
             // A better implementation of this simple use case would be to provide a way to map Luxury seat numbers to an ID deterministically,
             // and likely keep them in a separate vault from the Field tokens so that the semi-fungible Field tokens can be immediately grabbed.
@@ -116,7 +118,10 @@ mod sporting_event {
             for nft in &nfts {
                 let ticket: Ticket = nft.data();
                 if ticket.section == section && ticket.seat == seat {
-                    return self.tickets.as_non_fungible().take_non_fungible(&nft.local_id());
+                    return self
+                        .tickets
+                        .as_non_fungible()
+                        .take_non_fungible(&nft.local_id());
                 }
             }
 
@@ -131,17 +136,17 @@ mod sporting_event {
 
             // Then commit our updated data to our NFT
 
-            let resource_manger: ResourceManager = 
-            ResourceManager::from_address(nft_bucket.resource_address());
-            
-            let non_fungible_local_id: NonFungibleLocalId = nft_bucket.as_non_fungible().non_fungible_local_id();
+            let resource_manger: ResourceManager =
+                ResourceManager::from_address(nft_bucket.resource_address());
+
+            let non_fungible_local_id: NonFungibleLocalId =
+                nft_bucket.as_non_fungible().non_fungible_local_id();
 
             resource_manger.update_non_fungible_data(
-                &non_fungible_local_id, 
-                "prediction", 
-                Team::Away
+                &non_fungible_local_id,
+                "prediction",
+                Team::Away,
             );
-
 
             // All done, send it back
             nft_bucket

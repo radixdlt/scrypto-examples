@@ -9,7 +9,7 @@ mod bootstrap {
         /// Creates a number of NFT collections used for testing of the NFT marketplace blueprints.
         pub fn bootstrap() -> Vec<Bucket> {
             // Creating the resources used for our non-fungible tokens
-            let cars: Bucket = ResourceBuilder::new_ruid_non_fungible(OwnerRole::None)
+            let cars = ResourceBuilder::new_ruid_non_fungible(OwnerRole::None)
                 .metadata(metadata!(
                     init {
                         "name" => "Cars NFT".to_owned(), locked;
@@ -37,7 +37,7 @@ mod bootstrap {
                     },
                 ]);
 
-            let phones: Bucket = ResourceBuilder::new_ruid_non_fungible(OwnerRole::None)
+            let phones = ResourceBuilder::new_ruid_non_fungible(OwnerRole::None)
                 .metadata(metadata!(
                     init {
                         "name" => "Phones NFT".to_owned(), locked;
@@ -64,7 +64,7 @@ mod bootstrap {
                     },
                 ]);
 
-            let laptops: Bucket = ResourceBuilder::new_ruid_non_fungible(OwnerRole::None)
+            let laptops = ResourceBuilder::new_ruid_non_fungible(OwnerRole::None)
                 .metadata(metadata!(
                     init {
                         "name" => "Laptops NFT".to_owned(), locked;
@@ -93,7 +93,7 @@ mod bootstrap {
                 ]);
 
             // With all of the NFTs created, we can now return the buckets of tokens
-            return vec![cars, phones, laptops];
+            return vec![cars.into(), phones.into(), laptops.into()];
         }
     }
 }

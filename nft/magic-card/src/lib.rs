@@ -79,8 +79,8 @@ mod magic_card_nft {
                 ]);
 
             // Create an NFT resource with mutable supply
-            let (address_reservation, component_address) = 
-                    Runtime::allocate_component_address(Runtime::blueprint_id());
+            let (address_reservation, component_address) =
+                Runtime::allocate_component_address(MagicCardNft::blueprint_id());
 
             let random_card_resource_manager =
                 ResourceBuilder::new_integer_non_fungible::<MagicCard>(OwnerRole::None)
@@ -105,7 +105,7 @@ mod magic_card_nft {
 
             // Instantiate our component
             Self {
-                special_cards: Vault::with_bucket(special_cards_bucket),
+                special_cards: Vault::with_bucket(special_cards_bucket.into()),
                 special_card_prices: HashMap::from([
                     (NonFungibleLocalId::Integer(1u64.into()), 100.into()),
                     (NonFungibleLocalId::Integer(2u64.into()), 200.into()),
@@ -114,7 +114,7 @@ mod magic_card_nft {
                 random_card_resource_manager,
                 random_card_price: 50.into(),
                 random_card_id_counter: 0,
-                collected_xrd: Vault::new(RADIX_TOKEN),
+                collected_xrd: Vault::new(XRD),
             }
             .instantiate()
             .prepare_to_globalize(OwnerRole::None)
@@ -150,9 +150,9 @@ mod magic_card_nft {
                 level: random_seed as u8 % 8,
             };
             let nft_bucket = self.random_card_resource_manager.mint_non_fungible(
-                    &NonFungibleLocalId::Integer(self.random_card_id_counter.into()),
-                    new_card,
-                );
+                &NonFungibleLocalId::Integer(self.random_card_id_counter.into()),
+                new_card,
+            );
             self.random_card_id_counter += 1;
 
             // Return the NFT and change
@@ -166,14 +166,19 @@ mod magic_card_nft {
             );
 
             // Get and update the mutable data
-            let nft_local_id: NonFungibleLocalId = nft_bucket.as_non_fungible().non_fungible_local_id();
+            let nft_local_id: NonFungibleLocalId =
+                nft_bucket.as_non_fungible().non_fungible_local_id();
 
-            let resource_manager: ResourceManager = 
-            self.random_card_resource_manager;
+            let resource_manager: ResourceManager = self.random_card_resource_manager;
 
-            let mut non_fungible_data: MagicCard = nft_bucket.as_non_fungible().non_fungible().data();
+            let mut non_fungible_data: MagicCard =
+                nft_bucket.as_non_fungible().non_fungible().data();
 
-            resource_manager.update_non_fungible_data(&nft_local_id, "level", non_fungible_data.level += 1);
+            resource_manager.update_non_fungible_data(
+                &nft_local_id,
+                "level",
+                non_fungible_data.level += 1,
+            );
 
             nft_bucket
         }
@@ -195,12 +200,11 @@ mod magic_card_nft {
 
             // Burn the original cards
             nft_bucket.burn();
-        
 
             // Mint a new one.
             let new_non_fungible_bucket = self.random_card_resource_manager.mint_non_fungible(
-                    &NonFungibleLocalId::Integer(self.random_card_id_counter.into()),
-                    new_card,
+                &NonFungibleLocalId::Integer(self.random_card_id_counter.into()),
+                new_card,
             );
 
             self.random_card_id_counter += 1;

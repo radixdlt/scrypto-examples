@@ -3,7 +3,7 @@ use scrypto::prelude::*;
 #[blueprint]
 mod radiswap {
     struct Radiswap {
-        liquidity_pool_component: Global<TwoResourcePool>
+        liquidity_pool_component: Global<TwoResourcePool>,
     }
 
     impl Radiswap {
@@ -12,9 +12,8 @@ mod radiswap {
             token_a: ResourceAddress,
             token_b: ResourceAddress,
         ) -> Global<Radiswap> {
-
             let (address_reservation, component_address) =
-                Runtime::allocate_component_address(Runtime::blueprint_id());
+                Runtime::allocate_component_address(Radiswap::blueprint_id());
 
             let global_component_caller_badge =
                 NonFungibleGlobalId::global_caller_badge(component_address);
@@ -30,7 +29,7 @@ mod radiswap {
 
             // Instantiate our Radiswap component
             Self {
-                liquidity_pool_component
+                liquidity_pool_component,
             }
             .instantiate()
             .prepare_to_globalize(OwnerRole::None)
@@ -45,7 +44,6 @@ mod radiswap {
             token_a: Bucket,
             token_b: Bucket,
         ) -> (Bucket, Option<Bucket>) {
-
             // All the checks for correctness of buckets and everything else is handled by the pool
             // component! Just pass it the resources and it will either return the pool units back
             // if it succeeds or abort on failure.
@@ -70,11 +68,9 @@ mod radiswap {
                 .remove(&input_bucket.resource_address())
                 .expect("Resource does not belong to the pool");
 
-            let (output_resource_address, output_reserves) = 
-                reserves.into_iter().next().unwrap();
-            
-            let output_amount = 
-                (input_amount * output_reserves) / (input_reserves + input_amount);
+            let (output_resource_address, output_reserves) = reserves.into_iter().next().unwrap();
+
+            let output_amount = (input_amount * output_reserves) / (input_reserves + input_amount);
 
             // NOTE: It's the responsibility of the user of the pool to do the appropriate rounding
             // before calling the withdraw method.
@@ -92,12 +88,11 @@ mod radiswap {
         }
 
         pub fn withdraw(&mut self, token_address: ResourceAddress, amount: Decimal) -> Bucket {
-            self.liquidity_pool_component
-                .protected_withdraw(
-                    token_address, 
-                    amount, 
-                    WithdrawStrategy::Rounded(RoundingMode::ToZero)
-                )
+            self.liquidity_pool_component.protected_withdraw(
+                token_address,
+                amount,
+                WithdrawStrategy::Rounded(RoundingMode::ToZero),
+            )
         }
     }
 }

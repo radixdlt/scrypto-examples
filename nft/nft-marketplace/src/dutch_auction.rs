@@ -93,7 +93,7 @@ mod dutch_auction {
             starting_price: Decimal,
             ending_price: Decimal,
             relative_ending_epoch: u64,
-        ) -> (Global<DutchAuction>, Bucket) {
+        ) -> (Global<DutchAuction>, FungibleBucket) {
             // Performing checks to ensure that the creation of the component can go through
             // assert!(
             //     !non_fungible_tokens.iter().any(|x| !matches!(
@@ -139,7 +139,7 @@ mod dutch_auction {
             // from them and they're given an ownership NFT which is used to authenticate them and as proof of ownership
             // of the NFTs. This ownership badge can be used to either withdraw the funds from the token sale or the
             // NFTs if the seller is no longer interested in selling their tokens.
-            let ownership_badge: Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
+            let ownership_badge = ResourceBuilder::new_fungible(OwnerRole::None)
                 .metadata(metadata!(
                     init {
                         "name" => "Ownership Badge".to_owned(), locked;
@@ -168,11 +168,9 @@ mod dutch_auction {
                 ending_epoch: Runtime::current_epoch().after(relative_ending_epoch),
             }
             .instantiate()
-            .prepare_to_globalize(
-                OwnerRole::Updatable(
-                    rule!(require(ownership_badge.resource_address()))
-                )
-            )
+            .prepare_to_globalize(OwnerRole::Updatable(rule!(require(
+                ownership_badge.resource_address()
+            ))))
             .globalize();
 
             return (dutch_auction, ownership_badge);
@@ -357,7 +355,7 @@ mod dutch_auction {
                     self.nft_vaults
                         .get(&resource_address)
                         .unwrap()
-                        .non_fungible_local_ids()
+                        .non_fungible_local_ids(100)
                         .into_iter()
                         .collect::<Vec<NonFungibleLocalId>>(),
                 );

@@ -89,7 +89,9 @@ impl BeneficiaryVestingSchedule {
             cliff_epoch,
             end_epoch,
             total_vesting_amount,
-            amount_available_on_cliff: total_vesting_amount * percentage_available_on_cliff,
+            amount_available_on_cliff: total_vesting_amount
+                .safe_mul(percentage_available_on_cliff)
+                .unwrap(),
         };
     }
 
@@ -139,6 +141,9 @@ impl BeneficiaryVestingSchedule {
     ///
     /// * `Decimal` - The amount of tokens vested so far.
     pub fn get_unvested_amount(&self, epoch: u64) -> Decimal {
-        return self.total_vesting_amount - self.get_vested_amount(epoch);
+        return self
+            .total_vesting_amount
+            .safe_sub(self.get_vested_amount(epoch))
+            .unwrap();
     }
 }

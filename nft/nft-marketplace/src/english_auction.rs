@@ -95,7 +95,7 @@ mod english_auction {
             non_fungible_tokens: Vec<NonFungibleBucket>,
             accepted_payment_token: ResourceAddress,
             relative_ending_epoch: u64,
-        ) -> (Global<EnglishAuction>, Bucket) {
+        ) -> (Global<EnglishAuction>, FungibleBucket) {
             // Performing checks to ensure that the creation of the component can go through
             // assert!(
             //     !non_fungible_tokens.iter().any(|x| !matches!(
@@ -133,7 +133,7 @@ mod english_auction {
             // from them and they're given an ownership NFT which is used to authenticate them and as proof of ownership
             // of the NFTs. This ownership badge can be used to either withdraw the funds from the token sale or the
             // NFTs if the seller is no longer interested in selling their tokens.
-            let ownership_badge: Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
+            let ownership_badge = ResourceBuilder::new_fungible(OwnerRole::None)
                 .metadata(metadata!(
                     init {
                         "name" => "Ownership Badge".to_owned(), locked;
@@ -145,8 +145,8 @@ mod english_auction {
                 .mint_initial_supply(1);
 
             // Creating the internal admin badge which will be used to manager the bidder badges
-            let (address_reservation, component_address) = 
-                Runtime::allocate_component_address(Runtime::blueprint_id());
+            let (address_reservation, component_address) =
+                Runtime::allocate_component_address(EnglishAuction::blueprint_id());
 
             // Creating the bidder's badge which will be used to track the bidder's information and bids.
             let bidder_badge_resource_address: ResourceManager =
@@ -173,7 +173,6 @@ mod english_auction {
                     ))
                     .create_with_no_initial_supply();
 
-
             // let access_rule: AccessRule = rule!(require(ownership_badge.resource_address()));
             // let access_rules = AccessRulesConfig::new()
             //     .method("cancel_auction", access_rule.clone(), AccessRule::DenyAll)
@@ -191,11 +190,9 @@ mod english_auction {
                 state: AuctionState::Open,
             }
             .instantiate()
-            .prepare_to_globalize(
-                OwnerRole::Updatable(
-                    rule!(require(ownership_badge.resource_address()))
-                )
-            )
+            .prepare_to_globalize(OwnerRole::Updatable(rule!(require(
+                ownership_badge.resource_address()
+            ))))
             .with_address(address_reservation)
             .globalize();
 
@@ -309,19 +306,18 @@ mod english_auction {
                 matches!(self.state, AuctionState::Open),
                 "[Bid]: Bids may only be added while the auction is open."
             );
-            
+
             // At this point we know that a bid can be added.
 
             // Issuing a bidder's NFT to this bidder with information on the amount that they're bidding
 
-            let bidders_badge: Bucket = self.bidders_badge.mint_ruid_non_fungible(
-                    BidderBadge {
-                        bid_amount: funds.amount(),
-                        is_winner: false,
-                    },
-                );
+            let bidders_badge: Bucket = self.bidders_badge.mint_ruid_non_fungible(BidderBadge {
+                bid_amount: funds.amount(),
+                is_winner: false,
+            });
 
-            let non_fungible_local_id: NonFungibleLocalId = bidders_badge.as_non_fungible().non_fungible_local_id();
+            let non_fungible_local_id: NonFungibleLocalId =
+                bidders_badge.as_non_fungible().non_fungible_local_id();
 
             // Taking the bidder's funds and depositing them into a newly created vault where their funds will now live
             self.bid_vaults
@@ -373,18 +369,25 @@ mod english_auction {
             // At this point we know that the bidder's bid can be increased.
 
             // Updating the metadata of the bidder's badge to reflect on the update of the bidder's bid
-            let mut bidders_badge_data: BidderBadge = bidders_badge.as_non_fungible().non_fungible().data();
-            let non_fungible_local_id: NonFungibleLocalId = bidders_badge.as_non_fungible().non_fungible_local_id();
+            let mut bidders_badge_data: BidderBadge =
+                bidders_badge.as_non_fungible().non_fungible().data();
+            let non_fungible_local_id: NonFungibleLocalId =
+                bidders_badge.as_non_fungible().non_fungible_local_id();
             let resource_manager = self.bidders_badge;
             resource_manager.update_non_fungible_data(
-                &non_fungible_local_id, 
-                "bid_amount", 
-                bidders_badge_data.bid_amount += funds.amount()
+                &non_fungible_local_id,
+                "bid_amount",
+                bidders_badge_data.bid_amount.safe_add(funds.amount()),
             );
 
             // Adding the funds to the vault of the bidder
             self.bid_vaults
-                .get_mut(&bidders_badge.as_non_fungible().non_fungible::<BidderBadge>().local_id())
+                .get_mut(
+                    &bidders_badge
+                        .as_non_fungible()
+                        .non_fungible::<BidderBadge>()
+                        .local_id(),
+                )
                 .unwrap()
                 .put(funds);
         }
@@ -428,14 +431,23 @@ mod english_auction {
                 "[Cancel Bid]: This method requires that exactly one bidder's badge is passed to the method"
             );
             assert!(
-                !bidders_badge.as_non_fungible().non_fungible::<BidderBadge>().data().is_winner,
+                !bidders_badge
+                    .as_non_fungible()
+                    .non_fungible::<BidderBadge>()
+                    .data()
+                    .is_winner,
                 "[Cancel Bid]: You can not cancel your bid after winning the auction."
             );
             // At this point we know that the bid cancellation can go on.
             // Take out the bidder's funds from their vault
             let funds: Bucket = self
                 .bid_vaults
-                .get_mut(&bidders_badge.as_non_fungible().non_fungible::<BidderBadge>().local_id())
+                .get_mut(
+                    &bidders_badge
+                        .as_non_fungible()
+                        .non_fungible::<BidderBadge>()
+                        .local_id(),
+                )
                 .unwrap()
                 .take_all();
             // This bidder will no longer need their badge. We can now safely burn the badge.
@@ -485,7 +497,11 @@ mod english_auction {
                 "[Claim NFTs]: This method requires that exactly one bidder's badge is passed to the method"
             );
             assert!(
-                bidders_badge.as_non_fungible().non_fungible::<BidderBadge>().data().is_winner,
+                bidders_badge
+                    .as_non_fungible()
+                    .non_fungible::<BidderBadge>()
+                    .data()
+                    .is_winner,
                 "[Claim NFTs]: Badge provided is not the winner's badge."
             );
 
@@ -539,15 +555,14 @@ mod english_auction {
 
                         // Update the bidder's badge associated with the above non-fungible id to reflect that this is
                         // the winner of the bid.
-                        let resource_manager = self.bidders_badge;                    
+                        let resource_manager = self.bidders_badge;
 
                         // Setting the new data as the data of that badge
                         resource_manager.update_non_fungible_data(
-                            &non_fungible_local_id, 
-                            "is_winner", 
-                            true
+                            &non_fungible_local_id,
+                            "is_winner",
+                            true,
                         );
-                        
 
                         // Take the funds from the winner's vault and put them in the payment vault so that the seller
                         // can now withdraw them

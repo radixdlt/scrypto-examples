@@ -95,11 +95,11 @@ mod vesting {
             // Creating the Actor Virtual Badge which we will give authority to mint and burn the admin and beneficiary
             // badges.
             let (address_reservation, component_address) = 
-                Runtime::allocate_component_address(Runtime::blueprint_id());
+                Runtime::allocate_component_address(Vesting::blueprint_id());
 
             // Creating the admin badge and setting its auth. The admin badge may be burned by the internal admin badge
             // in the caste of the admin giving up their termination rights
-            let admin_badge: Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
+            let admin_badge = ResourceBuilder::new_fungible(OwnerRole::None)
                 .divisibility(DIVISIBILITY_NONE)
                 .metadata(metadata!(
                     init {
@@ -154,7 +154,7 @@ mod vesting {
             )
             .globalize();
     
-            return (vesting_component, admin_badge);
+            return (vesting_component, admin_badge.into());
         }
 
         /// Adds a new beneficiary to to the vesting component.
