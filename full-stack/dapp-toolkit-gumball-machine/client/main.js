@@ -3,7 +3,7 @@ const dAppId = 'account_tdx_d_12805alyg3562gsphgeyc9re800qq0phlyz89cnu2tydmlp0gt
 // Instantiate DappToolkit
 const rdt = RadixDappToolkit({
   dAppDefinitionAddress: dAppId,
-  networkId: 33,
+  networkId: 14,
 })
 console.log("dApp Toolkit: ", rdt)
 
