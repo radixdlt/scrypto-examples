@@ -34,18 +34,18 @@ mod gumball_machine {
         pub fn instantiate_gumball_machine(
             price: Decimal,
             flavor: String,
-        ) -> (Global<GumballMachine>, Bucket, Bucket) {
+        ) -> (Global<GumballMachine>, FungibleBucket, FungibleBucket) {
             let (address_reservation, component_address) =
                 Runtime::allocate_component_address(GumballMachine::blueprint_id());
 
-            let owner_badge: Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
+            let owner_badge = ResourceBuilder::new_fungible(OwnerRole::None)
                 .metadata(metadata!(init{"name"=>"owner badge", locked;}))
                 .divisibility(DIVISIBILITY_NONE)
                 .mint_initial_supply(1);
 
-            let admin_badge: Bucket = ResourceBuilder::new_fungible(OwnerRole::Updatable(rule!(
-                require(owner_badge.resource_address())
-            )))
+            let admin_badge = ResourceBuilder::new_fungible(OwnerRole::Updatable(rule!(require(
+                owner_badge.resource_address()
+            ))))
             .metadata(metadata!(init{"name"=>"admin badge", locked;}))
             .mint_roles(mint_roles! (
                      minter => rule!(require(global_caller(component_address)));
@@ -91,7 +91,7 @@ mod gumball_machine {
             let component = Self {
                 gum_resource_manager: bucket_of_gumballs.resource_manager(),
                 staff_badge_resource_manager: staff_badge,
-                gumballs: Vault::with_bucket(bucket_of_gumballs),
+                gumballs: Vault::with_bucket(bucket_of_gumballs.into()),
                 collected_xrd: Vault::new(XRD),
                 price: price,
             }
