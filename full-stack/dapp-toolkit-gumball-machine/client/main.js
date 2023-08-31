@@ -1,4 +1,6 @@
 import { RadixDappToolkit, DataRequestBuilder } from '@radixdlt/radix-dapp-toolkit'
+// You can create a dApp definition in the dashboard at https://rcnet-v3-dashboard.radixdlt.com/dapp-metadata 
+// then use that account for your dAppId
 const dAppId = 'account_tdx_d_12805alyg3562gsphgeyc9re800qq0phlyz89cnu2tydmlp0gt947cw'
 // Instantiate DappToolkit
 const rdt = RadixDappToolkit({
