@@ -91,7 +91,7 @@ mod vesting {
         ///
         /// * `ComponentAddress` - The address of the newly instantiated vesting component.
         /// * `Bucket` - A bucket containing the admin badge for the vesting component.
-        pub fn instantiate_vesting() -> (Global<Vesting>, Bucket) {
+        pub fn instantiate_vesting() -> (Global<Vesting>, FungibleBucket) {
             // Creating the Actor Virtual Badge which we will give authority to mint and burn the admin and beneficiary
             // badges.
             let (address_reservation, component_address) = 
@@ -154,7 +154,7 @@ mod vesting {
             )
             .globalize();
     
-            return (vesting_component, admin_badge.into());
+            return (vesting_component, admin_badge);
         }
 
         /// Adds a new beneficiary to to the vesting component.

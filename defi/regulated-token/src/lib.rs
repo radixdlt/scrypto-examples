@@ -24,7 +24,8 @@ mod regulated_token {
     }
 
     impl RegulatedToken {
-        pub fn instantiate_regulated_token() -> (Global<RegulatedToken>, Bucket, Bucket) {
+        pub fn instantiate_regulated_token(
+        ) -> (Global<RegulatedToken>, FungibleBucket, FungibleBucket) {
             // We are allocating a ComponentAddress used for our actor virtual badge and provide
             // minting & transfer authority to our component.
             let (address_reservation, component_address) =
@@ -111,7 +112,7 @@ mod regulated_token {
             .with_address(address_reservation)
             .globalize();
 
-            (component, general_admin.into(), freeze_admin.into())
+            (component, general_admin, freeze_admin)
         }
 
         /// The freeze admin badge may be used to freeze or unfreeze consumer transfers of the supply

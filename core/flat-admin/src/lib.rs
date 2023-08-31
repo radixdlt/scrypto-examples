@@ -17,7 +17,7 @@ mod flat_admin {
     }
 
     impl FlatAdmin {
-        pub fn instantiate_flat_admin(badge_name: String) -> (Global<FlatAdmin>, Bucket) {
+        pub fn instantiate_flat_admin(badge_name: String) -> (Global<FlatAdmin>, FungibleBucket) {
             // Creating a GlobalAddressReservation and ComponentAddress to use for the actor virtual badge pattern.
             let (address_reservation, component_address) =
                 Runtime::allocate_component_address(FlatAdmin::blueprint_id());
@@ -55,7 +55,7 @@ mod flat_admin {
             .globalize();
 
             // Return the instantiated component and the admin badge we just minted
-            (component, admin_badge.into())
+            (component, admin_badge)
         }
 
         // Any existing admin may create another admin token

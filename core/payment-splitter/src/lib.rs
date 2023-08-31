@@ -82,7 +82,7 @@ mod payment_splitter {
         /// * `Bucket` - A bucket containing the admin badge.
         pub fn instantiate_payment_splitter(
             accepted_token_resource_address: ResourceAddress,
-        ) -> (Global<PaymentSplitter>, Bucket) {
+        ) -> (Global<PaymentSplitter>, FungibleBucket) {
             // Loading in the resource manager for the provided resource address
             let accepted_token_resource_manager =
                 ResourceManager::from_address(accepted_token_resource_address);
@@ -113,7 +113,7 @@ mod payment_splitter {
                 rule!(require(admin_badge.resource_address())),
             );
 
-            return (payment_splitter, admin_badge.into());
+            return (payment_splitter, admin_badge);
         }
 
         /// Creates a new payment splitter component.

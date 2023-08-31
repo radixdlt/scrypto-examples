@@ -7,7 +7,7 @@ mod bootstrap {
 
     impl Bootstrap {
         /// Creates a number of NFT collections used for testing of the NFT marketplace blueprints.
-        pub fn bootstrap() -> Vec<Bucket> {
+        pub fn bootstrap() -> Vec<NonFungibleBucket> {
             // Creating the resources used for our non-fungible tokens
             let cars = ResourceBuilder::new_ruid_non_fungible(OwnerRole::None)
                 .metadata(metadata!(
@@ -93,7 +93,7 @@ mod bootstrap {
                 ]);
 
             // With all of the NFTs created, we can now return the buckets of tokens
-            return vec![cars.into(), phones.into(), laptops.into()];
+            return vec![cars, phones, laptops];
         }
     }
 }

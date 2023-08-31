@@ -49,7 +49,7 @@ mod radix_name_service {
             deposit_per_year: Decimal,
             fee_address_update: Decimal,
             fee_renewal_per_year: Decimal,
-        ) -> (Global<RadixNameService>, Bucket) {
+        ) -> (Global<RadixNameService>, FungibleBucket) {
             let (address_reservation, component_address) =
                 Runtime::allocate_component_address(RadixNameService::blueprint_id());
 
@@ -93,7 +93,7 @@ mod radix_name_service {
             .with_address(address_reservation)
             .globalize();
 
-            (component, admin_badge.into())
+            (component, admin_badge)
         }
 
         /// Lookup the address for a given `name`.
