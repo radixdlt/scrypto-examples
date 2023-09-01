@@ -35,21 +35,12 @@ fn test_create_additional_admin() {
     receipt1.expect_commit_success();
 
     // Test the `buy_ticket_by_id` method.
-    let component = receipt1
-        .expect_commit(true).new_component_addresses()[0];
+    let component = receipt1.expect_commit(true).new_component_addresses()[0];
 
     let manifest2 = ManifestBuilder::new()
-        .withdraw_from_account(account_component, RADIX_TOKEN, dec!("10"))
-        .take_all_from_worktop(
-            RADIX_TOKEN, 
-            "bucket"
-        )
-        .call_method_with_name_lookup(
-            component, 
-            "buy_ticket", 
-            |lookup| (
-                lookup.bucket("bucket"),
-            ))
+        .withdraw_from_account(account_component, XRD, dec!("10"))
+        .take_all_from_worktop(XRD, "bucket")
+        .call_method_with_name_lookup(component, "buy_ticket", |lookup| (lookup.bucket("bucket"),))
         .call_method(
             account_component,
             "deposit_batch",
