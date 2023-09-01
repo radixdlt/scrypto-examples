@@ -74,7 +74,7 @@ mod fixed_price_sale {
             non_fungible_tokens: Vec<NonFungibleBucket>,
             accepted_payment_token: ResourceAddress,
             price: Decimal,
-        ) -> (Global<FixedPriceSale>, Bucket) {
+        ) -> (Global<FixedPriceSale>, FungibleBucket) {
             // Performing checks to ensure that the creation of the component can go through
             // assert!(
             //     !non_fungible_tokens.iter().any(|x| !matches!(
@@ -112,7 +112,7 @@ mod fixed_price_sale {
             // from them and they're given an ownership NFT which is used to authenticate them and as proof of ownership
             // of the NFTs. This ownership badge can be used to either withdraw the funds from the token sale or the
             // NFTs if the seller is no longer interested in selling their tokens.
-            let ownership_badge: Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
+            let ownership_badge = ResourceBuilder::new_fungible(OwnerRole::None)
                 .metadata(metadata!(
                     init {
                         "name" => "Ownership Badge".to_owned(), locked;
@@ -140,11 +140,9 @@ mod fixed_price_sale {
                 price,
             }
             .instantiate()
-            .prepare_to_globalize(
-                OwnerRole::Updatable(
-                    rule!(require(ownership_badge.resource_address()))
-                )
-            )
+            .prepare_to_globalize(OwnerRole::Updatable(rule!(require(
+                ownership_badge.resource_address()
+            ))))
             .globalize();
 
             return (fixed_price_sale, ownership_badge);
@@ -200,7 +198,7 @@ mod fixed_price_sale {
                 )
             }
 
-            return (payment, tokens)
+            return (payment, tokens);
         }
 
         /// Cancels the sale of the tokens and returns the tokens back to their owner.
@@ -341,7 +339,7 @@ mod fixed_price_sale {
                     self.nft_vaults
                         .get(&resource_address)
                         .unwrap()
-                        .non_fungible_local_ids()
+                        .non_fungible_local_ids(100)
                         .into_iter()
                         .collect::<Vec<NonFungibleLocalId>>(),
                 );

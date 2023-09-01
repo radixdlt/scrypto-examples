@@ -32,7 +32,8 @@ mod airdrop {
                                 "name" => "Free Token".to_string(), locked;
                             }
                         ))
-                        .mint_initial_supply(1000),
+                        .mint_initial_supply(1000)
+                        .into(),
                 ),
             }
             .instantiate();

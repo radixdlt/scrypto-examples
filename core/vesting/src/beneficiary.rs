@@ -89,7 +89,9 @@ impl BeneficiaryVestingSchedule {
             cliff_epoch,
             end_epoch,
             total_vesting_amount,
-            amount_available_on_cliff: total_vesting_amount * percentage_available_on_cliff,
+            amount_available_on_cliff: total_vesting_amount
+                .safe_mul(percentage_available_on_cliff)
+                .unwrap(),
         };
     }
 
@@ -102,8 +104,12 @@ impl BeneficiaryVestingSchedule {
     ///
     /// * `Decimal` - A decimal of the gradient of the vesting schedule.
     pub fn vesting_gradient(&self) -> Decimal {
-        return (self.total_vesting_amount - self.amount_available_on_cliff)
-            / (self.end_epoch.number() - self.cliff_epoch.number());
+        return (self
+            .total_vesting_amount
+            .safe_sub(self.amount_available_on_cliff))
+        .unwrap()
+        .safe_div(self.end_epoch.number() - self.cliff_epoch.number())
+        .unwrap();
     }
 
     /// Calculates and returns the total amount vested by a given epoch
@@ -122,8 +128,11 @@ impl BeneficiaryVestingSchedule {
             dec!("0")
         } else {
             cmp::min(
-                self.vesting_gradient() * (epoch - self.cliff_epoch.number())
-                    + self.amount_available_on_cliff,
+                self.vesting_gradient()
+                    .safe_mul(epoch - self.cliff_epoch.number())
+                    .unwrap()
+                    .safe_add(self.amount_available_on_cliff)
+                    .unwrap(),
                 self.total_vesting_amount,
             )
         };
@@ -139,6 +148,9 @@ impl BeneficiaryVestingSchedule {
     ///
     /// * `Decimal` - The amount of tokens vested so far.
     pub fn get_unvested_amount(&self, epoch: u64) -> Decimal {
-        return self.total_vesting_amount - self.get_vested_amount(epoch);
+        return self
+            .total_vesting_amount
+            .safe_sub(self.get_vested_amount(epoch))
+            .unwrap();
     }
 }

@@ -91,15 +91,15 @@ mod vesting {
         ///
         /// * `ComponentAddress` - The address of the newly instantiated vesting component.
         /// * `Bucket` - A bucket containing the admin badge for the vesting component.
-        pub fn instantiate_vesting() -> (Global<Vesting>, Bucket) {
+        pub fn instantiate_vesting() -> (Global<Vesting>, FungibleBucket) {
             // Creating the Actor Virtual Badge which we will give authority to mint and burn the admin and beneficiary
             // badges.
             let (address_reservation, component_address) = 
-                Runtime::allocate_component_address(Runtime::blueprint_id());
+                Runtime::allocate_component_address(Vesting::blueprint_id());
 
             // Creating the admin badge and setting its auth. The admin badge may be burned by the internal admin badge
             // in the caste of the admin giving up their termination rights
-            let admin_badge: Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
+            let admin_badge = ResourceBuilder::new_fungible(OwnerRole::None)
                 .divisibility(DIVISIBILITY_NONE)
                 .metadata(metadata!(
                     init {
@@ -281,7 +281,7 @@ mod vesting {
                 if admin_resource_manager.total_supply().unwrap() <= dec!("2") {
                     admin_resource_manager.total_supply().unwrap()
                 } else {
-                    (admin_resource_manager.total_supply().unwrap() / dec!("2")).ceiling()
+                    (admin_resource_manager.total_supply().unwrap().safe_div(dec!("2")).unwrap().safe_ceiling()).unwrap()
                 };
             info!(
                 "[Add Admin]: Minimum required admins is: {}",
@@ -349,7 +349,7 @@ mod vesting {
             // now and the amount that should have not have vested yet.
             let beneficiary_vault: &mut Vault = self.funds.get_mut(&beneficiary_id).unwrap();
             let claim_amount: Decimal = beneficiary_vault.amount()
-                - beneficiary_vesting_schedule.get_unvested_amount(Runtime::current_epoch().number());
+                .safe_sub(beneficiary_vesting_schedule.get_unvested_amount(Runtime::current_epoch().number())).unwrap();
             info!(
                 "[Withdraw Funds]: Withdraw successful. Withdrawing {} tokens",
                 claim_amount

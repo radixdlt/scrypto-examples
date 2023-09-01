@@ -49,40 +49,41 @@ mod radix_name_service {
             deposit_per_year: Decimal,
             fee_address_update: Decimal,
             fee_renewal_per_year: Decimal,
-        ) -> (Global<RadixNameService>, Bucket) {
-
+        ) -> (Global<RadixNameService>, FungibleBucket) {
             let (address_reservation, component_address) =
-                Runtime::allocate_component_address(Runtime::blueprint_id());
+                Runtime::allocate_component_address(RadixNameService::blueprint_id());
 
             let admin_badge = ResourceBuilder::new_fungible(OwnerRole::None)
                 .divisibility(DIVISIBILITY_NONE)
                 .mint_initial_supply(1);
 
-            let name_resource = ResourceBuilder::new_bytes_non_fungible::<DomainName>(OwnerRole::None)
-                .metadata(metadata!(
-                    init {
-                        "name" => "Domain Name".to_owned(), locked;
-                    }
-                ))
-                .mint_roles(mint_roles!{
-                    minter => rule!(require(global_caller(component_address)));
-                    minter_updater => rule!(deny_all); 
-                })
-                .burn_roles(burn_roles! {
-                    burner => rule!(require(global_caller(component_address)));
-                    burner_updater => rule!(deny_all);
-                })
-                .non_fungible_data_update_roles(non_fungible_data_update_roles! {
-                    non_fungible_data_updater => rule!(require(global_caller(component_address)));
-                    non_fungible_data_updater_updater => rule!(deny_all);
-                })
-                .create_with_no_initial_supply();
+            let name_resource = ResourceBuilder::new_bytes_non_fungible::<DomainName>(
+                OwnerRole::None,
+            )
+            .metadata(metadata!(
+                init {
+                    "name" => "Domain Name".to_owned(), locked;
+                }
+            ))
+            .mint_roles(mint_roles! {
+                minter => rule!(require(global_caller(component_address)));
+                minter_updater => rule!(deny_all);
+            })
+            .burn_roles(burn_roles! {
+                burner => rule!(require(global_caller(component_address)));
+                burner_updater => rule!(deny_all);
+            })
+            .non_fungible_data_update_roles(non_fungible_data_update_roles! {
+                non_fungible_data_updater => rule!(require(global_caller(component_address)));
+                non_fungible_data_updater_updater => rule!(deny_all);
+            })
+            .create_with_no_initial_supply();
 
             let component = RadixNameService {
                 admin_badge: admin_badge.resource_address(),
                 name_resource,
-                deposits: Vault::new(RADIX_TOKEN),
-                fees: Vault::new(RADIX_TOKEN),
+                deposits: Vault::new(XRD),
+                fees: Vault::new(XRD),
                 deposit_per_year,
                 fee_address_update,
                 fee_renewal_per_year,
@@ -127,12 +128,15 @@ mod radix_name_service {
                 "A name must be reserved for at least one year"
             );
             assert!(
-                deposit.resource_address() == RADIX_TOKEN,
+                deposit.resource_address() == XRD,
                 "The deposit must be made in XRD"
             );
 
             let hash = Self::hash_name(name);
-            let deposit_amount = self.deposit_per_year * Decimal::from(reserve_years);
+            let deposit_amount = self
+                .deposit_per_year
+                .safe_mul(Decimal::from(reserve_years))
+                .unwrap();
             let last_valid_epoch =
                 Runtime::current_epoch().number() + EPOCHS_PER_YEAR * u64::from(reserve_years);
 
@@ -149,11 +153,11 @@ mod radix_name_service {
             };
 
             let name_nft = self.name_resource.mint_non_fungible(
-                    &NonFungibleLocalId::Bytes(
-                        BytesNonFungibleLocalId::new(hash.to_be_bytes().to_vec()).unwrap(),
-                    ),
-                    name_data,
-                );
+                &NonFungibleLocalId::Bytes(
+                    BytesNonFungibleLocalId::new(hash.to_be_bytes().to_vec()).unwrap(),
+                ),
+                name_data,
+            );
 
             self.deposits.put(deposit.take(deposit_amount));
 
@@ -171,9 +175,9 @@ mod radix_name_service {
             );
             assert!(!name_nft.is_empty(), "The supplied bucket is empty");
 
-            let mut total_deposit_amount = Decimal::zero();
+            let total_deposit_amount = Decimal::zero();
             for nft in name_nft.as_non_fungible().non_fungibles::<DomainName>() {
-                total_deposit_amount += nft.data().deposit_amount;
+                total_deposit_amount.safe_add(nft.data().deposit_amount);
             }
 
             name_nft.burn();
@@ -192,7 +196,7 @@ mod radix_name_service {
             mut fee: Bucket,
         ) -> Bucket {
             assert!(
-                fee.resource_address() == RADIX_TOKEN,
+                fee.resource_address() == XRD,
                 "The fee must be payed in XRD"
             );
 
@@ -213,9 +217,17 @@ mod radix_name_service {
             let old_name_data = resource_manager.get_non_fungible_data::<DomainName>(&id);
 
             resource_manager.update_non_fungible_data(&id, "address", new_address);
-            resource_manager.update_non_fungible_data(&id, "last_valid_epoch", old_name_data.last_valid_epoch);
-            resource_manager.update_non_fungible_data(&id, "deposit_amount", old_name_data.deposit_amount);
-        
+            resource_manager.update_non_fungible_data(
+                &id,
+                "last_valid_epoch",
+                old_name_data.last_valid_epoch,
+            );
+            resource_manager.update_non_fungible_data(
+                &id,
+                "deposit_amount",
+                old_name_data.deposit_amount,
+            );
+
             self.fees.put(fee.take(fee_amount));
 
             fee
@@ -227,7 +239,7 @@ mod radix_name_service {
         /// Returns any overpaid fees.
         pub fn renew_name(&mut self, name_nft: Proof, renew_years: u8, mut fee: Bucket) -> Bucket {
             assert!(
-                fee.resource_address() == RADIX_TOKEN,
+                fee.resource_address() == XRD,
                 "The fee must be payed in XRD"
             );
             assert!(
@@ -237,7 +249,7 @@ mod radix_name_service {
 
             let name_nft = name_nft.check(self.name_resource.address());
 
-            let fee_amount = self.fee_renewal_per_year * renew_years;
+            let fee_amount = self.fee_renewal_per_year.safe_mul(renew_years).unwrap();
             assert!(
                 fee.amount() >= fee_amount,
                 "Insufficient fee amount. You need to send a fee of {} XRD",
@@ -251,9 +263,14 @@ mod radix_name_service {
 
             let name_data = resource_manager.get_non_fungible_data::<DomainName>(&id);
 
-            let new_last_valid_epoch = name_data.last_valid_epoch.number() + EPOCHS_PER_YEAR * u64::from(renew_years);
+            let new_last_valid_epoch =
+                name_data.last_valid_epoch.number() + EPOCHS_PER_YEAR * u64::from(renew_years);
 
-            resource_manager.update_non_fungible_data(&id, "name_data", Epoch::of(new_last_valid_epoch));
+            resource_manager.update_non_fungible_data(
+                &id,
+                "name_data",
+                Epoch::of(new_last_valid_epoch),
+            );
             self.fees.put(fee.take(fee_amount));
 
             fee

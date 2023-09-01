@@ -22,7 +22,7 @@ mod basic_flash_loan {
         pub fn instantiate_default(initial_liquidity: Bucket) -> Global<BasicFlashLoan> {
 
             let (address_reservation, component_address) = 
-                Runtime::allocate_component_address(Runtime::blueprint_id());
+                Runtime::allocate_component_address(BasicFlashLoan::blueprint_id());
 
             // Define a "transient" resource which can never be deposited once created, only burned
             let transient_token_manager = ResourceBuilder::new_ruid_non_fungible::<LoanDue>(OwnerRole::None)
@@ -72,7 +72,7 @@ mod basic_flash_loan {
             );
 
             // Calculate how much we must be repaid
-            let amount_due = loan_amount * dec!("1.001");
+            let amount_due = loan_amount.safe_mul(dec!("1.001"));
 
             // Mint an NFT with the loan terms.  Remember that this resource previously had rules defined which
             // forbid it from ever being deposited in any vault.  Thus, once it is present in the transaction
@@ -84,7 +84,7 @@ mod basic_flash_loan {
             let loan_terms = self.transient_resource_manager
                 .mint_ruid_non_fungible(
                         LoanDue {
-                            amount_due: amount_due,
+                            amount_due: amount_due.unwrap(),
                         },
                     );
             (self.loan_vault.take(loan_amount), loan_terms)

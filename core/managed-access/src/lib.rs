@@ -30,30 +30,23 @@ mod managed_access {
     }
 
     impl ManagedAccess {
-        pub fn instantiate_managed_access(
-            badge_name: String
-        ) -> (Global<ManagedAccess>, Bucket) {
-            
-            let 
-            (flat_admin_component, admin_badge): (Global<FlatAdmin>, Bucket) = 
-            Blueprint::<FlatAdmin>::instantiate_flat_admin(badge_name);
+        pub fn instantiate_managed_access(badge_name: String) -> (Global<ManagedAccess>, Bucket) {
+            let (flat_admin_component, admin_badge): (Global<FlatAdmin>, Bucket) =
+                Blueprint::<FlatAdmin>::instantiate_flat_admin(badge_name);
 
-        let component = Self {
-            admin_badge: admin_badge.resource_address(),
-            flat_admin_controller: flat_admin_component,
-            protected_vault: Vault::new(RADIX_TOKEN),
-        }
-        .instantiate()
-        .prepare_to_globalize(OwnerRole::None)
-        .roles(
-            roles!(
+            let component = Self {
+                admin_badge: admin_badge.resource_address(),
+                flat_admin_controller: flat_admin_component,
+                protected_vault: Vault::new(XRD),
+            }
+            .instantiate()
+            .prepare_to_globalize(OwnerRole::None)
+            .roles(roles!(
                 admin => rule!(require(admin_badge.resource_address()));
-            )
-        )
-        .globalize();
+            ))
+            .globalize();
 
-        (component, admin_badge)
-        
+            (component, admin_badge)
         }
 
         pub fn withdraw_all(&mut self) -> Bucket {

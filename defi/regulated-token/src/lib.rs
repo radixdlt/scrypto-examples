@@ -2,7 +2,7 @@ use scrypto::prelude::*;
 
 #[blueprint]
 mod regulated_token {
-    enable_method_auth!{
+    enable_method_auth! {
         roles {
             freeze_admin => updatable_by: [];
             general_admin => updatable_by: [];
@@ -24,15 +24,15 @@ mod regulated_token {
     }
 
     impl RegulatedToken {
-        pub fn instantiate_regulated_token() -> (Global<RegulatedToken>, Bucket, Bucket) {
-
-            // We are allocating a ComponentAddress used for our actor virtual badge and provide 
+        pub fn instantiate_regulated_token(
+        ) -> (Global<RegulatedToken>, FungibleBucket, FungibleBucket) {
+            // We are allocating a ComponentAddress used for our actor virtual badge and provide
             // minting & transfer authority to our component.
-        let (address_reservation, component_address) =
-            Runtime::allocate_component_address(Runtime::blueprint_id());
-            
+            let (address_reservation, component_address) =
+                Runtime::allocate_component_address(RegulatedToken::blueprint_id());
+
             // Creating two resources we will use as badges and return to our instantiator
-            let general_admin: Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
+            let general_admin = ResourceBuilder::new_fungible(OwnerRole::None)
                 .divisibility(DIVISIBILITY_NONE)
                 .metadata(metadata! (
                     init {
@@ -45,7 +45,7 @@ mod regulated_token {
                 ))
                 .mint_initial_supply(1);
 
-            let freeze_admin: Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
+            let freeze_admin = ResourceBuilder::new_fungible(OwnerRole::None)
                 .divisibility(DIVISIBILITY_NONE)
                 .metadata(metadata! (
                     init {
@@ -63,7 +63,7 @@ mod regulated_token {
                 require(general_admin.resource_address())
                     || require(global_caller(component_address))
             );
-            let regulated_tokens: Bucket = ResourceBuilder::new_fungible(OwnerRole::None)
+            let regulated_tokens = ResourceBuilder::new_fungible(OwnerRole::None)
                 .divisibility(DIVISIBILITY_MAXIMUM)
                 .metadata(metadata! (
                     roles {
@@ -97,40 +97,32 @@ mod regulated_token {
                 .mint_initial_supply(100);
 
             let component = Self {
-                token_supply: Vault::with_bucket(regulated_tokens),
-                collected_xrd: Vault::new(RADIX_TOKEN),
+                token_supply: Vault::with_bucket(regulated_tokens.into()),
+                collected_xrd: Vault::new(XRD),
                 current_stage: 1,
                 admin_badge_address: general_admin.resource_address(),
                 freeze_admin_badge_address: freeze_admin.resource_address(),
             }
             .instantiate()
             .prepare_to_globalize(OwnerRole::None)
-            .roles(
-                roles!(
-                    freeze_admin => rule!(require(freeze_admin.resource_address()));
-                    general_admin => rule!(require(general_admin.resource_address()));
-                )
-            )
+            .roles(roles!(
+                freeze_admin => rule!(require(freeze_admin.resource_address()));
+                general_admin => rule!(require(general_admin.resource_address()));
+            ))
             .with_address(address_reservation)
             .globalize();
 
-            (
-                component,
-                general_admin,
-                freeze_admin,
-            )
+            (component, general_admin, freeze_admin)
         }
 
         /// The freeze admin badge may be used to freeze or unfreeze consumer transfers of the supply
         pub fn toggle_transfer_freeze(&self, set_frozen: bool) {
             // Note that this operation will fail if the token has reached stage 3 and the token behavior has been locked
-            let token_resource_manager = 
-                self.token_supply.resource_manager();
-  
+            let token_resource_manager = self.token_supply.resource_manager();
+
             if set_frozen {
-                token_resource_manager.set_withdrawable(rule!(
-                    require(self.freeze_admin_badge_address)
-                ));
+                token_resource_manager
+                    .set_withdrawable(rule!(require(self.freeze_admin_badge_address)));
                 info!("Token transfer is now RESTRICTED");
             } else {
                 token_resource_manager.set_withdrawable(rule!(allow_all));
@@ -149,10 +141,8 @@ mod regulated_token {
         }
 
         pub fn advance_stage(&mut self) {
-
             assert!(self.current_stage <= 2, "Already at final stage");
-            let token_resource_manager =
-                self.token_supply.resource_manager();
+            let token_resource_manager = self.token_supply.resource_manager();
 
             if self.current_stage == 1 {
                 // Advance to stage 2
@@ -160,20 +150,17 @@ mod regulated_token {
                 self.current_stage = 2;
 
                 // Update token's metadata to reflect the current stage
-                token_resource_manager
-                    .set_metadata(
-                        "stage",
-                        "Stage 2 - Unlimited supply, may be restricted transfer".to_string(),
-                    );
+                token_resource_manager.set_metadata(
+                    "stage",
+                    "Stage 2 - Unlimited supply, may be restricted transfer".to_string(),
+                );
 
                 // Enable minting for the token
-                token_resource_manager
-                    .set_mintable(rule!(
-                        require(self.admin_badge_address)
-                            || require(global_caller(Runtime::global_address()))
-                    ));
+                token_resource_manager.set_mintable(rule!(
+                    require(self.admin_badge_address)
+                        || require(global_caller(Runtime::global_address()))
+                ));
                 info!("Advanced to stage 2");
-
             } else {
                 // Advance to stage 3
                 // Token will no longer be regulated
@@ -181,11 +168,10 @@ mod regulated_token {
                 self.current_stage = 3;
 
                 // Update token's metadata to reflect the final stage
-                token_resource_manager
-                    .set_metadata(
-                        "stage",
-                        "Stage 3 - Unregulated token, fixed supply".to_string(),
-                    );
+                token_resource_manager.set_metadata(
+                    "stage",
+                    "Stage 3 - Unregulated token, fixed supply".to_string(),
+                );
 
                 // Set our behavior appropriately now that the regulated period has ended
                 token_resource_manager.set_mintable(rule!(deny_all));
@@ -193,7 +179,8 @@ mod regulated_token {
                 token_resource_manager.set_recallable(rule!(deny_all));
                 token_resource_manager.set_withdrawable(rule!(allow_all));
                 token_resource_manager.set_metadata_role("metadata_setter", rule!(deny_all));
-                token_resource_manager.set_metadata_role("metadata_setter_updater", rule!(deny_all));
+                token_resource_manager
+                    .set_metadata_role("metadata_setter_updater", rule!(deny_all));
 
                 // Permanently prevent the behavior of the token from changing
                 token_resource_manager.lock_mintable();
@@ -226,10 +213,11 @@ mod regulated_token {
             };
 
             // Take what we're owed
-            self.collected_xrd.put(payment.take(price * quantity));
+            self.collected_xrd
+                .put(payment.take(price.safe_mul(quantity).unwrap()));
 
             // Can we fill the desired quantity from current supply?
-            let extra_demand = quantity - self.token_supply.amount();
+            let extra_demand = quantity.safe_sub(self.token_supply.amount()).unwrap();
             if extra_demand <= dec!("0") {
                 // Take the required quantity, and return it along with any change
                 // The token may currently be under restricted transfer, so we will authorize our withdrawal
@@ -240,8 +228,7 @@ mod regulated_token {
                 // We will attempt to mint the shortfall
                 // If we are in stage 1 or 3, this action will fail, and it would probably be a good idea to tell the user this
                 // For the purposes of example, we will blindly attempt to mint
-                let mut tokens = self.token_supply.resource_manager()
-                    .mint(extra_demand);
+                let mut tokens = self.token_supply.resource_manager().mint(extra_demand);
 
                 // Combine the new tokens with whatever was left in supply to meet the full quantity
                 let existing_tokens = self.token_supply.take_all();

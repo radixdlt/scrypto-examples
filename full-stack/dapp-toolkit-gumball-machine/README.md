@@ -4,7 +4,7 @@ This example is meant to guide you through building, deploying and using the [Gu
 ## Pre-requisites
 1. Node >= 12.17.0
 2. The test wallet & Radix connector-extension browser extenstion installed. Instructions [here](https://docs-babylon.radixdlt.com/main/getting-started-developers/wallet-and-connector.html)
-3. Scrypto v0.9.0. Instructions to install [here](https://docs-babylon.radixdlt.com/main/getting-started-developers/first-component/install-scrypto.html) and update [here](https://docs-babylon.radixdlt.com/main/getting-started-developers/first-component/updating-scrypto.html)
+3. Scrypto v0.12.0. Instructions to install [here](https://docs-babylon.radixdlt.com/main/getting-started-developers/first-component/install-scrypto.html) and update [here](https://docs-babylon.radixdlt.com/main/getting-started-developers/first-component/updating-scrypto.html)
 
 ## Building the Scrypto code
 1. Enter the scrypto directory in a terminal: `cd scrypto`
@@ -12,7 +12,7 @@ This example is meant to guide you through building, deploying and using the [Gu
 1. Two important files (`gumball_machine.schema` and `gumball_machine.wasm`) will be generated in `scrypto/target/wasm32-unknown-unknown/release/`. You will need them for the next step.
 
 ## Deploy the package to RCnet
-1. Go to the [RCnet Dashboard Website](https://rcnet-dashboard.radixdlt.com/)
+1. Go to the [RCnet Dashboard Website](https://rcnet-v3-dashboard.radixdlt.com/)
 2. Connect the Wallet Via the Connect Button
 3. Navigate to Deploy Package & choose an account and badge or have one created for you if you don't have one yet using the link below. (Which appears once you have selected an account)
 4. Upload both `gumball_machine.schema` and `gumball_machine.wasm`
@@ -52,15 +52,17 @@ At this point we can instantiate our Gumball Machine locally `resim run instanti
 
 Store the returned component addres in the component environment variable `export component=<component_address>`
 
-Run `resim show $account` and find the admin badge resource address and store it in the admin_badge environment variable `export admin_badge=<resource_address>`
+Run `resim show $account` and find the admin badge resource address and store it in the admin_badge environment variable `export admin_badge=<resource_address>` and the owner_badge environment variable `export owner_badge=<resource_address>`
 
-You can run `resim get_price.rtm` to fetch the current gumball price
+Let's also set the xrd address as an environment variable `export xrd=resource_sim1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxakj8n3`
+
+You can run `resim run get_price.rtm` to fetch the current gumball price
 
 You can also run the set_price.rtm transaction manifest to change the price of a gumball `resim run set_price.rtm`
 
 To mint an NFT Staff Member Badge run `resim run mint_staff_badge.rtm`
 
-and of course you can buy a gumball by running `resim run buy_gumball.rtm`
+and of course you can buy a gumball by running `resim run buy_gum.rtm`
 
 As the holder of the admin badge you can run `resim run withdraw_earnings.rtm` to collect your riches.
 

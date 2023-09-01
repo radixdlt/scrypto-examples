@@ -17,21 +17,19 @@ mod flat_admin {
     }
 
     impl FlatAdmin {
-        pub fn instantiate_flat_admin(badge_name: String) -> (Global<FlatAdmin>, Bucket) {
-
+        pub fn instantiate_flat_admin(badge_name: String) -> (Global<FlatAdmin>, FungibleBucket) {
             // Creating a GlobalAddressReservation and ComponentAddress to use for the actor virtual badge pattern.
-            let (address_reservation, component_address) = 
-                Runtime::allocate_component_address(Runtime::blueprint_id());
+            let (address_reservation, component_address) =
+                Runtime::allocate_component_address(FlatAdmin::blueprint_id());
 
             // Create the ResourceManager for a mutable supply admin badge
             let admin_badge = ResourceBuilder::new_fungible(OwnerRole::None)
                 .divisibility(DIVISIBILITY_NONE)
                 .metadata(metadata!(
-                        init {
-                            "name" => badge_name, locked;
-                        }
-                    )
-                )
+                    init {
+                        "name" => badge_name, locked;
+                    }
+                ))
                 .mint_roles(mint_roles!(
                     minter => rule!(require(global_caller(component_address)));
                     minter_updater => rule!(deny_all);
@@ -47,12 +45,12 @@ mod flat_admin {
                 admin_badge: admin_badge.resource_manager(),
             }
             .instantiate()
-            .prepare_to_globalize(OwnerRole::Updatable(rule!(require(admin_badge.resource_address()))))
-            .roles(
-                roles!(
-                    admin => rule!(require(admin_badge.resource_address()));
-                )
-            )
+            .prepare_to_globalize(OwnerRole::Updatable(rule!(require(
+                admin_badge.resource_address()
+            ))))
+            .roles(roles!(
+                admin => rule!(require(admin_badge.resource_address()));
+            ))
             .with_address(address_reservation)
             .globalize();
 
@@ -64,7 +62,6 @@ mod flat_admin {
         pub fn create_additional_admin(&mut self) -> Bucket {
             // The "authorize" method provides a convenient shortcut to make use of the mint authority badge within our vault without removing it
             return self.admin_badge.mint(dec!(1));
-
         }
 
         pub fn destroy_admin_badge(&mut self, to_destroy: Bucket) {
@@ -80,5 +77,3 @@ mod flat_admin {
         }
     }
 }
-
-
