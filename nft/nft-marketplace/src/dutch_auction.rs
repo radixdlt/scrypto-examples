@@ -307,14 +307,19 @@ mod dutch_auction {
         /// * `ResourceAddress` - The resource address of the accepted payment token.
         /// * `Decimal` - A decimal value of the price of the NFT(s) in terms of the `accepted_payment_token`.
         pub fn price(&self) -> (ResourceAddress, Decimal) {
-            let gradient: Decimal = (self.ending_price - self.starting_price)
-                / (self.ending_epoch.number() - self.starting_epoch.number());
+            let gradient: Decimal = (self.ending_price.safe_sub(self.starting_price))
+                .unwrap()
+                .safe_div(self.ending_epoch.number() - self.starting_epoch.number())
+                .unwrap();
             return (
                 self.accepted_payment_token,
                 std::cmp::max(
                     self.ending_price,
-                    gradient * (Runtime::current_epoch().number() - self.starting_epoch.number())
-                        + self.starting_price,
+                    gradient
+                        .safe_mul(Runtime::current_epoch().number() - self.starting_epoch.number())
+                        .unwrap()
+                        .safe_add(self.starting_price)
+                        .unwrap(),
                 ),
             );
         }

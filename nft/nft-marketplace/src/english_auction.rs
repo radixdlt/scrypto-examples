@@ -369,7 +369,7 @@ mod english_auction {
             // At this point we know that the bidder's bid can be increased.
 
             // Updating the metadata of the bidder's badge to reflect on the update of the bidder's bid
-            let mut bidders_badge_data: BidderBadge =
+            let bidders_badge_data: BidderBadge =
                 bidders_badge.as_non_fungible().non_fungible().data();
             let non_fungible_local_id: NonFungibleLocalId =
                 bidders_badge.as_non_fungible().non_fungible_local_id();

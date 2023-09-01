@@ -281,7 +281,7 @@ mod vesting {
                 if admin_resource_manager.total_supply().unwrap() <= dec!("2") {
                     admin_resource_manager.total_supply().unwrap()
                 } else {
-                    (admin_resource_manager.total_supply().unwrap() / dec!("2")).ceiling()
+                    (admin_resource_manager.total_supply().unwrap().safe_div(dec!("2")).unwrap().safe_ceiling()).unwrap()
                 };
             info!(
                 "[Add Admin]: Minimum required admins is: {}",
@@ -349,7 +349,7 @@ mod vesting {
             // now and the amount that should have not have vested yet.
             let beneficiary_vault: &mut Vault = self.funds.get_mut(&beneficiary_id).unwrap();
             let claim_amount: Decimal = beneficiary_vault.amount()
-                - beneficiary_vesting_schedule.get_unvested_amount(Runtime::current_epoch().number());
+                .safe_sub(beneficiary_vesting_schedule.get_unvested_amount(Runtime::current_epoch().number())).unwrap();
             info!(
                 "[Withdraw Funds]: Withdraw successful. Withdrawing {} tokens",
                 claim_amount
