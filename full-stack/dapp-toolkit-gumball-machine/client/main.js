@@ -1,7 +1,7 @@
 import { RadixDappToolkit, DataRequestBuilder } from '@radixdlt/radix-dapp-toolkit'
 // You can create a dApp definition in the dashboard at https://rcnet-v3-dashboard.radixdlt.com/dapp-metadata 
 // then use that account for your dAppId
-const dAppId = 'account_tdx_d_12805alyg3562gsphgeyc9re800qq0phlyz89cnu2tydmlp0gt947cw'
+const dAppId = 'account_tdx_e_1297m36evz735smxtfa3wmj83awa3y2kunqvcn2k5xltztf02ml2d3w'
 // Instantiate DappToolkit
 const rdt = RadixDappToolkit({
   dAppDefinitionAddress: dAppId,
@@ -22,14 +22,14 @@ rdt.walletApi.walletData$.subscribe((walletData) => {
 
 // Global states
 let accountAddress // User account address
-let componentAddress = "component_tdx_21_1cqulhyk42qcmdck5unzl4nvywje0x93a5xkxsmhek3pz62x9dsfhne" //GumballMachine component address
-let gum_resourceAddress = "resource_tdx_21_1thcxgxs9t3je33dreplv2n2yyx6tmakm3gc2wepw0wm5p4fme9lnd5" // SCRYPTO GUM resource address
-let xrdAddress = "resource_tdx_21_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxsmgder" //Enkinet XRD resource address
+let componentAddress = "component_tdx_e_1cp06nqttywhtyj52u3x2wmepzakthk0jr5pl78f0kd4ymvqgrwvy6s" //GumballMachine component address
+let gum_resourceAddress = "resource_tdx_e_1tkqmtjm6le9cwg0hjqc8ak74e4t6sljd9kka63997m5zk4mrrsemw0" // RCV3 GUM resource address
+let xrdAddress = "resource_tdx_e_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxx8rpsmc" //RCnet v3 XRD resource address
 // You receive this badge(your resource address will be different) when you instantiate the component
-let admin_badge = "resource_tdx_21_1tk7daptrcfh0xh7n3277qere5ek3fwpxfj0va7hj0pwy99pnq9ckkc"
-let owner_badge = "resource_tdx_21_1t4yksfxzfjau9axdxv454a3av7n46qnsx5cr78tl9j2wxsw36qg4q3"
+let admin_badge = "resource_tdx_e_1thk43rt3x9jpsag9ce5wqd5tnammtl7kkyfefvc8fd7zps7dxjat9j"
+let owner_badge = "resource_tdx_e_1t5knhgq3ygje856rk6n0kscs0dl6m6grapwk072aud2etp6cvmqm6k"
 // You can use these addresses to skip package deployment steps
-// enkinet package_address = package_tdx_21_1pk0vlq5nedaws4gzwqvnxwn4884uc6du7kgaw4cratqd9r36e8jthr
+// RCNet v3 package_address = package_tdx_e_1p49n6eul8s8vvjzafw039yjxmf79re8lcx8a278qw4l6vd7jkks4pq
 
 
 // ************ Instantiate component and fetch component and resource addresses *************
