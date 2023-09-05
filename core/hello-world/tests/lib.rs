@@ -5,7 +5,7 @@ use transaction::builder::ManifestBuilder;
 #[test]
 fn test_hello() {
     // Setup the environment
-    let mut test_runner = TestRunner::builder().build();
+    let mut test_runner = TestRunnerBuilder::new().build();
 
     // Create an account
     let (public_key, _private_key, account_component) = test_runner.new_allocated_account();
@@ -15,7 +15,12 @@ fn test_hello() {
 
     // Test the `instantiate_hello` function.
     let manifest = ManifestBuilder::new()
-        .call_function(package_address, "Hello", "instantiate_hello", manifest_args!())
+        .call_function(
+            package_address,
+            "Hello",
+            "instantiate_hello",
+            manifest_args!(),
+        )
         .build();
     let receipt = test_runner.execute_manifest_ignoring_fee(
         manifest,
@@ -23,8 +28,7 @@ fn test_hello() {
     );
     println!("{:?}\n", receipt);
     receipt.expect_commit_success();
-    let component = receipt
-        .expect_commit(true).new_component_addresses()[0];
+    let component = receipt.expect_commit(true).new_component_addresses()[0];
 
     // Test the `free_token` method.
     let manifest = ManifestBuilder::new()
