@@ -12,14 +12,14 @@ pub struct Account {
 }
 
 pub struct TestEnvironment {
-    test_runner: TestRunner,
+    test_runner: DefaultTestRunner,
     account: Account,
     package_address: PackageAddress,
 }
 
 impl TestEnvironment {
     pub fn instantiate_test() -> Self {
-        let mut test_runner = TestRunner::builder().build();
+        let mut test_runner = TestRunnerBuilder::new().build();
 
         // Create an account
         let (public_key, _private_key, account_address) = test_runner.new_allocated_account();
@@ -46,8 +46,8 @@ impl TestEnvironment {
         network: &NetworkDefinition,
     ) -> TransactionReceipt {
         dump_manifest_to_file_system(
-            &manifest,
             manifest_names,
+            &manifest,
             "./transaction_manifest/fixed_price_sale",
             Some(name),
             network,
@@ -72,7 +72,7 @@ impl TestEnvironment {
             .withdraw_non_fungibles_from_account(
                 self.account.account_address,
                 non_fungible_tokens,
-                &btreeset!(NonFungibleLocalId::integer(1)),
+                btreeset!(NonFungibleLocalId::integer(1)),
             )
             .take_all_from_worktop(non_fungible_tokens, "bucket")
             .call_function_with_name_lookup(
