@@ -78,7 +78,7 @@ mod hello_nft {
             (ticket, payment)
         }
 
-        pub fn available_ticket_ids(&self) -> BTreeSet<NonFungibleLocalId> {
+        pub fn available_ticket_ids(&self) -> IndexSet<NonFungibleLocalId> {
             self.available_tickets
                 .as_non_fungible()
                 .non_fungible_local_ids(100)

@@ -135,7 +135,7 @@ mod radix_name_service {
             let hash = Self::hash_name(name);
             let deposit_amount = self
                 .deposit_per_year
-                .safe_mul(Decimal::from(reserve_years))
+                .checked_mul(Decimal::from(reserve_years))
                 .unwrap();
             let last_valid_epoch =
                 Runtime::current_epoch().number() + EPOCHS_PER_YEAR * u64::from(reserve_years);
@@ -177,7 +177,7 @@ mod radix_name_service {
 
             let total_deposit_amount = Decimal::zero();
             for nft in name_nft.as_non_fungible().non_fungibles::<DomainName>() {
-                total_deposit_amount.safe_add(nft.data().deposit_amount);
+                total_deposit_amount.checked_add(nft.data().deposit_amount);
             }
 
             name_nft.burn();
@@ -249,7 +249,7 @@ mod radix_name_service {
 
             let name_nft = name_nft.check(self.name_resource.address());
 
-            let fee_amount = self.fee_renewal_per_year.safe_mul(renew_years).unwrap();
+            let fee_amount = self.fee_renewal_per_year.checked_mul(renew_years).unwrap();
             assert!(
                 fee.amount() >= fee_amount,
                 "Insufficient fee amount. You need to send a fee of {} XRD",

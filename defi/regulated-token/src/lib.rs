@@ -214,10 +214,10 @@ mod regulated_token {
 
             // Take what we're owed
             self.collected_xrd
-                .put(payment.take(price.safe_mul(quantity).unwrap()));
+                .put(payment.take(price.checked_mul(quantity).unwrap()));
 
             // Can we fill the desired quantity from current supply?
-            let extra_demand = quantity.safe_sub(self.token_supply.amount()).unwrap();
+            let extra_demand = quantity.checked_sub(self.token_supply.amount()).unwrap();
             if extra_demand <= dec!("0") {
                 // Take the required quantity, and return it along with any change
                 // The token may currently be under restricted transfer, so we will authorize our withdrawal

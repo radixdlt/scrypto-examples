@@ -1,7 +1,7 @@
 import { RadixDappToolkit, DataRequestBuilder } from '@radixdlt/radix-dapp-toolkit'
 // You can create a dApp definition in the dashboard at https://rcnet-v3-dashboard.radixdlt.com/dapp-metadata 
 // then use that account for your dAppId
-const dAppId = 'account_tdx_e_1297m36evz735smxtfa3wmj83awa3y2kunqvcn2k5xltztf02ml2d3w'
+const dAppId = 'account_tdx_e_128y6f7ysmlvmn73zfjkjvrlvhqjac3gslep5xlaamg09pmcgdtrt7y'
 // Instantiate DappToolkit
 const rdt = RadixDappToolkit({
   dAppDefinitionAddress: dAppId,
@@ -22,14 +22,14 @@ rdt.walletApi.walletData$.subscribe((walletData) => {
 
 // Global states
 let accountAddress // User account address
-let componentAddress = "component_tdx_e_1cp06nqttywhtyj52u3x2wmepzakthk0jr5pl78f0kd4ymvqgrwvy6s" //GumballMachine component address
-let gum_resourceAddress = "resource_tdx_e_1tkqmtjm6le9cwg0hjqc8ak74e4t6sljd9kka63997m5zk4mrrsemw0" // RCV3 GUM resource address
+let componentAddress = "component_tdx_e_1crt0ndkk0x7rexswhczacj2405tgzh0zv3t0fr7czdxnd8y8vgjuyw" //GumballMachine component address
+let gum_resourceAddress = "resource_tdx_e_1t5hrjudhk4yd5m4svujx5ytvtvjaj5ufuahxaauru72ed7vrce8q34" // RCV3 GUM resource address
 let xrdAddress = "resource_tdx_e_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxx8rpsmc" //RCnet v3 XRD resource address
 // You receive this badge(your resource address will be different) when you instantiate the component
-let admin_badge = "resource_tdx_e_1thk43rt3x9jpsag9ce5wqd5tnammtl7kkyfefvc8fd7zps7dxjat9j"
-let owner_badge = "resource_tdx_e_1t5knhgq3ygje856rk6n0kscs0dl6m6grapwk072aud2etp6cvmqm6k"
+let admin_badge = "resource_tdx_e_1t5kmfczjh3g5vs7gj9jcarmgt0u29qfj50kngxqv2cnny9rr89fd94"
+let owner_badge = "resource_tdx_e_1tk35c2pnzy4fr6ms5wpm8v4rsw76h7ptyydvqgs88jk58eqmaeqt45"
 // You can use these addresses to skip package deployment steps
-// RCNet v3 package_address = package_tdx_e_1p49n6eul8s8vvjzafw039yjxmf79re8lcx8a278qw4l6vd7jkks4pq
+// RCNet v3.1 package_address = package_tdx_e_1p5xrp5rasany9nfa5ssp8skmhx4c4v2zlwmjnn7fu29yxhvhhra6l6
 
 
 // ************ Instantiate component and fetch component and resource addresses *************
@@ -138,7 +138,7 @@ document.getElementById('getPrice').onclick = async function () {
   console.log('getPrice', getPrice)
 
   // Show the price in the DOM
-  document.getElementById('price').innerText = JSON.stringify(getPrice.details.state.programmatic_json.fields[2].value);
+  document.getElementById('price').innerText = JSON.stringify(getPrice.details.state.fields[2].value);
 }
 
 
@@ -174,7 +174,7 @@ CALL_METHOD
   console.log('Set Price new value', getPrice)
 
   // Show the New Price in the DOM
-  document.getElementById('price').innerText = JSON.stringify(getPrice.details.state.programmatic_json.fields[2].value);
+  document.getElementById('price').innerText = JSON.stringify(getPrice.details.state.fields[2].value);
 }
 
 

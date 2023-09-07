@@ -249,7 +249,7 @@ mod payment_splitter {
                 non_fungible_id,
                 Vault::new(self.accepted_token_resource_address),
             );
-            self.total_amount_of_shares.safe_add(amount_of_shares);
+            self.total_amount_of_shares.checked_add(amount_of_shares);
 
             // Returning the shareholder back to the method caller
             return shareholder_badge;
@@ -396,7 +396,7 @@ mod payment_splitter {
             let shareholder: Shareholder =
                 shareholder_resource_manager.get_non_fungible_data(&non_fungible_id);
             self.total_amount_of_shares
-                .safe_sub(shareholder.amount_of_shares);
+                .checked_sub(shareholder.amount_of_shares);
 
             // Burning the shareholder NFT
             shareholder_badge.burn();
@@ -444,8 +444,8 @@ mod payment_splitter {
                     shareholder_resource_manager.get_non_fungible_data(&non_fungible_id);
                 let amount_owed: Decimal = shareholder
                     .amount_of_shares
-                    .safe_mul(bucket.amount())
-                    .and_then(|d| d.safe_div(self.total_amount_of_shares))
+                    .checked_mul(bucket.amount())
+                    .and_then(|d| d.checked_div(self.total_amount_of_shares))
                     .unwrap();
                 // shareholder.amount_of_shares * bucket.amount() / self.total_amount_of_shares;
                 vault.put(bucket.take(amount_owed));
