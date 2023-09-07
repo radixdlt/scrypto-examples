@@ -90,7 +90,7 @@ impl BeneficiaryVestingSchedule {
             end_epoch,
             total_vesting_amount,
             amount_available_on_cliff: total_vesting_amount
-                .safe_mul(percentage_available_on_cliff)
+                .checked_mul(percentage_available_on_cliff)
                 .unwrap(),
         };
     }
@@ -106,9 +106,9 @@ impl BeneficiaryVestingSchedule {
     pub fn vesting_gradient(&self) -> Decimal {
         return (self
             .total_vesting_amount
-            .safe_sub(self.amount_available_on_cliff))
+            .checked_sub(self.amount_available_on_cliff))
         .unwrap()
-        .safe_div(self.end_epoch.number() - self.cliff_epoch.number())
+        .checked_div(self.end_epoch.number() - self.cliff_epoch.number())
         .unwrap();
     }
 
@@ -129,9 +129,9 @@ impl BeneficiaryVestingSchedule {
         } else {
             cmp::min(
                 self.vesting_gradient()
-                    .safe_mul(epoch - self.cliff_epoch.number())
+                    .checked_mul(epoch - self.cliff_epoch.number())
                     .unwrap()
-                    .safe_add(self.amount_available_on_cliff)
+                    .checked_add(self.amount_available_on_cliff)
                     .unwrap(),
                 self.total_vesting_amount,
             )
@@ -150,7 +150,7 @@ impl BeneficiaryVestingSchedule {
     pub fn get_unvested_amount(&self, epoch: u64) -> Decimal {
         return self
             .total_vesting_amount
-            .safe_sub(self.get_vested_amount(epoch))
+            .checked_sub(self.get_vested_amount(epoch))
             .unwrap();
     }
 }

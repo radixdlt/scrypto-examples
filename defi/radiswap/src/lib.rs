@@ -64,9 +64,9 @@ mod radiswap {
             let (output_resource_address, output_reserves) = reserves.into_iter().next().unwrap();
 
             let output_amount = input_amount
-                .safe_mul(output_reserves)
+                .checked_mul(output_reserves)
                 .unwrap()
-                .safe_div(input_reserves.safe_add(input_amount).unwrap())
+                .checked_div(input_reserves.checked_add(input_amount).unwrap())
                 .unwrap();
 
             // NOTE: It's the responsibility of the user of the pool to do the appropriate rounding
@@ -76,7 +76,7 @@ mod radiswap {
             self.withdraw(output_resource_address, output_amount)
         }
 
-        fn vault_reserves(&self) -> BTreeMap<ResourceAddress, Decimal> {
+        fn vault_reserves(&self) -> IndexMap<ResourceAddress, Decimal> {
             self.pool_component.get_vault_amounts()
         }
 

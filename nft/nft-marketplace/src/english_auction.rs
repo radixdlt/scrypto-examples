@@ -377,7 +377,7 @@ mod english_auction {
             resource_manager.update_non_fungible_data(
                 &non_fungible_local_id,
                 "bid_amount",
-                bidders_badge_data.bid_amount.safe_add(funds.amount()),
+                bidders_badge_data.bid_amount.checked_add(funds.amount()),
             );
 
             // Adding the funds to the vault of the bidder
