@@ -3,8 +3,9 @@ This example is meant to guide you through building, deploying and using the [Gu
 
 ## Pre-requisites
 1. Node >= 12.17.0
-2. The test wallet & Radix connector-extension browser extenstion installed. Instructions [here](https://docs-babylon.radixdlt.com/main/getting-started-developers/wallet-and-connector.html)
-3. Scrypto v1.0.0. Instructions to install [here](https://docs.radixdlt.com/docs/getting-rust-scrypto) and update [here](https://docs.radixdlt.com/docs/updating-scrypto)
+2. The Radix Wallet [more info here](https://docs.radixdlt.com/docs/radix-wallet-overview)
+3. The Radix connector-extension with dev tools [download from github](https://github.com/radixdlt/connector-extension/releases) and load unpacked manually for interacting on localhost installed.
+4. Scrypto v1.0.0. Instructions to install [here](https://docs.radixdlt.com/docs/getting-rust-scrypto) and update [here](https://docs.radixdlt.com/docs/updating-scrypto)
 
 ## Building the Scrypto code
 1. Enter the scrypto directory in a terminal: `cd scrypto`
