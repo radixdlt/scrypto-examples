@@ -1,11 +1,13 @@
-import { RadixDappToolkit, DataRequestBuilder } from '@radixdlt/radix-dapp-toolkit'
-// You can create a dApp definition in the dashboard at https://rcnet-v3-dashboard.radixdlt.com/dapp-metadata 
+import { RadixDappToolkit, DataRequestBuilder, RadixNetwork } from '@radixdlt/radix-dapp-toolkit'
+// You can create a dApp definition in the dev console at https://stokenet-console.radixdlt.com/dapp-metadata 
 // then use that account for your dAppId
-const dAppId = 'account_tdx_e_128y6f7ysmlvmn73zfjkjvrlvhqjac3gslep5xlaamg09pmcgdtrt7y'
+const dAppId = 'account_tdx_2_12ys5dcytt0hc0yhq5a78stl7upchljsvs36ujdunlszlrgu90mz44d'
 // Instantiate DappToolkit
 const rdt = RadixDappToolkit({
   dAppDefinitionAddress: dAppId,
-  networkId: 14,
+  networkId: RadixNetwork.Stokenet, // network ID 2 is for the stokenet test network 1 is for mainnet
+  applicationName: 'Radix Gumball dApp',
+  applicationVersion: '1.0.0',
 })
 console.log("dApp Toolkit: ", rdt)
 
@@ -22,14 +24,14 @@ rdt.walletApi.walletData$.subscribe((walletData) => {
 
 // Global states
 let accountAddress // User account address
-let componentAddress = "component_tdx_e_1crt0ndkk0x7rexswhczacj2405tgzh0zv3t0fr7czdxnd8y8vgjuyw" //GumballMachine component address
-let gum_resourceAddress = "resource_tdx_e_1t5hrjudhk4yd5m4svujx5ytvtvjaj5ufuahxaauru72ed7vrce8q34" // RCV3 GUM resource address
-let xrdAddress = "resource_tdx_e_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxx8rpsmc" //RCnet v3 XRD resource address
+let componentAddress = "component_tdx_2_1czgd7s0x9t0ajqhlw88s09m8pe5caefjf4jnlu8xx45sy5m2dqyq68" //GumballMachine component address on stokenet
+let gum_resourceAddress = "resource_tdx_2_1tkwuc7n6udvu2sczkedwhcvaa62mfp53x932az6plyhg6v0nauqd7s" // Stokenet BABYLON resource address
+let xrdAddress = "resource_tdx_2_1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxtfd2jc" //Stokenet XRD resource address
 // You receive this badge(your resource address will be different) when you instantiate the component
-let admin_badge = "resource_tdx_e_1t5kmfczjh3g5vs7gj9jcarmgt0u29qfj50kngxqv2cnny9rr89fd94"
-let owner_badge = "resource_tdx_e_1tk35c2pnzy4fr6ms5wpm8v4rsw76h7ptyydvqgs88jk58eqmaeqt45"
-// You can use these addresses to skip package deployment steps
-// RCNet v3.1 package_address = package_tdx_e_1p5xrp5rasany9nfa5ssp8skmhx4c4v2zlwmjnn7fu29yxhvhhra6l6
+let admin_badge = "resource_tdx_2_1tkm4y2lknsuxch62qeg5l7rtc85qzdq66h3xeym5m8tg2yl2k9mgwg"
+let owner_badge = "resource_tdx_2_1tkcw4ks7m2hkct99hxfqvfc9uz87cvcmltn925ud5smac4uuguxgul"
+// You can use this address to skip package deployment step
+// Stokenet package_address = package_tdx_2_1p4ccyz5jtgg0ptgddex03vn068uaz937zucky3nyp9hd6nml4ypx9a
 
 
 // ************ Instantiate component and fetch component and resource addresses *************
