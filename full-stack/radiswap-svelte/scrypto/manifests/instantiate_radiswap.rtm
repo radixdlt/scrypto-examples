@@ -1,0 +1,14 @@
+CALL_FUNCTION
+    Address("package_sim1pkraxt270a7w3c0wk8maj0djrctjezuq3ftjgkeyjf44ct7rk03jdm")
+    "Radiswap"
+    "new"
+    Enum<0u8>()
+    Address("resource_sim1t5s0rnmld9e9jhrd2ujcnp0np4n30ph0u9307ulnr28tvrjyljakgf")
+    Address("resource_sim1tkjxt2hcg483frrsgq58lh4f9zs84ck3zn6mf6pch32c3744pmk0nt")
+;
+CALL_METHOD
+    Address("account_sim1cywetnvsd3xuxhrxpa7kn5wvh9ty4z869z3q5f0n4yw3mqsea2ntml")
+    "try_deposit_batch_or_abort"
+    Expression("ENTIRE_WORKTOP")
+    Enum<0u8>()
+;
