@@ -118,7 +118,7 @@ mod dutch_auction {
                 "[Instantiation]: The starting price must be greater than the ending price."
             );
             assert!(
-                Runtime::current_epoch().after(relative_ending_epoch) > Runtime::current_epoch(),
+                Runtime::current_epoch().after(relative_ending_epoch).unwrap() > Runtime::current_epoch(),
                 "[Instantiation]: The ending epoch has already passed."
             );
 
@@ -165,13 +165,13 @@ mod dutch_auction {
                 starting_price,
                 ending_price,
                 starting_epoch: Runtime::current_epoch(),
-                ending_epoch: Runtime::current_epoch().after(relative_ending_epoch),
+                ending_epoch: Runtime::current_epoch().after(relative_ending_epoch).unwrap(),
             }
-            .instantiate()
-            .prepare_to_globalize(OwnerRole::Updatable(rule!(require(
+                .instantiate()
+                .prepare_to_globalize(OwnerRole::Updatable(rule!(require(
                 ownership_badge.resource_address()
             ))))
-            .globalize();
+                .globalize();
 
             return (dutch_auction, ownership_badge);
         }
