@@ -112,7 +112,7 @@ mod english_auction {
                 "[Instantiation]: Only payments of fungible resources are accepted."
             );
             assert!(
-                Runtime::current_epoch().after(relative_ending_epoch) > Runtime::current_epoch(),
+                Runtime::current_epoch().after(relative_ending_epoch).unwrap() > Runtime::current_epoch(),
                 "[Instantiation]: The ending epoch has already passed."
             );
 
@@ -137,7 +137,7 @@ mod english_auction {
                 .metadata(metadata!(
                     init {
                         "name" => "Ownership Badge".to_owned(), locked;
-                        "description" => 
+                        "description" =>
                         "An ownership badge used to authenticate the owner of the NFT(s).".to_owned(), locked;
                         "symbol" => "OWNER".to_owned(), locked;
                     }
@@ -154,7 +154,7 @@ mod english_auction {
                     .metadata(metadata!(
                         init {
                             "name" => "Bidder Badge".to_owned(), locked;
-                            "description" => 
+                            "description" =>
                             "A badge provided to bidders to keep track of the amount they've bid".to_owned(), locked;
                             "symbol" => "BIDDER".to_owned(), locked;
                         }
@@ -186,15 +186,15 @@ mod english_auction {
                 payment_vault: Vault::new(accepted_payment_token),
                 bidders_badge: bidder_badge_resource_address,
                 accepted_payment_token,
-                ending_epoch: Runtime::current_epoch().after(relative_ending_epoch),
+                ending_epoch: Runtime::current_epoch().after(relative_ending_epoch).unwrap(),
                 state: AuctionState::Open,
             }
-            .instantiate()
-            .prepare_to_globalize(OwnerRole::Updatable(rule!(require(
+                .instantiate()
+                .prepare_to_globalize(OwnerRole::Updatable(rule!(require(
                 ownership_badge.resource_address()
             ))))
-            .with_address(address_reservation)
-            .globalize();
+                .with_address(address_reservation)
+                .globalize();
 
             return (english_auction, ownership_badge);
         }
